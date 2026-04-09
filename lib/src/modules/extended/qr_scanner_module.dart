@@ -27,9 +27,9 @@ class QrScannerModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: add NSCameraUsageDescription to Info.plist.',
-        'Android: add CAMERA permission to AndroidManifest.xml.',
-      ];
+    'iOS: add NSCameraUsageDescription to Info.plist.',
+    'Android: add CAMERA permission to AndroidManifest.xml.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

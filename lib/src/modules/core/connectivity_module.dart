@@ -27,8 +27,8 @@ class ConnectivityModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: add NSLocalNetworkUsageDescription to Info.plist if needed.',
-      ];
+    'iOS: add NSLocalNetworkUsageDescription to Info.plist if needed.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

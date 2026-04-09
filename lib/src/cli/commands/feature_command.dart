@@ -64,7 +64,8 @@ class FeatureCommand extends Command<int> {
     }
 
     final data = config.read();
-    final projectName = data['project_name'] as String? ?? p.basename(projectPath);
+    final projectName =
+        data['project_name'] as String? ?? p.basename(projectPath);
     final stateManagement = data['state_management'] as String? ?? 'cubit';
     final simple = args['simple'] as bool;
 
@@ -79,9 +80,10 @@ class FeatureCommand extends Command<int> {
         simple: simple,
       );
 
-      final structure = simple
-          ? 'lib/features/$featureName/ (flat)'
-          : 'lib/features/$featureName/{data,domain,presentation}';
+      final structure =
+          simple
+              ? 'lib/features/$featureName/ (flat)'
+              : 'lib/features/$featureName/{data,domain,presentation}';
 
       _logger
         ..success('Feature "$featureName" created at $structure')

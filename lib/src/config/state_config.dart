@@ -72,11 +72,11 @@ enum StateConfig {
   ///
   /// Throws [ArgumentError] for unrecognised names.
   static StateConfig fromString(String name) => switch (name) {
-        'cubit' => cubit,
-        'riverpod' => riverpod,
-        'mobx' => mobx,
-        _ => throw ArgumentError('Unknown state management: $name'),
-      };
+    'cubit' => cubit,
+    'riverpod' => riverpod,
+    'mobx' => mobx,
+    _ => throw ArgumentError('Unknown state management: $name'),
+  };
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -84,8 +84,8 @@ enum StateConfig {
 
   /// Human-readable label for this configuration.
   String get displayName => switch (this) {
-        cubit => 'Flutter Bloc / Cubit',
-        riverpod => 'Riverpod',
-        mobx => 'MobX',
-      };
+    cubit => 'Flutter Bloc / Cubit',
+    riverpod => 'Riverpod',
+    mobx => 'MobX',
+  };
 }

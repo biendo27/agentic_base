@@ -27,10 +27,10 @@ class NotificationsModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: enable Push Notifications capability in Xcode.',
-        'Android: add notification icons to res/drawable.',
-        'Initialise AwesomeNotifications in bootstrap.dart before runApp().',
-      ];
+    'iOS: enable Push Notifications capability in Xcode.',
+    'Android: add notification icons to res/drawable.',
+    'Initialise AwesomeNotifications in bootstrap.dart before runApp().',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

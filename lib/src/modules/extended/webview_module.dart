@@ -27,10 +27,10 @@ class WebViewModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: set minimum deployment target to iOS 12 in Xcode.',
-        'Android: set minSdkVersion to 19 in android/app/build.gradle.',
-        'Android: add android:usesCleartextTraffic="true" if loading HTTP URLs.',
-      ];
+    'iOS: set minimum deployment target to iOS 12 in Xcode.',
+    'Android: set minSdkVersion to 19 in android/app/build.gradle.',
+    'Android: add android:usesCleartextTraffic="true" if loading HTTP URLs.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

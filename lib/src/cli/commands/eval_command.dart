@@ -116,19 +116,19 @@ class EvalCommand extends Command<int> {
   List<String> _buildFlutterTestArgs({
     required String? testPath,
     required bool withCoverage,
-  }) =>
-      [
-        'test',
-        if (withCoverage) '--coverage',
-        if (testPath != null) testPath,
-      ];
+  }) => [
+    'test',
+    if (withCoverage) '--coverage',
+    if (testPath != null) testPath,
+  ];
 
   Future<int> _executeTests({
     required String projectPath,
     required List<String> flutterArgs,
   }) async {
-    final progress =
-        _logger.progress('Running flutter ${flutterArgs.join(' ')}');
+    final progress = _logger.progress(
+      'Running flutter ${flutterArgs.join(' ')}',
+    );
 
     try {
       final process = await Process.start(
@@ -181,16 +181,17 @@ class EvalCommand extends Command<int> {
   /// Parse and re-print a compact pass/fail summary line.
   void _printSummary({required String output, required int exitCode}) {
     // flutter test emits: "00:01 +3: All tests passed!" or "00:01 +2 -1: ..."
-    final summaryLine = output
-        .split('\n')
-        .lastWhere(
-          (l) =>
-              l.contains('passed') ||
-              l.contains('failed') ||
-              l.contains('+'),
-          orElse: () => '',
-        )
-        .trim();
+    final summaryLine =
+        output
+            .split('\n')
+            .lastWhere(
+              (l) =>
+                  l.contains('passed') ||
+                  l.contains('failed') ||
+                  l.contains('+'),
+              orElse: () => '',
+            )
+            .trim();
 
     _logger.info('');
     if (exitCode == 0) {

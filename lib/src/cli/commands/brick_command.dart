@@ -196,8 +196,10 @@ class _BrickListSubcommand extends Command<int> {
     );
 
     if (bricks.isEmpty) {
-      _logger.info('No community bricks installed. '
-          'Use: agentic_base brick add <name>');
+      _logger.info(
+        'No community bricks installed. '
+        'Use: agentic_base brick add <name>',
+      );
       return 0;
     }
 
@@ -224,7 +226,11 @@ Future<bool> _masonAvailable() async {
 }
 
 /// Add or remove [brickName] from the `community_bricks` list in agentic.yaml.
-void _registerBrick(AgenticConfig config, String brickName, {required bool added}) {
+void _registerBrick(
+  AgenticConfig config,
+  String brickName, {
+  required bool added,
+}) {
   final data = config.read();
   final bricks = List<String>.from(
     (data['community_bricks'] as List?)?.cast<String>() ?? [],

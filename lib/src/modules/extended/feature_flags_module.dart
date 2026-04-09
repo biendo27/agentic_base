@@ -27,9 +27,9 @@ class FeatureFlagsModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'Define your flags in FeatureFlagsServiceImpl._defaults.',
-        'Connect to remote_config or a backend to override flags at runtime.',
-      ];
+    'Define your flags in FeatureFlagsServiceImpl._defaults.',
+    'Connect to remote_config or a backend to override flags at runtime.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

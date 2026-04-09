@@ -27,10 +27,10 @@ class AppUpdateModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'Wrap your MaterialApp with UpgradeAlert or UpgradeCupertino widget.',
-        'Ensure app is published on App Store / Play Store for version checks to work.',
-        'Test with debugDisplayAlways: true during development.',
-      ];
+    'Wrap your MaterialApp with UpgradeAlert or UpgradeCupertino widget.',
+    'Ensure app is published on App Store / Play Store for version checks to work.',
+    'Test with debugDisplayAlways: true during development.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

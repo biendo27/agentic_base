@@ -27,9 +27,9 @@ class PermissionsModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: add required NSUsage* keys to Info.plist for each permission.',
-        'Android: add uses-permission entries to AndroidManifest.xml.',
-      ];
+    'iOS: add required NSUsage* keys to Info.plist for each permission.',
+    'Android: add uses-permission entries to AndroidManifest.xml.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

@@ -27,9 +27,9 @@ class InAppReviewModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: review prompts are throttled by Apple — test on a real device.',
-        'Android: app must be published on Play Store for the dialog to appear.',
-      ];
+    'iOS: review prompts are throttled by Apple — test on a real device.',
+    'Android: app must be published on Play Store for the dialog to appear.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

@@ -26,9 +26,9 @@ class AnalyticsModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
-        'Ensure Firebase is initialised in bootstrap.dart before runApp().',
-      ];
+    'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
+    'Ensure Firebase is initialised in bootstrap.dart before runApp().',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

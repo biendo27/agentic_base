@@ -10,8 +10,7 @@ class CrashlyticsModule implements AgenticModule {
   String get name => 'crashlytics';
 
   @override
-  String get description =>
-      'Firebase Crashlytics — crash and error reporting.';
+  String get description => 'Firebase Crashlytics — crash and error reporting.';
 
   @override
   List<String> get dependencies => ['firebase_crashlytics'];
@@ -27,10 +26,10 @@ class CrashlyticsModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
-        'Enable Crashlytics in the Firebase console.',
-        'Call CrashReportingService.init() in bootstrap.dart.',
-      ];
+    'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
+    'Enable Crashlytics in the Firebase console.',
+    'Call CrashReportingService.init() in bootstrap.dart.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

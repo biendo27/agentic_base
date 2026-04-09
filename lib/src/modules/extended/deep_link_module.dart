@@ -27,10 +27,10 @@ class DeepLinkModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: add Associated Domains entitlement for universal links.',
-        'Android: add intent-filter with ACTION_VIEW in AndroidManifest.xml.',
-        'Register your scheme / domain in the Firebase console if using Dynamic Links.',
-      ];
+    'iOS: add Associated Domains entitlement for universal links.',
+    'Android: add intent-filter with ACTION_VIEW in AndroidManifest.xml.',
+    'Register your scheme / domain in the Firebase console if using Dynamic Links.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

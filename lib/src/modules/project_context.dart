@@ -23,7 +23,8 @@ class ProjectContext {
   final List<String> installedModules;
 
   @override
-  String toString() => 'ProjectContext('
+  String toString() =>
+      'ProjectContext('
       'project=$projectName, '
       'state=$stateManagement, '
       'modules=$installedModules)';

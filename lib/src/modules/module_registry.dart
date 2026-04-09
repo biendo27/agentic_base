@@ -105,9 +105,7 @@ class ModuleRegistry {
   }) {
     final module = find(moduleName);
     if (module == null) return [];
-    return module.conflictsWith
-        .where((c) => installed.contains(c))
-        .toList();
+    return module.conflictsWith.where((c) => installed.contains(c)).toList();
   }
 
   /// Returns prerequisite modules not yet in [installed].

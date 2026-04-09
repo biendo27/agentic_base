@@ -27,11 +27,11 @@ class SocialLoginModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: add Sign In with Apple capability in Xcode.',
-        'iOS: add REVERSED_CLIENT_ID to Info.plist CFBundleURLSchemes for Google.',
-        'Android: configure SHA-1 fingerprint in Firebase console for Google Sign-In.',
-        'Web: configure OAuth client IDs in Google Cloud Console.',
-      ];
+    'iOS: add Sign In with Apple capability in Xcode.',
+    'iOS: add REVERSED_CLIENT_ID to Info.plist CFBundleURLSchemes for Google.',
+    'Android: configure SHA-1 fingerprint in Firebase console for Google Sign-In.',
+    'Web: configure OAuth client IDs in Google Cloud Console.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

@@ -27,10 +27,10 @@ class LocationModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: add NSLocationWhenInUseUsageDescription (and Always variant if needed) to Info.plist.',
-        'Android: add ACCESS_FINE_LOCATION and ACCESS_COARSE_LOCATION to AndroidManifest.xml.',
-        'Android: set minSdkVersion to 19 in android/app/build.gradle.',
-      ];
+    'iOS: add NSLocationWhenInUseUsageDescription (and Always variant if needed) to Info.plist.',
+    'Android: add ACCESS_FINE_LOCATION and ACCESS_COARSE_LOCATION to AndroidManifest.xml.',
+    'Android: set minSdkVersion to 19 in android/app/build.gradle.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

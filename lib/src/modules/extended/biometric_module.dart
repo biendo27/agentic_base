@@ -27,10 +27,10 @@ class BiometricModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: add NSFaceIDUsageDescription to Info.plist.',
-        'Android: add USE_BIOMETRIC and USE_FINGERPRINT permissions to AndroidManifest.xml.',
-        'Android: ensure FlutterFragmentActivity (not FlutterActivity) in MainActivity.kt.',
-      ];
+    'iOS: add NSFaceIDUsageDescription to Info.plist.',
+    'Android: add USE_BIOMETRIC and USE_FINGERPRINT permissions to AndroidManifest.xml.',
+    'Android: ensure FlutterFragmentActivity (not FlutterActivity) in MainActivity.kt.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

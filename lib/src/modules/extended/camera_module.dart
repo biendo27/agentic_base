@@ -27,10 +27,10 @@ class CameraModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: add NSCameraUsageDescription and NSMicrophoneUsageDescription to Info.plist.',
-        'Android: add CAMERA and RECORD_AUDIO permissions to AndroidManifest.xml.',
-        'Android: set minSdkVersion to 21 in android/app/build.gradle.',
-      ];
+    'iOS: add NSCameraUsageDescription and NSMicrophoneUsageDescription to Info.plist.',
+    'Android: add CAMERA and RECORD_AUDIO permissions to AndroidManifest.xml.',
+    'Android: set minSdkVersion to 21 in android/app/build.gradle.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

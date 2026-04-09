@@ -27,8 +27,8 @@ class LoggingModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'Add TalkerDioLogger to your Dio instance interceptors in api_client.dart.',
-      ];
+    'Add TalkerDioLogger to your Dio instance interceptors in api_client.dart.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

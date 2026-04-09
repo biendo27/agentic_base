@@ -10,7 +10,8 @@ class ShareModule implements AgenticModule {
   String get name => 'share';
 
   @override
-  String get description => 'share_plus — native share sheet for text and files.';
+  String get description =>
+      'share_plus — native share sheet for text and files.';
 
   @override
   List<String> get dependencies => ['share_plus'];
@@ -26,8 +27,8 @@ class ShareModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'No platform setup required — share_plus works out of the box.',
-      ];
+    'No platform setup required — share_plus works out of the box.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

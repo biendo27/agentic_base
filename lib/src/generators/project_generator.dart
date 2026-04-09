@@ -57,27 +57,40 @@ class ProjectGenerator {
     );
 
     // Step 4: Install dependencies
-    await _runInProject(outputDirectory, 'Installing dependencies',
-        'flutter', ['pub', 'get']);
+    await _runInProject(outputDirectory, 'Installing dependencies', 'flutter', [
+      'pub',
+      'get',
+    ]);
 
     // Step 5: Run flavorizr to configure native flavor builds
-    await _runInteractive(outputDirectory, 'Configuring flavors',
-        'dart', ['run', 'flutter_flavorizr']);
+    await _runInteractive(outputDirectory, 'Configuring flavors', 'dart', [
+      'run',
+      'flutter_flavorizr',
+    ]);
 
     // Step 6: Install selected modules
     if (modules.isNotEmpty) {
-      await _installModules(outputDirectory, projectName,
-          stateManagement, modules);
+      await _installModules(
+        outputDirectory,
+        projectName,
+        stateManagement,
+        modules,
+      );
     }
 
     // Step 7: Code generation (freezed, injectable, auto_route)
-    await _runInProject(outputDirectory, 'Running code generation',
-        'dart',
-        ['run', 'build_runner', 'build', '--delete-conflicting-outputs']);
+    await _runInProject(outputDirectory, 'Running code generation', 'dart', [
+      'run',
+      'build_runner',
+      'build',
+      '--delete-conflicting-outputs',
+    ]);
 
     // Step 8: Auto-fix lint (sort imports)
-    await _runInProject(outputDirectory, 'Applying lint fixes',
-        'dart', ['fix', '--apply']);
+    await _runInProject(outputDirectory, 'Applying lint fixes', 'dart', [
+      'fix',
+      '--apply',
+    ]);
 
     // Step 9: Verify — analyze + test
     await _verify(outputDirectory);
@@ -119,8 +132,7 @@ class ProjectGenerator {
       }
     }
     // Re-run pub get after adding module deps
-    await Process.run('flutter', ['pub', 'get'],
-        workingDirectory: projectDir);
+    await Process.run('flutter', ['pub', 'get'], workingDirectory: projectDir);
     progress.complete('Modules installed');
   }
 
@@ -128,7 +140,8 @@ class ProjectGenerator {
   Future<void> _verify(String projectDir) async {
     final analyzeProgress = _logger.progress('Verifying (dart analyze)');
     final analyzeResult = await Process.run(
-      'dart', ['analyze', 'lib/'],
+      'dart',
+      ['analyze', 'lib/'],
       workingDirectory: projectDir,
     );
     if (analyzeResult.exitCode == 0) {
@@ -140,7 +153,8 @@ class ProjectGenerator {
 
     final testProgress = _logger.progress('Verifying (flutter test)');
     final testResult = await Process.run(
-      'flutter', ['test'],
+      'flutter',
+      ['test'],
       workingDirectory: projectDir,
     );
     if (testResult.exitCode == 0) {
@@ -153,12 +167,18 @@ class ProjectGenerator {
 
   /// Run a command with inherited stdio (for tools that need a terminal).
   Future<void> _runInteractive(
-    String projectDir, String label, String cmd, List<String> args,
+    String projectDir,
+    String label,
+    String cmd,
+    List<String> args,
   ) async {
     _logger.info(label);
-    final process = await Process.start(cmd, args,
-        workingDirectory: projectDir,
-        mode: ProcessStartMode.inheritStdio);
+    final process = await Process.start(
+      cmd,
+      args,
+      workingDirectory: projectDir,
+      mode: ProcessStartMode.inheritStdio,
+    );
     final exitCode = await process.exitCode;
     if (exitCode != 0) {
       _logger.warn('$label exited with $exitCode (non-fatal)');
@@ -167,11 +187,13 @@ class ProjectGenerator {
 
   /// Run a command inside the generated project directory.
   Future<void> _runInProject(
-    String projectDir, String label, String cmd, List<String> args,
+    String projectDir,
+    String label,
+    String cmd,
+    List<String> args,
   ) async {
     final progress = _logger.progress(label);
-    final result = await Process.run(cmd, args,
-        workingDirectory: projectDir);
+    final result = await Process.run(cmd, args, workingDirectory: projectDir);
     if (result.exitCode != 0) {
       progress.fail('$label failed');
       _logger.err((result.stderr as String).trim());
@@ -189,9 +211,14 @@ class ProjectGenerator {
   }) async {
     final progress = _logger.progress('Creating Flutter project');
     final result = await Process.run('flutter', [
-      'create', '--org', org,
-      '--platforms', platforms.join(','),
-      '-e', '--project-name', projectName,
+      'create',
+      '--org',
+      org,
+      '--platforms',
+      platforms.join(','),
+      '-e',
+      '--project-name',
+      projectName,
       outputDirectory,
     ]);
     if (result.exitCode != 0) {
@@ -224,10 +251,12 @@ class ProjectGenerator {
       await generator.generate(
         target,
         vars: <String, dynamic>{
-          'project_name': projectName, 'org': org,
+          'project_name': projectName,
+          'org': org,
           'platforms': platforms,
           'state_management': stateManagement,
-          'flavors': flavors, 'primary_color': primaryColor,
+          'flavors': flavors,
+          'primary_color': primaryColor,
         },
         fileConflictResolution: FileConflictResolution.overwrite,
       );

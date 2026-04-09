@@ -27,10 +27,10 @@ class FileManagerModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'Android: add READ_EXTERNAL_STORAGE / WRITE_EXTERNAL_STORAGE or MANAGE_EXTERNAL_STORAGE to AndroidManifest.xml.',
-        'Android: add FileProvider authority to AndroidManifest.xml for open_filex.',
-        'iOS: add UIFileSharingEnabled and LSSupportsOpeningDocumentsInPlace to Info.plist if sharing files.',
-      ];
+    'Android: add READ_EXTERNAL_STORAGE / WRITE_EXTERNAL_STORAGE or MANAGE_EXTERNAL_STORAGE to AndroidManifest.xml.',
+    'Android: add FileProvider authority to AndroidManifest.xml for open_filex.',
+    'iOS: add UIFileSharingEnabled and LSSupportsOpeningDocumentsInPlace to Info.plist if sharing files.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

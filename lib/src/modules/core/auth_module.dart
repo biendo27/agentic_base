@@ -26,9 +26,9 @@ class AuthModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
-        'Enable desired sign-in providers in the Firebase console.',
-      ];
+    'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
+    'Enable desired sign-in providers in the Firebase console.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

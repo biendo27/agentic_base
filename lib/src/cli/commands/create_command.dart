@@ -79,9 +79,10 @@ class CreateCommand extends Command<int> {
 
     final String outputDir;
     if (flagOutputDir != null) {
-      outputDir = p.isAbsolute(flagOutputDir)
-          ? p.join(flagOutputDir, projectName)
-          : p.join(Directory.current.path, flagOutputDir, projectName);
+      outputDir =
+          p.isAbsolute(flagOutputDir)
+              ? p.join(flagOutputDir, projectName)
+              : p.join(Directory.current.path, flagOutputDir, projectName);
     } else if (noInteractive) {
       outputDir = p.join(Directory.current.path, projectName);
     } else {
@@ -90,9 +91,8 @@ class CreateCommand extends Command<int> {
         'Output directory',
         defaultValue: defaultDir,
       );
-      outputDir = chosen.endsWith(projectName)
-          ? chosen
-          : p.join(chosen, projectName);
+      outputDir =
+          chosen.endsWith(projectName) ? chosen : p.join(chosen, projectName);
     }
 
     // Prevent overwriting pre-existing directories
@@ -102,51 +102,65 @@ class CreateCommand extends Command<int> {
     }
     final prompts = CreatePrompts(_logger);
 
-    final org = noInteractive
-        ? (args['org'] as String? ?? 'com.example')
-        : prompts.promptOrg(args['org'] as String?);
+    final org =
+        noInteractive
+            ? (args['org'] as String? ?? 'com.example')
+            : prompts.promptOrg(args['org'] as String?);
 
     // Validate org format
     if (!_validOrg.hasMatch(org)) {
-      _logger.err('Invalid org format. Expected reverse domain '
-          '(e.g. com.example). Got: "$org"');
+      _logger.err(
+        'Invalid org format. Expected reverse domain '
+        '(e.g. com.example). Got: "$org"',
+      );
       return 1;
     }
 
-    final platforms = noInteractive
-        ? (args['platforms'] as String?)?.split(',') ?? defaultPlatforms
-        : prompts.promptPlatforms(args['platforms'] as String?);
+    final platforms =
+        noInteractive
+            ? (args['platforms'] as String?)?.split(',') ?? defaultPlatforms
+            : prompts.promptPlatforms(args['platforms'] as String?);
 
     // Validate platforms
     for (final platform in platforms) {
       if (!allPlatforms.contains(platform.trim())) {
-        _logger.err('Invalid platform: "$platform". '
-            'Allowed: ${allPlatforms.join(', ')}');
+        _logger.err(
+          'Invalid platform: "$platform". '
+          'Allowed: ${allPlatforms.join(', ')}',
+        );
         return 1;
       }
     }
 
     final state = args['state'] as String? ?? 'cubit';
 
-    final flavors = noInteractive
-        ? (args['flavors'] as String?)?.split(',') ?? defaultFlavors
-        : prompts.promptFlavors(args['flavors'] as String?);
+    final flavors =
+        noInteractive
+            ? (args['flavors'] as String?)?.split(',') ?? defaultFlavors
+            : prompts.promptFlavors(args['flavors'] as String?);
 
-    final primaryColor = noInteractive
-        ? (args['primary-color'] as String? ?? '6750A4')
-        : prompts.promptPrimaryColor(args['primary-color'] as String?);
+    final primaryColor =
+        noInteractive
+            ? (args['primary-color'] as String? ?? '6750A4')
+            : prompts.promptPrimaryColor(args['primary-color'] as String?);
 
     // Validate hex color
     if (!_validHex.hasMatch(primaryColor)) {
-      _logger.err('Invalid hex color. Expected 6-char hex '
-          '(e.g. 6750A4). Got: "$primaryColor"');
+      _logger.err(
+        'Invalid hex color. Expected 6-char hex '
+        '(e.g. 6750A4). Got: "$primaryColor"',
+      );
       return 1;
     }
 
-    final modules = noInteractive
-        ? (args['modules'] as String?)?.split(',').map((m) => m.trim()).toList()
-            ?? <String>[]
-        : prompts.promptModules(args['modules'] as String?);
+    final modules =
+        noInteractive
+            ? (args['modules'] as String?)
+                    ?.split(',')
+                    .map((m) => m.trim())
+                    .toList() ??
+                <String>[]
+            : prompts.promptModules(args['modules'] as String?);
 
     _logger.header('Creating $projectName...');
 

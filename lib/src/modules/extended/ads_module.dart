@@ -27,10 +27,10 @@ class AdsModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: add GADApplicationIdentifier to Info.plist.',
-        'Android: add com.google.android.gms.ads.APPLICATION_ID meta-data to AndroidManifest.xml.',
-        'Replace test ad unit IDs in AdsServiceImpl with production IDs before release.',
-      ];
+    'iOS: add GADApplicationIdentifier to Info.plist.',
+    'Android: add com.google.android.gms.ads.APPLICATION_ID meta-data to AndroidManifest.xml.',
+    'Replace test ad unit IDs in AdsServiceImpl with production IDs before release.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

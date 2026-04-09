@@ -53,7 +53,11 @@ class DoctorCommand extends Command<int> {
     }
   }
 
-  Future<bool> _checkOptional(String label, String cmd, List<String> args) async {
+  Future<bool> _checkOptional(
+    String label,
+    String cmd,
+    List<String> args,
+  ) async {
     try {
       final result = await Process.run(cmd, args);
       if (result.exitCode == 0) {

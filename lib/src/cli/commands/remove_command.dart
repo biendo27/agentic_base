@@ -19,7 +19,8 @@ class RemoveCommand extends Command<int> {
   String get name => 'remove';
 
   @override
-  String get description => 'Remove an installed module from the current project.';
+  String get description =>
+      'Remove an installed module from the current project.';
 
   @override
   String get invocation => 'agentic_base remove <module_name>';

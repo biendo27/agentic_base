@@ -16,12 +16,12 @@ import 'package:mason_logger/mason_logger.dart';
 /// CLI runner for agentic_base tool.
 class AgenticBaseCliRunner extends CommandRunner<int> {
   AgenticBaseCliRunner({AgenticLogger? logger})
-      : _logger = logger ?? AgenticLogger(),
-        super(
-          'agentic_base',
-          'Generate production-ready Flutter codebases '
-              'optimized for AI-agent-driven development.',
-        ) {
+    : _logger = logger ?? AgenticLogger(),
+      super(
+        'agentic_base',
+        'Generate production-ready Flutter codebases '
+            'optimized for AI-agent-driven development.',
+      ) {
     argParser.addFlag(
       'version',
       abbr: 'v',

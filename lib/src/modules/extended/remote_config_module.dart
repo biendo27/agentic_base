@@ -27,10 +27,10 @@ class RemoteConfigModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
-        'Define default parameter values in the Firebase console.',
-        'Call RemoteConfigService.fetchAndActivate() on app start.',
-      ];
+    'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
+    'Define default parameter values in the Firebase console.',
+    'Call RemoteConfigService.fetchAndActivate() on app start.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

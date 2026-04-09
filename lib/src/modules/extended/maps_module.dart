@@ -27,11 +27,11 @@ class MapsModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: add MAPS_API_KEY to AppDelegate.swift via GMSServices.provideAPIKey().',
-        'Android: add MAPS_API_KEY meta-data to AndroidManifest.xml.',
-        'Obtain a Maps SDK API key from Google Cloud Console.',
-        'Android: set minSdkVersion to 21 in android/app/build.gradle.',
-      ];
+    'iOS: add MAPS_API_KEY to AppDelegate.swift via GMSServices.provideAPIKey().',
+    'Android: add MAPS_API_KEY meta-data to AndroidManifest.xml.',
+    'Obtain a Maps SDK API key from Google Cloud Console.',
+    'Android: set minSdkVersion to 21 in android/app/build.gradle.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

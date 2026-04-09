@@ -27,10 +27,10 @@ class ImagePickerModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'iOS: add NSPhotoLibraryUsageDescription and NSCameraUsageDescription to Info.plist.',
-        'Android: add READ_EXTERNAL_STORAGE and CAMERA permissions to AndroidManifest.xml.',
-        'Android: add UCropActivity to AndroidManifest.xml for image_cropper.',
-      ];
+    'iOS: add NSPhotoLibraryUsageDescription and NSCameraUsageDescription to Info.plist.',
+    'Android: add READ_EXTERNAL_STORAGE and CAMERA permissions to AndroidManifest.xml.',
+    'Android: add UCropActivity to AndroidManifest.xml for image_cropper.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

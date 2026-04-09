@@ -34,12 +34,11 @@ class AgenticLogger {
     String message, {
     required List<String> choices,
     List<String>? defaultValues,
-  }) =>
-      _logger.chooseAny(
-        message,
-        choices: choices,
-        defaultValues: defaultValues,
-      );
+  }) => _logger.chooseAny(
+    message,
+    choices: choices,
+    defaultValues: defaultValues,
+  );
 
   /// Print a branded header.
   void header(String title) {

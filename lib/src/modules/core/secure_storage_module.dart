@@ -27,9 +27,9 @@ class SecureStorageModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'Android: set minSdkVersion to 18 in android/app/build.gradle.',
-        'Web: add meta[name=flutter_secure_storage_web] to index.html if targeting web.',
-      ];
+    'Android: set minSdkVersion to 18 in android/app/build.gradle.',
+    'Web: add meta[name=flutter_secure_storage_web] to index.html if targeting web.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

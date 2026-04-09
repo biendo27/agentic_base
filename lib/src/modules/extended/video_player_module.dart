@@ -15,10 +15,10 @@ class VideoPlayerModule implements AgenticModule {
 
   @override
   List<String> get dependencies => [
-        'media_kit',
-        'media_kit_video',
-        'media_kit_libs_video',
-      ];
+    'media_kit',
+    'media_kit_video',
+    'media_kit_libs_video',
+  ];
 
   @override
   List<String> get devDependencies => [];
@@ -31,10 +31,10 @@ class VideoPlayerModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'Call MediaKit.ensureInitialized() in main() before runApp().',
-        'Android: set minSdkVersion to 21 in android/app/build.gradle.',
-        'macOS: add com.apple.security.network.client to entitlements for network streams.',
-      ];
+    'Call MediaKit.ensureInitialized() in main() before runApp().',
+    'Android: set minSdkVersion to 21 in android/app/build.gradle.',
+    'macOS: add com.apple.security.network.client to entitlements for network streams.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {

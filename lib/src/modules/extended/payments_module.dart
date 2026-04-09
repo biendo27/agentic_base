@@ -27,10 +27,10 @@ class PaymentsModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-        'Create a RevenueCat project and obtain API keys for iOS and Android.',
-        'Configure products / entitlements in the RevenueCat dashboard.',
-        'Set up App Store Connect / Google Play products matching RevenueCat identifiers.',
-      ];
+    'Create a RevenueCat project and obtain API keys for iOS and Android.',
+    'Configure products / entitlements in the RevenueCat dashboard.',
+    'Set up App Store Connect / Google Play products matching RevenueCat identifiers.',
+  ];
 
   @override
   Future<void> install(ProjectContext ctx) async {
