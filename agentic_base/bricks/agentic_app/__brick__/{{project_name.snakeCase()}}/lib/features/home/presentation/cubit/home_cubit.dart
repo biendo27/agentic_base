@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:injectable/injectable.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/usecases/get_home_items.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/presentation/cubit/home_state.dart';
+import 'package:injectable/injectable.dart';
 
 @injectable
 class HomeCubit extends Cubit<HomeState> {

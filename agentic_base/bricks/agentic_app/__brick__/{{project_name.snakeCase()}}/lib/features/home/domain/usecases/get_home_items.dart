@@ -1,7 +1,7 @@
-import 'package:injectable/injectable.dart';
 import 'package:{{project_name.snakeCase()}}/core/error/failures.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/entities/home_item.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/repositories/home_repository.dart';
+import 'package:injectable/injectable.dart';
 
 @injectable
 class GetHomeItems {

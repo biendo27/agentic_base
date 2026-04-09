@@ -25,6 +25,10 @@ class CreateCommand extends Command<int> {
       )
       ..addOption('flavors', help: 'Flavors (comma-separated)')
       ..addOption(
+        'output-dir',
+        help: 'Output directory (default: ./<app_name>)',
+      )
+      ..addOption(
         'primary-color',
         help: 'Primary color hex (e.g., 6750A4)',
       )
@@ -65,15 +69,32 @@ class CreateCommand extends Command<int> {
       );
     }
 
-    final outputDir = p.join(Directory.current.path, projectName);
+    final noInteractive = args['no-interactive'] as bool;
+    final flagOutputDir = args['output-dir'] as String?;
+
+    final String outputDir;
+    if (flagOutputDir != null) {
+      outputDir = p.isAbsolute(flagOutputDir)
+          ? p.join(flagOutputDir, projectName)
+          : p.join(Directory.current.path, flagOutputDir, projectName);
+    } else if (noInteractive) {
+      outputDir = p.join(Directory.current.path, projectName);
+    } else {
+      final defaultDir = p.join(Directory.current.path, projectName);
+      final chosen = _logger.prompt(
+        'Output directory',
+        defaultValue: defaultDir,
+      );
+      outputDir = chosen.endsWith(projectName)
+          ? chosen
+          : p.join(chosen, projectName);
+    }
 
     // Prevent overwriting pre-existing directories
     if (Directory(outputDir).existsSync()) {
       _logger.err('Directory already exists: $outputDir');
       return 1;
     }
-
-    final noInteractive = args['no-interactive'] as bool;
     final prompts = CreatePrompts(_logger);
 
     final org = noInteractive
@@ -135,8 +156,7 @@ class CreateCommand extends Command<int> {
         ..info('')
         ..info('Next steps:')
         ..info('  cd $projectName')
-        ..info('  flutter pub get')
-        ..info('  agentic_base gen');
+        ..info('  flutter run');
       return 0;
     } on Exception catch (e) {
       _logger.err('Failed to create project: $e');

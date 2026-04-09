@@ -52,6 +52,35 @@ class ProjectGenerator {
       flavors: flavors,
       toolVersion: AgenticBaseCliRunner.version,
     );
+
+    // Step 4: Install dependencies (overwrite the empty flutter create pubspec)
+    await _runInProject(outputDirectory, 'Installing dependencies',
+        'flutter', ['pub', 'get']);
+
+    // Step 5: Run code generation (freezed, injectable, auto_route, etc.)
+    await _runInProject(outputDirectory, 'Running code generation',
+        'dart', ['run', 'build_runner', 'build', '--delete-conflicting-outputs']);
+
+    // Step 6: Auto-fix lint (sort imports, apply dart fixes)
+    await _runInProject(outputDirectory, 'Applying lint fixes',
+        'dart', ['fix', '--apply']);
+  }
+
+  /// Run a command inside the generated project directory.
+  Future<void> _runInProject(
+    String projectDir,
+    String label,
+    String cmd,
+    List<String> args,
+  ) async {
+    final progress = _logger.progress(label);
+    final result = await Process.run(cmd, args, workingDirectory: projectDir);
+    if (result.exitCode != 0) {
+      progress.fail('$label failed');
+      _logger.err((result.stderr as String).trim());
+      return; // Non-fatal — user can run manually
+    }
+    progress.complete(label);
   }
 
   /// Run `flutter create` to generate native platform directories.
