@@ -2,6 +2,8 @@
 
 A Dart CLI tool that generates production-ready Flutter codebases optimized for AI-agent-driven development.
 
+The package now lives at the repository root. Root-level [`docs/`](./docs/) stores evergreen project documentation, and [`plans/`](./plans/) stores implementation plans and reports.
+
 ## Installation
 
 ```bash
@@ -53,7 +55,7 @@ agentic_base create my_app --state riverpod
 agentic_base create my_app --state mobx
 ```
 
-## Available Modules (25)
+## Available Modules (27)
 
 ### Core (8)
 `analytics`, `crashlytics`, `auth`, `local_storage`, `connectivity`, `permissions`, `secure_storage`, `logging`
@@ -75,7 +77,7 @@ agentic_base create my_app --state mobx
 
 ## Generated Project Structure
 
-```
+```text
 lib/
 ├── app/          # Bootstrap, flavors, observers
 ├── core/         # DI, network, theme, router, error handling
@@ -94,6 +96,29 @@ lib/
 | `--flavors` | Build flavors | `dev,staging,prod` |
 | `--primary-color` | Primary color hex | `6750A4` |
 | `--no-interactive` | Skip prompts, use defaults | `false` |
+
+## Documentation Index
+
+1. [`01-project-overview-pdr.md`](./docs/01-project-overview-pdr.md)
+2. [`02-codebase-summary.md`](./docs/02-codebase-summary.md)
+3. [`03-code-standards.md`](./docs/03-code-standards.md)
+4. [`04-system-architecture.md`](./docs/04-system-architecture.md)
+5. [`05-project-roadmap.md`](./docs/05-project-roadmap.md)
+6. [`06-deployment-guide.md`](./docs/06-deployment-guide.md)
+7. [`07-design-guidelines.md`](./docs/07-design-guidelines.md)
+
+## Local Development
+
+```bash
+dart pub get
+dart analyze --fatal-infos
+dart test
+```
+
+## Notes
+
+- Root `docs/` is repo-level documentation.
+- Generated Flutter app docs inside Mason templates are separate from the root `docs/` set.
 
 ## License
 

@@ -227,7 +227,7 @@ make test      # run tests
 ```
 
 ## Architecture
-See `docs/system-architecture.md` for full architecture details.
+See the repo `docs/` directory for architecture details when that doc set is present.
 ''';
 
 String _claudeMdContent(String projectName) => '''
