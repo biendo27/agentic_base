@@ -50,11 +50,29 @@ class CreatePrompts {
     if (flagValue != null) {
       return flagValue.split(',').map((f) => f.trim()).toList();
     }
-    final input = _logger.prompt(
-      'Flavors (comma-separated)',
-      defaultValue: defaultFlavors.join(','),
+
+    // Let user pick from defaults + offer custom input
+    final selected = _logger.chooseAny(
+      'Build flavors',
+      choices: [...defaultFlavors, '(custom)'],
+      defaultValues: defaultFlavors,
     );
-    return input.split(',').map((f) => f.trim()).toList();
+
+    // If user selected (custom), prompt for custom flavors
+    if (selected.contains('(custom)')) {
+      final custom = _logger.prompt(
+        'Enter custom flavors (comma-separated)',
+        defaultValue: 'dev,staging,prod',
+      );
+      final customList = custom.split(',').map((f) => f.trim()).toList();
+      // Merge selected defaults (minus the custom marker) + custom entries
+      return [
+        ...selected.where((f) => f != '(custom)'),
+        ...customList,
+      ];
+    }
+
+    return selected;
   }
 
   String promptPrimaryColor(String? flagValue) {

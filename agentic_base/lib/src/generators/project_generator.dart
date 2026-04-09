@@ -7,13 +7,13 @@ import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:mason/mason.dart';
 import 'package:path/path.dart' as p;
 
-/// Orchestrates Mason brick generation for new projects.
+/// Orchestrates Flutter project creation + Mason brick overlay.
 class ProjectGenerator {
   const ProjectGenerator({required AgenticLogger logger}) : _logger = logger;
 
   final AgenticLogger _logger;
 
-  /// Generate a new Flutter project from the bundled brick.
+  /// Generate a new Flutter project with native scaffolding + templates.
   Future<void> generate({
     required String projectName,
     required String outputDirectory,
@@ -23,13 +23,81 @@ class ProjectGenerator {
     required List<String> flavors,
     required String primaryColor,
   }) async {
-    final progress = _logger.progress('Generating project structure');
+    // Step 1: Run flutter create for native platform scaffolding
+    await _flutterCreate(
+      projectName: projectName,
+      outputDirectory: outputDirectory,
+      org: org,
+      platforms: platforms,
+    );
+
+    // Step 2: Overlay Mason brick templates on top
+    await _overlayBrickTemplates(
+      projectName: projectName,
+      outputDirectory: outputDirectory,
+      org: org,
+      platforms: platforms,
+      stateManagement: stateManagement,
+      flavors: flavors,
+      primaryColor: primaryColor,
+    );
+
+    // Step 3: Write agentic.yaml config
+    AgenticConfig.createInitial(
+      projectPath: outputDirectory,
+      projectName: projectName,
+      org: org,
+      stateManagement: stateManagement,
+      platforms: platforms,
+      flavors: flavors,
+      toolVersion: AgenticBaseCliRunner.version,
+    );
+  }
+
+  /// Run `flutter create` to generate native platform directories.
+  Future<void> _flutterCreate({
+    required String projectName,
+    required String outputDirectory,
+    required String org,
+    required List<String> platforms,
+  }) async {
+    final progress = _logger.progress('Creating Flutter project');
+
+    final result = await Process.run(
+      'flutter',
+      [
+        'create',
+        '--org', org,
+        '--platforms', platforms.join(','),
+        '-e', // empty app (we'll overlay our own code)
+        '--project-name', projectName,
+        outputDirectory,
+      ],
+    );
+
+    if (result.exitCode != 0) {
+      progress.fail('flutter create failed');
+      _logger.err((result.stderr as String).trim());
+      throw Exception('flutter create failed with exit ${result.exitCode}');
+    }
+    progress.complete('Flutter project created');
+  }
+
+  /// Overlay Mason brick templates onto the flutter create output.
+  Future<void> _overlayBrickTemplates({
+    required String projectName,
+    required String outputDirectory,
+    required String org,
+    required List<String> platforms,
+    required String stateManagement,
+    required List<String> flavors,
+    required String primaryColor,
+  }) async {
+    final progress = _logger.progress('Applying agentic templates');
 
     try {
       final bricksRoot = await _resolveBricksRoot();
-      final brick = Brick.path(
-        p.join(bricksRoot, 'agentic_app'),
-      );
+      final brick = Brick.path(p.join(bricksRoot, 'agentic_app'));
       final generator = await MasonGenerator.fromBrick(brick);
 
       final vars = <String, dynamic>{
@@ -41,42 +109,31 @@ class ProjectGenerator {
         'primary_color': primaryColor,
       };
 
-      // Brick template creates {{project_name.snakeCase()}}/ as root dir,
-      // so we generate into the parent to avoid double-nesting.
+      // Brick creates {{project_name.snakeCase()}}/ dir, so target parent.
       final parentDir = p.dirname(outputDirectory);
       final target = DirectoryGeneratorTarget(Directory(parentDir));
-      await generator.generate(target, vars: vars);
-      progress.complete('Project structure generated');
-
-      // Write agentic.yaml
-      AgenticConfig.createInitial(
-        projectPath: outputDirectory,
-        projectName: projectName,
-        org: org,
-        stateManagement: stateManagement,
-        platforms: platforms,
-        flavors: flavors,
-        toolVersion: AgenticBaseCliRunner.version,
+      await generator.generate(
+        target,
+        vars: vars,
+        fileConflictResolution: FileConflictResolution.overwrite,
       );
-    } catch (e) {
-      progress.fail('Generation failed');
+      progress.complete('Agentic templates applied');
+    } on Exception {
+      progress.fail('Template overlay failed');
       rethrow;
     }
   }
 
   /// Resolve bricks root — works for dev, pub global, and AOT.
   static Future<String> _resolveBricksRoot() async {
-    // Try resolving via package URI (works for pub global + dev)
     final packageUri = Uri.parse('package:agentic_base/agentic_base.dart');
     final resolved = await Isolate.resolvePackageUri(packageUri);
     if (resolved != null) {
-      // resolved = .../agentic_base/lib/agentic_base.dart
       final packageRoot = p.dirname(p.dirname(resolved.toFilePath()));
       final bricksDir = p.join(packageRoot, 'bricks');
       if (Directory(bricksDir).existsSync()) return bricksDir;
     }
 
-    // Fallback: relative to script (dev mode)
     final script = Platform.script.toFilePath();
     final packageRoot = p.dirname(p.dirname(script));
     final bricksDir = p.join(packageRoot, 'bricks');
