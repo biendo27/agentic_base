@@ -1,0 +1,24 @@
+name: agentic_feature
+description: A Clean Architecture feature template for agentic_base projects.
+version: 0.1.0
+environment:
+  mason: ">=0.1.0-dev.74 <0.2.0"
+vars:
+  feature_name:
+    type: string
+    description: Feature name (snake_case)
+    prompt: Feature name (snake_case, e.g. user_profile)
+  simple:
+    type: boolean
+    description: Flat structure without domain layer
+    default: false
+    prompt: Use simple (flat) structure instead of Clean Architecture layers?
+  state_management:
+    type: string
+    description: "State management choice: cubit, riverpod, or mobx"
+    default: cubit
+    prompt: "State management (cubit, riverpod, mobx)"
+  project_name:
+    type: string
+    description: Project package name (snake_case)
+    prompt: Project package name

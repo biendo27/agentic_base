@@ -1,0 +1,15 @@
+import 'package:injectable/injectable.dart';
+import 'package:{{project_name.snakeCase()}}/core/error/failures.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/domain/entities/{{feature_name.snakeCase()}}_entity.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/domain/repositories/{{feature_name.snakeCase()}}_repository.dart';
+
+/// Fetches all {{feature_name.titleCase()}} items from the repository.
+@injectable
+class Get{{feature_name.pascalCase()}} {
+  const Get{{feature_name.pascalCase()}}(this._repository);
+
+  final {{feature_name.pascalCase()}}Repository _repository;
+
+  Future<(List<{{feature_name.pascalCase()}}Entity>, Failure?)> call() =>
+      _repository.getAll();
+}

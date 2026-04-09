@@ -1,0 +1,54 @@
+import 'dart:async';
+
+import 'package:auto_route/auto_route.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:{{project_name.snakeCase()}}/core/di/injection.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/presentation/cubit/{{feature_name.snakeCase()}}_cubit.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/presentation/cubit/{{feature_name.snakeCase()}}_state.dart';
+
+@RoutePage()
+class {{feature_name.pascalCase()}}Page extends StatelessWidget {
+  const {{feature_name.pascalCase()}}Page({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) {
+        final cubit = getIt<{{feature_name.pascalCase()}}Cubit>();
+        unawaited(cubit.load());
+        return cubit;
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('{{feature_name.titleCase()}}')),
+        body: BlocBuilder<{{feature_name.pascalCase()}}Cubit, {{feature_name.pascalCase()}}State>(
+          builder: (context, state) => switch (state) {
+            {{feature_name.pascalCase()}}Initial() => const SizedBox.shrink(),
+            {{feature_name.pascalCase()}}Loading() =>
+              const Center(child: CircularProgressIndicator()),
+            {{feature_name.pascalCase()}}Loaded(:final items) => ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: items.length,
+                itemBuilder: (context, index) =>
+                    ListTile(title: Text(items[index].name)),
+              ),
+            {{feature_name.pascalCase()}}Error(:final message) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(message),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () =>
+                          context.read<{{feature_name.pascalCase()}}Cubit>().load(),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+          },
+        ),
+      ),
+    );
+  }
+}

@@ -1,0 +1,19 @@
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/domain/entities/{{feature_name.snakeCase()}}_entity.dart';
+
+/// Data model for [{{feature_name.pascalCase()}}Entity].
+///
+/// Handles JSON serialisation; the entity is the clean domain object.
+class {{feature_name.pascalCase()}}Model extends {{feature_name.pascalCase()}}Entity {
+  const {{feature_name.pascalCase()}}Model({required super.id, required super.name});
+
+  factory {{feature_name.pascalCase()}}Model.fromJson(Map<String, dynamic> json) =>
+      {{feature_name.pascalCase()}}Model(
+        id: json['id'] as String,
+        name: json['name'] as String,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+      };
+}

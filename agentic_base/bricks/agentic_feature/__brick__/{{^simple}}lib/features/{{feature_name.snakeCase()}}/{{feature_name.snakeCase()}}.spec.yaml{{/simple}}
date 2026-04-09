@@ -1,0 +1,9 @@
+feature: {{feature_name.snakeCase()}}
+description: {{feature_name.titleCase()}} feature
+acceptance_criteria:
+  - Items load on page open
+  - Loading indicator shown while fetching
+  - Error state shows retry button
+edge_cases:
+  - Empty list
+  - Network failure

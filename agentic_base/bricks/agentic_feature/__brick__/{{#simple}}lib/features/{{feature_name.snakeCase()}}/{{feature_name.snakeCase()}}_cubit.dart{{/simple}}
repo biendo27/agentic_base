@@ -1,0 +1,19 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:injectable/injectable.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/{{feature_name.snakeCase()}}_state.dart';
+
+@injectable
+class {{feature_name.pascalCase()}}Cubit extends Cubit<{{feature_name.pascalCase()}}State> {
+  {{feature_name.pascalCase()}}Cubit() : super(const {{feature_name.pascalCase()}}State.initial());
+
+  Future<void> load() async {
+    emit(const {{feature_name.pascalCase()}}State.loading());
+    try {
+      // TODO(impl): Replace with actual data source call.
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      emit(const {{feature_name.pascalCase()}}State.loaded([]));
+    } on Exception catch (e) {
+      emit({{feature_name.pascalCase()}}State.error(e.toString()));
+    }
+  }
+}

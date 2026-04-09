@@ -1,6 +1,10 @@
+import 'package:agentic_base/src/cli/commands/add_command.dart';
 import 'package:agentic_base/src/cli/commands/create_command.dart';
+import 'package:agentic_base/src/cli/commands/deploy_command.dart';
 import 'package:agentic_base/src/cli/commands/doctor_command.dart';
+import 'package:agentic_base/src/cli/commands/feature_command.dart';
 import 'package:agentic_base/src/cli/commands/gen_command.dart';
+import 'package:agentic_base/src/cli/commands/remove_command.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
 import 'package:mason_logger/mason_logger.dart';
@@ -20,9 +24,13 @@ class AgenticBaseCliRunner extends CommandRunner<int> {
       negatable: false,
       help: 'Print the current version.',
     );
+    addCommand(AddCommand(logger: _logger));
     addCommand(CreateCommand(logger: _logger));
+    addCommand(DeployCommand(logger: _logger));
     addCommand(DoctorCommand(logger: _logger));
+    addCommand(FeatureCommand(logger: _logger));
     addCommand(GenCommand(logger: _logger));
+    addCommand(RemoveCommand(logger: _logger));
   }
 
   final AgenticLogger _logger;

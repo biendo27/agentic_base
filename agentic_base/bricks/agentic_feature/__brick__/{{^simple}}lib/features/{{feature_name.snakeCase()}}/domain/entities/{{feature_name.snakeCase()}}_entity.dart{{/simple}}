@@ -1,0 +1,22 @@
+/// Domain entity for the {{feature_name.titleCase()}} feature.
+///
+/// Pure Dart — no framework dependencies.
+class {{feature_name.pascalCase()}}Entity {
+  const {{feature_name.pascalCase()}}Entity({
+    required this.id,
+    required this.name,
+  });
+
+  final String id;
+  final String name;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is {{feature_name.pascalCase()}}Entity &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+}
