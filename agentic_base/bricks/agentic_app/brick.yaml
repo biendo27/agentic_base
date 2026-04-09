@@ -1,0 +1,35 @@
+name: agentic_app
+description: A production-ready Flutter app template optimized for AI-agent development.
+version: 0.1.0
+
+environment:
+  mason: ">=0.1.0-dev.74 <0.2.0"
+
+vars:
+  project_name:
+    type: string
+    description: The project name (snake_case)
+    prompt: "Project name:"
+  org:
+    type: string
+    description: Organization reverse domain
+    default: com.example
+    prompt: "Organization:"
+  platforms:
+    type: list
+    description: Target platforms
+    prompt: "Platforms:"
+  state_management:
+    type: string
+    description: State management choice
+    default: cubit
+    prompt: "State management:"
+  flavors:
+    type: list
+    description: Build flavors
+    prompt: "Flavors:"
+  primary_color:
+    type: string
+    description: Primary color hex
+    default: "6750A4"
+    prompt: "Primary color:"

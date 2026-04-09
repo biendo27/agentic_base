@@ -1,0 +1,72 @@
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
+import 'package:yaml_edit/yaml_edit.dart';
+
+/// Reads/writes `.info/agentic.yaml` for project state tracking.
+class AgenticConfig {
+  AgenticConfig({required this.projectPath});
+
+  final String projectPath;
+
+  String get _configPath => p.join(projectPath, '.info', 'agentic.yaml');
+
+  /// Whether an agentic.yaml config exists at [projectPath].
+  bool get exists => File(_configPath).existsSync();
+
+  /// Read current config. Returns empty map if file doesn't exist.
+  Map<String, dynamic> read() {
+    final file = File(_configPath);
+    if (!file.existsSync()) return {};
+    final content = file.readAsStringSync();
+    if (content.trim().isEmpty) return {};
+    final yaml = loadYaml(content);
+    if (yaml is! YamlMap) return {};
+    return _yamlMapToMap(yaml);
+  }
+
+  /// Write [data] to agentic.yaml, preserving comments if file exists.
+  void write(Map<String, dynamic> data) {
+    final file = File(_configPath);
+    file.parent.createSync(recursive: true);
+
+    final editor = YamlEditor(file.existsSync() ? file.readAsStringSync() : '');
+    for (final entry in data.entries) {
+      editor.update([entry.key], entry.value);
+    }
+    file.writeAsStringSync(editor.toString());
+  }
+
+  /// Create initial config for a new project.
+  static void createInitial({
+    required String projectPath,
+    required String projectName,
+    required String org,
+    required String stateManagement,
+    required List<String> platforms,
+    required List<String> flavors,
+    required String toolVersion,
+  }) {
+    AgenticConfig(projectPath: projectPath).write({
+      'tool_version': toolVersion,
+      'project_name': projectName,
+      'org': org,
+      'state_management': stateManagement,
+      'platforms': platforms,
+      'flavors': flavors,
+      'modules': <String>[],
+      'created_at': DateTime.now().toIso8601String(),
+    });
+  }
+
+  static Map<String, dynamic> _yamlMapToMap(YamlMap yaml) {
+    return yaml.map((key, value) {
+      if (value is YamlMap) return MapEntry(key.toString(), _yamlMapToMap(value));
+      if (value is YamlList) {
+        return MapEntry(key.toString(), value.map((e) => e.toString()).toList());
+      }
+      return MapEntry(key.toString(), value);
+    });
+  }
+}

@@ -1,0 +1,7 @@
+tool_version: 0.1.0
+project_name: {{project_name.snakeCase()}}
+org: {{org}}
+state_management: {{state_management}}
+platforms: []
+flavors: []
+modules: []
