@@ -7,6 +7,25 @@ import 'package:agentic_base/src/modules/core/local_storage_module.dart';
 import 'package:agentic_base/src/modules/core/logging_module.dart';
 import 'package:agentic_base/src/modules/core/permissions_module.dart';
 import 'package:agentic_base/src/modules/core/secure_storage_module.dart';
+import 'package:agentic_base/src/modules/extended/ads_module.dart';
+import 'package:agentic_base/src/modules/extended/app_update_module.dart';
+import 'package:agentic_base/src/modules/extended/biometric_module.dart';
+import 'package:agentic_base/src/modules/extended/camera_module.dart';
+import 'package:agentic_base/src/modules/extended/deep_link_module.dart';
+import 'package:agentic_base/src/modules/extended/feature_flags_module.dart';
+import 'package:agentic_base/src/modules/extended/file_manager_module.dart';
+import 'package:agentic_base/src/modules/extended/image_picker_module.dart';
+import 'package:agentic_base/src/modules/extended/in_app_review_module.dart';
+import 'package:agentic_base/src/modules/extended/location_module.dart';
+import 'package:agentic_base/src/modules/extended/maps_module.dart';
+import 'package:agentic_base/src/modules/extended/notifications_module.dart';
+import 'package:agentic_base/src/modules/extended/payments_module.dart';
+import 'package:agentic_base/src/modules/extended/qr_scanner_module.dart';
+import 'package:agentic_base/src/modules/extended/remote_config_module.dart';
+import 'package:agentic_base/src/modules/extended/share_module.dart';
+import 'package:agentic_base/src/modules/extended/social_login_module.dart';
+import 'package:agentic_base/src/modules/extended/video_player_module.dart';
+import 'package:agentic_base/src/modules/extended/webview_module.dart';
 
 /// Central registry mapping module names to their implementations.
 ///
@@ -23,6 +42,7 @@ class ModuleRegistry {
   };
 
   static const List<AgenticModule> _allModules = [
+    // Core (8)
     AnalyticsModule(),
     CrashlyticsModule(),
     AuthModule(),
@@ -31,6 +51,30 @@ class ModuleRegistry {
     PermissionsModule(),
     SecureStorageModule(),
     LoggingModule(),
+    // Communication & Engagement (5)
+    NotificationsModule(),
+    DeepLinkModule(),
+    InAppReviewModule(),
+    ShareModule(),
+    SocialLoginModule(),
+    // Monetization (4)
+    AdsModule(),
+    PaymentsModule(),
+    RemoteConfigModule(),
+    FeatureFlagsModule(),
+    // Media (4)
+    ImagePickerModule(),
+    CameraModule(),
+    VideoPlayerModule(),
+    QrScannerModule(),
+    // Location & Maps (2)
+    LocationModule(),
+    MapsModule(),
+    // Device & System (4)
+    BiometricModule(),
+    FileManagerModule(),
+    AppUpdateModule(),
+    WebViewModule(),
   ];
 
   /// All registered module names.
@@ -67,15 +111,39 @@ class ModuleRegistry {
   }
 
   /// Returns prerequisite modules not yet in [installed].
+  ///
+  /// Resolves transitively — if `maps` requires `location` which requires
+  /// `permissions`, all missing prerequisites are returned in dependency order.
   static List<String> missingPrerequisites(
     String moduleName, {
     required List<String> installed,
   }) {
+    final result = <String>[];
+    final visited = <String>{};
+    _collectMissing(moduleName, installed, result, visited);
+    return result;
+  }
+
+  static void _collectMissing(
+    String moduleName,
+    List<String> installed,
+    List<String> result,
+    Set<String> visited,
+  ) {
+    if (visited.contains(moduleName)) return;
+    visited.add(moduleName);
     final module = find(moduleName);
-    if (module == null) return [];
-    return module.requiresModules
-        .where((r) => !installed.contains(r))
-        .toList();
+    if (module == null) return;
+    for (final req in module.requiresModules) {
+      if (!installed.contains(req)) {
+        // Recurse to collect transitive deps first (depth-first pre-order).
+        _collectMissing(req, installed, result, visited);
+        if (!result.contains(req)) result.add(req);
+      } else {
+        // Still recurse in case transitive deps of an installed module are missing.
+        _collectMissing(req, installed, result, visited);
+      }
+    }
   }
 
   /// Returns installed modules that declare a dependency on [moduleName].
