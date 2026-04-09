@@ -1,7 +1,7 @@
 ---
 title: "agentic_base — Flutter Agentic Codebase Generator"
 description: "Dart CLI tool on pub.dev generating production-ready Flutter codebases optimized for AI-agent-driven development"
-status: pending
+status: completed
 priority: P1
 effort: 250-350h
 branch: main
@@ -28,12 +28,12 @@ None — first plan in this repo.
 | Phase | Name | Status | Effort |
 |-------|------|--------|--------|
 | 1 | [Tool Scaffold & Create Command](./phase-01-tool-scaffold-and-create-command.md) | Completed | 30h |
-| 2 | [Feature & Module System](./phase-02-feature-and-module-system.md) | Pending | 25h |
-| 3 | [Testing & Eval](./phase-03-testing-and-eval.md) | Pending | 15h |
-| 4 | [CI/CD & Deploy](./phase-04-cicd-and-deploy.md) | Pending | 15h |
-| 5 | [Extended Modules](./phase-05-extended-modules.md) | Pending | 15h |
-| 6 | [Multi-State & Bricks](./phase-06-multi-state-and-bricks.md) | Pending | 15h |
-| 7 | [Polish & Publish](./phase-07-polish-and-publish.md) | Pending | 10h |
+| 2 | [Feature & Module System](./phase-02-feature-and-module-system.md) | Completed | 25h |
+| 3 | [Testing & Eval](./phase-03-testing-and-eval.md) | Completed | 15h |
+| 4 | [CI/CD & Deploy](./phase-04-cicd-and-deploy.md) | Completed | 15h |
+| 5 | [Extended Modules](./phase-05-extended-modules.md) | Completed | 15h |
+| 6 | [Multi-State & Bricks](./phase-06-multi-state-and-bricks.md) | Completed | 15h |
+| 7 | [Polish & Publish](./phase-07-polish-and-publish.md) | Completed | 10h |
 
 ## Dependencies
 

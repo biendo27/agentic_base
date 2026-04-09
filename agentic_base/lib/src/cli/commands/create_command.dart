@@ -56,7 +56,7 @@ class CreateCommand extends Command<int> {
 
     final projectName = rest.first;
 
-    // C2: Validate project name before path construction
+    // Validate project name before path construction
     if (!_validName.hasMatch(projectName)) {
       throw UsageException(
         'Project name must be snake_case (e.g. my_app). '
@@ -67,7 +67,7 @@ class CreateCommand extends Command<int> {
 
     final outputDir = p.join(Directory.current.path, projectName);
 
-    // C3: Prevent deleting pre-existing directories on rollback
+    // Prevent overwriting pre-existing directories
     if (Directory(outputDir).existsSync()) {
       _logger.err('Directory already exists: $outputDir');
       return 1;
@@ -80,7 +80,7 @@ class CreateCommand extends Command<int> {
         ? (args['org'] as String? ?? 'com.example')
         : prompts.promptOrg(args['org'] as String?);
 
-    // H3: Validate org format
+    // Validate org format
     if (!_validOrg.hasMatch(org)) {
       _logger.err('Invalid org format. Expected reverse domain '
           '(e.g. com.example). Got: "$org"');
@@ -91,7 +91,7 @@ class CreateCommand extends Command<int> {
         ? (args['platforms'] as String?)?.split(',') ?? defaultPlatforms
         : prompts.promptPlatforms(args['platforms'] as String?);
 
-    // H3: Validate platforms
+    // Validate platforms
     for (final platform in platforms) {
       if (!allPlatforms.contains(platform.trim())) {
         _logger.err('Invalid platform: "$platform". '
@@ -110,7 +110,7 @@ class CreateCommand extends Command<int> {
         ? (args['primary-color'] as String? ?? '6750A4')
         : prompts.promptPrimaryColor(args['primary-color'] as String?);
 
-    // H3: Validate hex color
+    // Validate hex color
     if (!_validHex.hasMatch(primaryColor)) {
       _logger.err('Invalid hex color. Expected 6-char hex '
           '(e.g. 6750A4). Got: "$primaryColor"');

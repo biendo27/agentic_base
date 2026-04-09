@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
+import 'package:path/path.dart' as p;
 
 /// Runs code-generation pipeline: build_runner + format.
 class GenCommand extends Command<int> {
@@ -19,8 +20,8 @@ class GenCommand extends Command<int> {
 
   @override
   Future<int> run() async {
-    final config = AgenticConfig(projectPath: Directory.current.path);
-    if (!config.exists) {
+    final projectRoot = _findProjectRoot(Directory.current.path);
+    if (projectRoot == null) {
       _logger.err(
         'No .info/agentic.yaml found. '
         'Run this command inside an agentic_base project.',
@@ -35,7 +36,7 @@ class GenCommand extends Command<int> {
     final buildResult = await Process.run(
       'dart',
       ['run', 'build_runner', 'build', '--delete-conflicting-outputs'],
-      workingDirectory: Directory.current.path,
+      workingDirectory: projectRoot,
     );
     if (buildResult.exitCode != 0) {
       buildProgress.fail('build_runner failed');
@@ -49,7 +50,7 @@ class GenCommand extends Command<int> {
     final fmtResult = await Process.run(
       'dart',
       ['format', 'lib', 'test'],
-      workingDirectory: Directory.current.path,
+      workingDirectory: projectRoot,
     );
     if (fmtResult.exitCode != 0) {
       fmtProgress.fail('Format failed');
@@ -60,5 +61,16 @@ class GenCommand extends Command<int> {
 
     _logger.success('Code generation complete!');
     return 0;
+  }
+
+  /// Walk up from [start] to find the nearest directory with agentic.yaml.
+  static String? _findProjectRoot(String start) {
+    var dir = start;
+    while (true) {
+      if (AgenticConfig(projectPath: dir).exists) return dir;
+      final parent = p.dirname(dir);
+      if (parent == dir) return null; // reached filesystem root
+      dir = parent;
+    }
   }
 }

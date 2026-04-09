@@ -1,17 +1,20 @@
 import 'dart:io';
 
 import 'package:mason/mason.dart';
+import 'package:path/path.dart' as p;
 
 Future<void> run(HookContext context) async {
   final logger = context.logger;
   final projectName = context.vars['project_name'] as String;
 
+  // Resolve to absolute path to avoid issues with CWD changes
+  final workDir = p.join(Directory.current.path, projectName);
   final progress = logger.progress('Running flutter pub get');
 
   final result = await Process.run(
     'flutter',
     ['pub', 'get'],
-    workingDirectory: projectName,
+    workingDirectory: workDir,
   );
 
   if (result.exitCode != 0) {

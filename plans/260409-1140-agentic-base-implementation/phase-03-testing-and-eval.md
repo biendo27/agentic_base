@@ -6,7 +6,7 @@
 
 ## Overview
 - **Priority**: P2
-- **Status**: Pending
+- **Status**: Completed
 - **Effort**: 15h
 - **Depends on**: Phase 2
 
@@ -82,21 +82,21 @@ Build `eval` command that runs tests per feature or all. Add spec.yaml parsing, 
 3. Document in testing-guide.md
 
 ## Todo List
-- [ ] Spec parser (YAML → acceptance criteria + edge cases)
-- [ ] Test generator (spec → unit/widget/golden test stubs)
-- [ ] Update feature brick with spec.yaml + auto test generation
-- [ ] Alchemist golden test setup in generated project
-- [ ] Patrol integration test setup
-- [ ] Eval command (feature, --all, --coverage)
-- [ ] Update docs/06-testing-guide.md template
+- [x] Spec parser (YAML → acceptance criteria + edge cases)
+- [x] Test generator (spec → unit/widget/golden test stubs)
+- [x] Update feature brick with spec.yaml + auto test generation
+- [x] Alchemist golden test setup in generated project
+- [x] Patrol integration test setup
+- [x] Eval command (feature, --all, --coverage)
+- [x] Update docs/06-testing-guide.md template
 
 ## Success Criteria
-- [ ] `agentic_base feature auth` generates spec.yaml + test stubs
-- [ ] `agentic_base eval auth` runs only auth tests
-- [ ] `agentic_base eval --coverage` generates coverage report
-- [ ] Generated test stubs are meaningful (not just empty `test()` blocks)
-- [ ] Alchemist golden tests configured and runnable
-- [ ] Patrol setup included but optional
+- [x] `agentic_base feature auth` generates spec.yaml + test stubs
+- [x] `agentic_base eval auth` runs only auth tests
+- [x] `agentic_base eval --coverage` generates coverage report
+- [x] Generated test stubs are meaningful (not just empty `test()` blocks)
+- [x] Alchemist golden tests configured and runnable
+- [x] Patrol setup included but optional
 
 ## Risk Assessment
 | Risk | Impact | Mitigation |

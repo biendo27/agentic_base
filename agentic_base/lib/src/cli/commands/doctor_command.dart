@@ -76,7 +76,8 @@ class DoctorCommand extends Command<int> {
         ['pub', 'global', 'list'],
       );
       final output = result.stdout as String;
-      if (output.contains(package)) {
+      // Word-boundary match to avoid e.g. "mason" matching "mason_logger"
+      if (RegExp('(?:^|\\n)$package ').hasMatch(output)) {
         _logger.success('  $package: installed (global)');
         return true;
       }

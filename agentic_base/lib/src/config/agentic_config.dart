@@ -62,11 +62,13 @@ class AgenticConfig {
 
   static Map<String, dynamic> _yamlMapToMap(YamlMap yaml) {
     return yaml.map((key, value) {
-      if (value is YamlMap) return MapEntry(key.toString(), _yamlMapToMap(value));
-      if (value is YamlList) {
-        return MapEntry(key.toString(), value.map((e) => e.toString()).toList());
-      }
-      return MapEntry(key.toString(), value);
+      return MapEntry(key.toString(), _convertValue(value));
     });
+  }
+
+  static dynamic _convertValue(dynamic value) {
+    if (value is YamlMap) return _yamlMapToMap(value);
+    if (value is YamlList) return value.map(_convertValue).toList();
+    return value;
   }
 }

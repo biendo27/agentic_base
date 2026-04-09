@@ -6,7 +6,7 @@
 
 ## Overview
 - **Priority**: P2
-- **Status**: Pending
+- **Status**: Completed
 - **Effort**: 15h
 - **Depends on**: Phase 2
 
@@ -113,21 +113,21 @@ For each: create module class + mason brick (contract + impl + DI + tests)
 4. Verify generated project compiles with 5+ modules installed
 
 ## Todo List
-- [ ] Module dependency resolution in registry
-- [ ] Communication: notifications, deep_link, in_app_review, share, social_login
-- [ ] Monetization: ads, payments, remote_config, feature_flags
-- [ ] Media: image_picker, camera, video_player, qr_scanner
-- [ ] Location: location, maps
-- [ ] Device: biometric, file_manager, app_update, webview, onboarding
-- [ ] Integration test: multi-module install + dependency chain
-- [ ] Update conflict matrix for all 25 modules
+- [x] Module dependency resolution in registry
+- [x] Communication: notifications, deep_link, in_app_review, share, social_login
+- [x] Monetization: ads, payments, remote_config, feature_flags
+- [x] Media: image_picker, camera, video_player, qr_scanner
+- [x] Location: location, maps
+- [x] Device: biometric, file_manager, app_update, webview, onboarding
+- [x] Integration test: multi-module install + dependency chain
+- [x] Update conflict matrix for all 25 modules
 
 ## Success Criteria
-- [ ] All 17 modules installable via `agentic_base add`
-- [ ] Dependency auto-install works (e.g., `add maps` installs location + permissions)
-- [ ] Conflict detection covers all 25 modules
-- [ ] Generated project compiles with 5+ modules
-- [ ] Each module follows contract pattern (swappable)
+- [x] All 17 modules installable via `agentic_base add`
+- [x] Dependency auto-install works (e.g., `add maps` installs location + permissions)
+- [x] Conflict detection covers all 25 modules
+- [x] Generated project compiles with 5+ modules
+- [x] Each module follows contract pattern (swappable)
 
 ## Risk Assessment
 | Risk | Impact | Mitigation |

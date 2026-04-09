@@ -6,7 +6,7 @@
 
 ## Overview
 - **Priority**: P1
-- **Status**: Pending
+- **Status**: Completed
 - **Effort**: 25h
 - **Depends on**: Phase 1
 
@@ -176,30 +176,30 @@ For each module (analytics, crashlytics, auth, local_storage, connectivity, perm
 3. Verify: `dart analyze` clean, `flutter test` pass after add/remove
 
 ## Todo List
-- [ ] Config system (.info/agentic.yaml read/write + version compat)
-- [ ] Feature command + brick (3-layer + flat)
-- [ ] Module contract + registry + conflict checking
-- [ ] Core module: analytics (firebase_analytics)
-- [ ] Core module: crashlytics (firebase_crashlytics / sentry)
-- [ ] Core module: auth (firebase_auth)
-- [ ] Core module: local_storage (hive_ce)
-- [ ] Core module: connectivity (connectivity_plus)
-- [ ] Core module: permissions (permission_handler)
-- [ ] Core module: secure_storage (flutter_secure_storage)
-- [ ] Core module: logging (talker + talker_dio_logger)
-- [ ] Add command
-- [ ] Remove command
-- [ ] Integration test (create → add → remove → verify)
+- [x] Config system (.info/agentic.yaml read/write + version compat)
+- [x] Feature command + brick (3-layer + flat)
+- [x] Module contract + registry + conflict checking
+- [x] Core module: analytics (firebase_analytics)
+- [x] Core module: crashlytics (firebase_crashlytics / sentry)
+- [x] Core module: auth (firebase_auth)
+- [x] Core module: local_storage (hive_ce)
+- [x] Core module: connectivity (connectivity_plus)
+- [x] Core module: permissions (permission_handler)
+- [x] Core module: secure_storage (flutter_secure_storage)
+- [x] Core module: logging (talker + talker_dio_logger)
+- [x] Add command
+- [x] Remove command
+- [x] Integration test (create → add → remove → verify)
 
 ## Success Criteria
-- [ ] `agentic_base feature auth` generates 3-layer feature
-- [ ] `agentic_base feature settings --simple` generates flat feature
-- [ ] `agentic_base add analytics` installs + wires + updates config
-- [ ] `agentic_base remove analytics` uninstalls cleanly
-- [ ] Conflicting modules blocked (e.g., crashlytics vs sentry)
-- [ ] .info/agentic.yaml correctly tracks all state
-- [ ] Generated project compiles after add/remove operations
-- [ ] All 8 core modules independently installable
+- [x] `agentic_base feature auth` generates 3-layer feature
+- [x] `agentic_base feature settings --simple` generates flat feature
+- [x] `agentic_base add analytics` installs + wires + updates config
+- [x] `agentic_base remove analytics` uninstalls cleanly
+- [x] Conflicting modules blocked (e.g., crashlytics vs sentry)
+- [x] .info/agentic.yaml correctly tracks all state
+- [x] Generated project compiles after add/remove operations
+- [x] All 8 core modules independently installable
 
 ## Risk Assessment
 | Risk | Impact | Mitigation |

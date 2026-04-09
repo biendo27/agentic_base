@@ -50,7 +50,11 @@ class CreatePrompts {
     if (flagValue != null) {
       return flagValue.split(',').map((f) => f.trim()).toList();
     }
-    return defaultFlavors;
+    final input = _logger.prompt(
+      'Flavors (comma-separated)',
+      defaultValue: defaultFlavors.join(','),
+    );
+    return input.split(',').map((f) => f.trim()).toList();
   }
 
   String promptPrimaryColor(String? flagValue) {

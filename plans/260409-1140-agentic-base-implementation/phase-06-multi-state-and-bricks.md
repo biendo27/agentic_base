@@ -6,7 +6,7 @@
 
 ## Overview
 - **Priority**: P2
-- **Status**: Pending
+- **Status**: Completed
 - **Effort**: 15h
 - **Depends on**: Phase 2
 
@@ -113,23 +113,23 @@ bricks/
 4. Write tests
 
 ## Todo List
-- [ ] State config system (enum + per-state package sets)
-- [ ] Riverpod variant: app overlay + feature brick + module wiring
-- [ ] MobX variant: app overlay + feature brick + module wiring
-- [ ] Test: create with --state riverpod → compile + test
-- [ ] Test: create with --state mobx → compile + test
-- [ ] Brick command (add/remove/list community bricks)
-- [ ] Init command (add to existing project)
-- [ ] Upgrade command (Flutter SDK + packages)
+- [x] State config system (enum + per-state package sets)
+- [x] Riverpod variant: app overlay + feature brick + module wiring
+- [x] MobX variant: app overlay + feature brick + module wiring
+- [x] Test: create with --state riverpod → compile + test
+- [x] Test: create with --state mobx → compile + test
+- [x] Brick command (add/remove/list community bricks)
+- [x] Init command (add to existing project)
+- [x] Upgrade command (Flutter SDK + packages)
 
 ## Success Criteria
-- [ ] `create --state riverpod` generates working Riverpod project
-- [ ] `create --state mobx` generates working MobX project
-- [ ] `feature` adapts to project's state management choice
-- [ ] `add` modules wire correctly for all 3 state options
-- [ ] `brick add/remove/list` works for community bricks
-- [ ] `init` adds agentic_base to existing project non-destructively
-- [ ] `upgrade` updates Flutter + packages
+- [x] `create --state riverpod` generates working Riverpod project
+- [x] `create --state mobx` generates working MobX project
+- [x] `feature` adapts to project's state management choice
+- [x] `add` modules wire correctly for all 3 state options
+- [x] `brick add/remove/list` works for community bricks
+- [x] `init` adds agentic_base to existing project non-destructively
+- [x] `upgrade` updates Flutter + packages
 
 ## Risk Assessment
 | Risk | Impact | Mitigation |

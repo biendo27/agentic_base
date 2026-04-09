@@ -6,7 +6,7 @@
 
 ## Overview
 - **Priority**: P2
-- **Status**: Pending
+- **Status**: Completed
 - **Effort**: 15h
 - **Depends on**: Phase 1 (Phase 2-3 not strictly required)
 
@@ -78,20 +78,20 @@ Add CI/CD workflow generation to generated projects (GitHub Actions + Fastlane),
 5. All scripts self-documented with `--help`
 
 ## Todo List
-- [ ] ci.yml workflow template
-- [ ] cd-dev.yml, cd-staging.yml, cd-prod.yml workflows
-- [ ] release.yml workflow
-- [ ] Fastlane setup (Appfile, Fastfile, Matchfile)
-- [ ] Deploy command (gh workflow run)
-- [ ] Finalize Makefile targets
-- [ ] Finalize all tools/ scripts with _common.sh
+- [x] ci.yml workflow template
+- [x] cd-dev.yml, cd-staging.yml, cd-prod.yml workflows
+- [x] release.yml workflow
+- [x] Fastlane setup (Appfile, Fastfile, Matchfile)
+- [x] Deploy command (gh workflow run)
+- [x] Finalize Makefile targets
+- [x] Finalize all tools/ scripts with _common.sh
 
 ## Success Criteria
-- [ ] Generated project CI workflow runs successfully on GitHub Actions
-- [ ] `agentic_base deploy dev` triggers cd-dev.yml via gh CLI
-- [ ] Fastlane lanes configured for all flavors
-- [ ] All tools/ scripts work standalone and via Makefile
-- [ ] CI-check script mirrors actual CI workflow
+- [x] Generated project CI workflow runs successfully on GitHub Actions
+- [x] `agentic_base deploy dev` triggers cd-dev.yml via gh CLI
+- [x] Fastlane lanes configured for all flavors
+- [x] All tools/ scripts work standalone and via Makefile
+- [x] CI-check script mirrors actual CI workflow
 
 ## Risk Assessment
 | Risk | Impact | Mitigation |
