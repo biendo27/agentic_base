@@ -60,22 +60,26 @@ class ProjectGenerator {
     await _runInProject(outputDirectory, 'Installing dependencies',
         'flutter', ['pub', 'get']);
 
-    // Step 5: Install selected modules
+    // Step 5: Run flavorizr to configure native flavor builds
+    await _runInteractive(outputDirectory, 'Configuring flavors',
+        'dart', ['run', 'flutter_flavorizr']);
+
+    // Step 6: Install selected modules
     if (modules.isNotEmpty) {
       await _installModules(outputDirectory, projectName,
           stateManagement, modules);
     }
 
-    // Step 6: Code generation (freezed, injectable, auto_route)
+    // Step 7: Code generation (freezed, injectable, auto_route)
     await _runInProject(outputDirectory, 'Running code generation',
         'dart',
         ['run', 'build_runner', 'build', '--delete-conflicting-outputs']);
 
-    // Step 7: Auto-fix lint (sort imports)
+    // Step 8: Auto-fix lint (sort imports)
     await _runInProject(outputDirectory, 'Applying lint fixes',
         'dart', ['fix', '--apply']);
 
-    // Step 8: Verify — analyze + test
+    // Step 9: Verify — analyze + test
     await _verify(outputDirectory);
   }
 
@@ -144,6 +148,20 @@ class ProjectGenerator {
     } else {
       testProgress.fail('Some tests failed');
       _logger.warn((testResult.stdout as String).trim());
+    }
+  }
+
+  /// Run a command with inherited stdio (for tools that need a terminal).
+  Future<void> _runInteractive(
+    String projectDir, String label, String cmd, List<String> args,
+  ) async {
+    _logger.info(label);
+    final process = await Process.start(cmd, args,
+        workingDirectory: projectDir,
+        mode: ProcessStartMode.inheritStdio);
+    final exitCode = await process.exitCode;
+    if (exitCode != 0) {
+      _logger.warn('$label exited with $exitCode (non-fatal)');
     }
   }
 

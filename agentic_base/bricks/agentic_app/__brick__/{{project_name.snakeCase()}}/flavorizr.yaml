@@ -1,0 +1,22 @@
+flavors:
+  dev:
+    app:
+      name: "{{project_name.titleCase()}} Dev"
+    android:
+      applicationId: "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}.dev"
+    ios:
+      bundleId: "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}.dev"
+  staging:
+    app:
+      name: "{{project_name.titleCase()}} Staging"
+    android:
+      applicationId: "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}.staging"
+    ios:
+      bundleId: "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}.staging"
+  prod:
+    app:
+      name: "{{project_name.titleCase()}}"
+    android:
+      applicationId: "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}"
+    ios:
+      bundleId: "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}"

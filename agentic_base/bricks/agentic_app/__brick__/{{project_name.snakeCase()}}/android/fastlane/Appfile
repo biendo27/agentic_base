@@ -1,0 +1,2 @@
+json_key_file ENV["PLAY_STORE_JSON_KEY"]
+package_name "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}"

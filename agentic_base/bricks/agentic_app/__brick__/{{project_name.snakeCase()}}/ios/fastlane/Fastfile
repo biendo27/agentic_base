@@ -1,0 +1,29 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and deploy to TestFlight"
+  lane :beta do
+    # Build is done by Flutter CLI before calling fastlane
+    # flutter build ipa --flavor staging -t lib/main_staging.dart
+    upload_to_testflight(
+      ipa: "../build/ios/ipa/{{project_name.snakeCase()}}.ipa",
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Deploy to App Store"
+  lane :release do
+    # flutter build ipa --flavor prod -t lib/main_prod.dart
+    upload_to_app_store(
+      ipa: "../build/ios/ipa/{{project_name.snakeCase()}}.ipa",
+      skip_metadata: true,
+      skip_screenshots: true
+    )
+  end
+
+  desc "Sync certificates with Match"
+  lane :certificates do
+    match(type: "appstore")
+    match(type: "development")
+  end
+end
