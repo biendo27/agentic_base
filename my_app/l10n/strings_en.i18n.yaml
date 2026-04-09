@@ -1,6 +1,0 @@
-app_name: My App
-home:
-  title: Home
-  error: Something went wrong
-  retry: Retry
-  empty: No items found
