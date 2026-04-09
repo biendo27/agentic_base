@@ -32,6 +32,11 @@ class CreateCommand extends Command<int> {
         'primary-color',
         help: 'Primary color hex (e.g., 6750A4)',
       )
+      ..addOption(
+        'modules',
+        help: 'Modules to install (comma-separated)',
+        abbr: 'm',
+      )
       ..addFlag(
         'no-interactive',
         help: 'Skip prompts, use defaults for missing values',
@@ -138,6 +143,11 @@ class CreateCommand extends Command<int> {
       return 1;
     }
 
+    final modules = noInteractive
+        ? (args['modules'] as String?)?.split(',').map((m) => m.trim()).toList()
+            ?? <String>[]
+        : prompts.promptModules(args['modules'] as String?);
+
     _logger.header('Creating $projectName...');
 
     try {
@@ -149,6 +159,7 @@ class CreateCommand extends Command<int> {
         stateManagement: state,
         flavors: flavors,
         primaryColor: primaryColor,
+        modules: modules,
       );
 
       _logger

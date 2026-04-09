@@ -1,3 +1,4 @@
+import 'package:agentic_base/src/modules/module_registry.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 
 /// Default platform choices for project creation.
@@ -78,5 +79,20 @@ class CreatePrompts {
   String promptPrimaryColor(String? flagValue) {
     if (flagValue != null) return flagValue;
     return _logger.prompt('Primary color (hex)', defaultValue: '6750A4');
+  }
+
+  /// Prompt user to select modules to install during project creation.
+  List<String> promptModules(String? flagValue) {
+    if (flagValue != null) {
+      return flagValue.split(',').map((m) => m.trim()).toList();
+    }
+    final available = ModuleRegistry.allNames;
+    if (!_logger.confirm('Add modules now?')) {
+      return [];
+    }
+    return _logger.chooseAny(
+      'Select modules to install',
+      choices: available,
+    );
   }
 }

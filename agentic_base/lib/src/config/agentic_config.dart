@@ -31,7 +31,10 @@ class AgenticConfig {
     final file = File(_configPath);
     file.parent.createSync(recursive: true);
 
-    final editor = YamlEditor(file.existsSync() ? file.readAsStringSync() : '');
+    final existing = file.existsSync() ? file.readAsStringSync() : '';
+    // YamlEditor.update fails on empty docs — seed with empty map
+    final content = existing.trim().isEmpty ? '{}' : existing;
+    final editor = YamlEditor(content);
     for (final entry in data.entries) {
       editor.update([entry.key], entry.value);
     }
