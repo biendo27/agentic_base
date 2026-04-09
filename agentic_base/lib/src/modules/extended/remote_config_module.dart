@@ -104,7 +104,7 @@ class FirebaseRemoteConfigService implements RemoteConfigService {
   bool getBool(String key, {bool defaultValue = false}) {
     try {
       return _config.getBool(key);
-    } catch (_) {
+    } on Exception catch (_) {
       return defaultValue;
     }
   }
@@ -113,7 +113,7 @@ class FirebaseRemoteConfigService implements RemoteConfigService {
   int getInt(String key, {int defaultValue = 0}) {
     try {
       return _config.getInt(key);
-    } catch (_) {
+    } on Exception catch (_) {
       return defaultValue;
     }
   }
@@ -122,7 +122,7 @@ class FirebaseRemoteConfigService implements RemoteConfigService {
   double getDouble(String key, {double defaultValue = 0.0}) {
     try {
       return _config.getDouble(key);
-    } catch (_) {
+    } on Exception catch (_) {
       return defaultValue;
     }
   }

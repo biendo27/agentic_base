@@ -11,10 +11,12 @@
 //   - AgenticConfig: Project configuration management
 //   - ModuleRegistry: Module discovery and management
 
+import 'dart:io';
+
 import 'package:agentic_base/agentic_base.dart';
 
-void main() {
-  // The tool is designed to be used from the command line.
-  // All public APIs are available for programmatic use.
-  print('agentic_base v${AgenticBaseCliRunner.version}');
+Future<void> main() async {
+  // Run the CLI with provided arguments.
+  final exitCode = await AgenticBaseCliRunner().run(['--version']);
+  exit(exitCode);
 }

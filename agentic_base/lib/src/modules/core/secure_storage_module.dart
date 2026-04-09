@@ -90,10 +90,7 @@ import 'package:$pkg/core/secure_storage/secure_storage_service.dart';
 /// [FlutterSecureStorage] implementation of [SecureStorageService].
 class FlutterSecureStorageService implements SecureStorageService {
   FlutterSecureStorageService({FlutterSecureStorage? storage})
-      : _storage = storage ??
-            const FlutterSecureStorage(
-              aOptions: AndroidOptions(encryptedSharedPreferences: true),
-            );
+      : _storage = storage ?? const FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;
 

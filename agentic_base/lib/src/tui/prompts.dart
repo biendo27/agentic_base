@@ -81,18 +81,21 @@ class CreatePrompts {
     return _logger.prompt('Primary color (hex)', defaultValue: '6750A4');
   }
 
+  /// Recommended modules pre-selected during interactive create.
+  static const defaultModules = ['analytics', 'logging'];
+
   /// Prompt user to select modules to install during project creation.
   List<String> promptModules(String? flagValue) {
     if (flagValue != null) {
       return flagValue.split(',').map((m) => m.trim()).toList();
     }
-    final available = ModuleRegistry.allNames;
     if (!_logger.confirm('Add modules now?')) {
       return [];
     }
     return _logger.chooseAny(
       'Select modules to install',
-      choices: available,
+      choices: ModuleRegistry.allNames,
+      defaultValues: defaultModules,
     );
   }
 }

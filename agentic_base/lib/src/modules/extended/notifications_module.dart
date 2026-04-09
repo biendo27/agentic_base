@@ -61,9 +61,9 @@ class NotificationsModule implements AgenticModule {
   // ---------------------------------------------------------------------------
 
   String _contractContent(String pkg) => '''
-/// Notification channel model.
-class NotificationChannel {
-  const NotificationChannel({
+/// Notification channel descriptor (avoids name clash with packages).
+class AppNotificationChannel {
+  const AppNotificationChannel({
     required this.channelKey,
     required this.channelName,
     required this.channelDescription,
@@ -75,8 +75,8 @@ class NotificationChannel {
 }
 
 /// Notification payload model.
-class NotificationPayload {
-  const NotificationPayload({
+class AppNotificationPayload {
+  const AppNotificationPayload({
     required this.id,
     required this.channelKey,
     required this.title,
@@ -94,13 +94,13 @@ class NotificationPayload {
 /// Notifications service contract.
 abstract class NotificationsService {
   /// Initialise notification channels.
-  Future<void> initialize(List<NotificationChannel> channels);
+  Future<void> initialize(List<AppNotificationChannel> channels);
 
   /// Request notification permission from the user.
   Future<bool> requestPermission();
 
   /// Show a local notification.
-  Future<void> show(NotificationPayload payload);
+  Future<void> show(AppNotificationPayload payload);
 
   /// Cancel a notification by [id].
   Future<void> cancel(int id);
@@ -111,18 +111,19 @@ abstract class NotificationsService {
 ''';
 
   String _implContent(String pkg) => '''
-import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:awesome_notifications/awesome_notifications.dart'
+    as awesome;
 import 'package:$pkg/core/notifications/notifications_service.dart';
 
 /// awesome_notifications implementation of [NotificationsService].
 class AwesomeNotificationsService implements NotificationsService {
   @override
-  Future<void> initialize(List<NotificationChannel> channels) async {
-    await AwesomeNotifications().initialize(
+  Future<void> initialize(List<AppNotificationChannel> channels) async {
+    await awesome.AwesomeNotifications().initialize(
       null,
       channels
           .map(
-            (c) => NotificationChannel(
+            (c) => awesome.NotificationChannel(
               channelKey: c.channelKey,
               channelName: c.channelName,
               channelDescription: c.channelDescription,
@@ -134,12 +135,13 @@ class AwesomeNotificationsService implements NotificationsService {
 
   @override
   Future<bool> requestPermission() =>
-      AwesomeNotifications().requestPermissionToSendNotifications();
+      awesome.AwesomeNotifications()
+          .requestPermissionToSendNotifications();
 
   @override
-  Future<void> show(NotificationPayload payload) async {
-    await AwesomeNotifications().createNotification(
-      content: NotificationContent(
+  Future<void> show(AppNotificationPayload payload) async {
+    await awesome.AwesomeNotifications().createNotification(
+      content: awesome.NotificationContent(
         id: payload.id,
         channelKey: payload.channelKey,
         title: payload.title,
@@ -150,10 +152,12 @@ class AwesomeNotificationsService implements NotificationsService {
   }
 
   @override
-  Future<void> cancel(int id) => AwesomeNotifications().cancel(id);
+  Future<void> cancel(int id) =>
+      awesome.AwesomeNotifications().cancel(id);
 
   @override
-  Future<void> cancelAll() => AwesomeNotifications().cancelAll();
+  Future<void> cancelAll() =>
+      awesome.AwesomeNotifications().cancelAll();
 }
 ''';
 }

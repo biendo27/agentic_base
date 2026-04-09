@@ -117,8 +117,10 @@ class RevenuecatPaymentsService implements PaymentsService {
   Future<List<AppOffering>> getOfferings() async {
     final offerings = await Purchases.getOfferings();
     return offerings.all.values.map((o) {
-      final monthly = o.monthly?.storeProduct.price ?? 0;
-      final annual = o.annual?.storeProduct.price ?? 0;
+      final monthly =
+          o.monthly?.storeProduct.price ?? 0;
+      final annual =
+          o.annual?.storeProduct.price ?? 0;
       return AppOffering(
         identifier: o.identifier,
         monthlyPrice: monthly,
@@ -131,9 +133,11 @@ class RevenuecatPaymentsService implements PaymentsService {
   Future<bool> purchase(String packageIdentifier) async {
     final offerings = await Purchases.getOfferings();
     for (final offering in offerings.all.values) {
-      for (final package in offering.availablePackages) {
-        if (package.identifier == packageIdentifier) {
-          final info = await Purchases.purchasePackage(package);
+      for (final pkg in offering.availablePackages) {
+        if (pkg.identifier == packageIdentifier) {
+          await Purchases.purchase(PurchaseParams.package(pkg));
+          // Verify entitlement after purchase
+          final info = await Purchases.getCustomerInfo();
           return info.entitlements.active.isNotEmpty;
         }
       }
