@@ -41,7 +41,7 @@ agentic_base eval --coverage
 | `remove <module>` | Remove an installed module |
 | `gen` | Run build_runner + format pipeline |
 | `eval [feature]` | Run tests (optional: specific feature) |
-| `deploy <env>` | Trigger CI/CD deployment via GitHub Actions |
+| `deploy <env>` | Trigger CI/CD deployment via the stored GitHub or GitLab provider |
 | `doctor` | Check environment health |
 | `brick <add|remove|list>` | Manage community Mason bricks |
 | `init` | Add agentic_base to existing project |
@@ -78,12 +78,15 @@ agentic_base create my_app --state mobx
 ## Generated Project Structure
 
 ```text
+assets/i18n/
+├── app/          # App-shell translations
+└── home/         # Starter feature translations
+
 lib/
-├── app/          # Bootstrap, flavors, observers
+├── app/          # Bootstrap, flavors, generated i18n
 ├── core/         # DI, network, theme, router, error handling
 ├── features/     # Feature modules (3-layer Clean Architecture)
-├── shared/       # Shared widgets and utilities
-└── l10n/         # Localization
+└── shared/       # Shared widgets and utilities
 ```
 
 ## Flags
@@ -94,8 +97,18 @@ lib/
 | `--platforms` | Target platforms (comma-separated) | `android,ios,web` |
 | `--state` | State management | `cubit` |
 | `--flavors` | Build flavors | `dev,staging,prod` |
+| `--ci-provider` | Generated project CI provider (`github` or `gitlab`) | `github` |
 | `--primary-color` | Primary color hex | `6750A4` |
 | `--no-interactive` | Skip prompts, use defaults | `false` |
+
+## CI Provider Selection
+
+Generated and initialized projects persist one CI provider in `.info/agentic.yaml`:
+
+- `github`: emits `.github/workflows/*.yml` and `agentic_base deploy <env>` uses `gh`
+- `gitlab`: emits root `.gitlab-ci.yml` plus `.gitlab/ci/*.yml` and `agentic_base deploy <env>` uses `glab`
+
+GitLab native validation is macOS-only by contract. Generated GitLab projects require a macOS runner with a shell executor, Xcode, and `tags: [macos]`; Linux runners do not replace the native gate.
 
 ## Documentation Index
 

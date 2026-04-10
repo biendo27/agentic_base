@@ -1,0 +1,33 @@
+# Production should be mapped to a protected GitLab environment in project settings.
+.deploy_template:
+  stage: deploy
+  tags: [macos]
+  needs: [native_validate]
+  when: manual
+
+deploy_dev:
+  extends: .deploy_template
+  environment:
+    name: development
+  script:
+    - chmod +x tools/*.sh
+    - flutter pub get
+    - ./tools/build.sh dev
+
+deploy_staging:
+  extends: .deploy_template
+  environment:
+    name: staging
+  script:
+    - chmod +x tools/*.sh
+    - flutter pub get
+    - ./tools/build.sh staging
+
+deploy_prod:
+  extends: .deploy_template
+  environment:
+    name: production
+  script:
+    - chmod +x tools/*.sh
+    - flutter pub get
+    - ./tools/build.sh prod

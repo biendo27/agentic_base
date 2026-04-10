@@ -1,6 +1,7 @@
 tool_version: 0.1.0
 project_name: {{project_name.snakeCase()}}
 org: {{org}}
+ci_provider: {{ci_provider}}
 state_management: {{state_management}}
 platforms: []
 flavors: []

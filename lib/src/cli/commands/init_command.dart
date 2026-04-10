@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
+import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
@@ -13,7 +14,13 @@ import 'package:yaml/yaml.dart';
 ///
 /// Usage: `agentic_base init`
 class InitCommand extends Command<int> {
-  InitCommand({required AgenticLogger logger}) : _logger = logger;
+  InitCommand({required AgenticLogger logger}) : _logger = logger {
+    argParser.addOption(
+      'ci-provider',
+      help: 'CI provider: github or gitlab',
+      allowed: supportedCiProviders,
+    );
+  }
 
   final AgenticLogger _logger;
 
@@ -57,6 +64,10 @@ class InitCommand extends Command<int> {
     final pubspecContent = pubspecFile.readAsStringSync();
     final detectedState = _detectStateManagement(pubspecContent);
     final projectName = _readProjectName(pubspecContent, projectPath);
+    final ciProvider = _resolveCiProvider(
+      projectPath,
+      argResults!['ci-provider'] as String?,
+    );
 
     _logger.info(
       'Detected state management: '
@@ -71,6 +82,7 @@ class InitCommand extends Command<int> {
       projectPath: projectPath,
       projectName: projectName,
       org: 'com.example',
+      ciProvider: ciProvider,
       stateManagement: stateManagement,
       platforms: const ['android', 'ios'],
       flavors: const ['dev', 'staging', 'prod'],
@@ -181,6 +193,24 @@ class InitCommand extends Command<int> {
       // Ignore parse errors — fall through to fallback.
     }
     return p.basename(projectPath);
+  }
+
+  CiProvider _resolveCiProvider(String projectPath, String? explicitValue) {
+    if (explicitValue != null) {
+      return parseCiProvider(explicitValue);
+    }
+
+    final inferredProvider = inferCiProviderFromProjectFiles(projectPath);
+    if (inferredProvider != null) {
+      _logger.info('Detected CI provider: ${inferredProvider.name}');
+      return inferredProvider;
+    }
+
+    _logger.warn(
+      'Could not infer a single CI provider from existing files. '
+      'Defaulting to ${defaultCiProvider.name}.',
+    );
+    return defaultCiProvider;
   }
 
   // ---------------------------------------------------------------------------

@@ -21,8 +21,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - run: flutter pub get
-      - run: dart run build_runner build --delete-conflicting-outputs
-      - run: flutter build apk --flavor prod -t lib/main_prod.dart
-      - run: flutter build appbundle --flavor prod -t lib/main_prod.dart
+      - run: chmod +x tools/*.sh
+      - run: ./tools/build.sh prod
       - name: Deploy to App Store / Play Store
         run: echo "TODO - Configure App Store and Play Store Production deployment"

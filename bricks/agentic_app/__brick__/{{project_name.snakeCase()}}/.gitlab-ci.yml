@@ -1,0 +1,7 @@
+stages:
+  - verify
+  - deploy
+
+include:
+  - local: .gitlab/ci/verify.yml
+  - local: .gitlab/ci/deploy.yml

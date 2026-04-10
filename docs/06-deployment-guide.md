@@ -9,7 +9,7 @@ This document covers two separate surfaces:
 
 ## Verified Repo Automation
 
-Current checked-in automation is limited to CI:
+Current checked-in automation stays GitHub-hosted and lives in:
 
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
 
@@ -17,8 +17,11 @@ It runs on pushes and pull requests to `main` and does:
 
 - `dart pub get`
 - `dart analyze --fatal-infos`
-- `dart format --set-exit-if-changed lib bin`
+- `dart format --set-exit-if-changed lib bin test`
 - `dart test`
+- generated-app smoke coverage for `--ci-provider github`
+- generated-app smoke coverage for `--ci-provider gitlab`
+- a pinned macOS generated-app native gate that fresh-generates an app and runs `./tools/ci-check.sh`
 
 There is no checked-in release workflow or pub.dev publish workflow in this repo today.
 
@@ -60,8 +63,8 @@ This sequence is partly inference. The repo does not currently codify it in scri
 - run inside an initialized/generated Flutter project
 - require a clean git working tree
 - require local branch to be pushed
-- require authenticated `gh`
-- run `gh workflow run cd-<env>.yml`
+- resolve one persisted `ci_provider` from `.info/agentic.yaml`
+- do not accept a deploy-time provider override
 
 Supported environments in source:
 
@@ -69,21 +72,36 @@ Supported environments in source:
 - `staging`
 - `prod`
 
+### GitHub generated projects
+
+- scaffold `.github/workflows/*.yml`
+- `agentic_base deploy <env>` requires authenticated `gh`
+- deploy routing uses `gh workflow run cd-<env>.yml`
+- generated workflows call the shared project scripts:
+  - `./tools/ci-check.sh`
+  - `./tools/build.sh <env>`
+
+### GitLab generated projects
+
+- scaffold root `.gitlab-ci.yml` plus `.gitlab/ci/verify.yml` and `.gitlab/ci/deploy.yml`
+- `agentic_base deploy <env>` requires authenticated `glab`
+- deploy routing creates a pipeline on the current branch, then targets the matching manual job:
+  - `deploy_dev`
+  - `deploy_staging`
+  - `deploy_prod`
+- generated GitLab CI keeps native validation explicit and blocking:
+  - the verification job is tagged `macos`
+  - the project must provide a macOS runner with shell executor and Xcode
+  - Linux runners may handle Dart-only work, but they do not satisfy native validation
+
 ## Important Caveat
 
-The required `cd-<env>.yml` workflows are not checked into this repo, and they were not found inside the current app brick either. That means:
+Generated-project GitLab support does not mean this package repo itself runs on GitLab CI. Current scope is:
 
-- the command contract exists in package code
-- the workflow implementation must be supplied by downstream projects or added later to the template
+- repo automation: GitHub Actions only
+- generated project automation: GitHub or GitLab, selected by one persisted provider contract
 
-Do not assume `agentic_base deploy prod` works out of the box in a newly generated project until those workflow files exist.
-
-## Recommended Next Step
-
-Pick one of these and document it permanently:
-
-- bundle deployment workflows inside the app brick
-- keep workflows external, but document the expected file names and inputs in the generated project README
+GitLab production protection is still configured in GitLab project settings via protected environments. The scaffold keeps `deploy_prod` manual, but GitLab UI policy must still be applied by the downstream repo owner.
 
 ## References
 

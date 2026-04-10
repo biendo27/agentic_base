@@ -61,8 +61,15 @@ The CLI runner registers:
 
 The package creates or modifies Flutter projects in two main ways:
 
-- `create` makes a fresh Flutter project, overlays the `agentic_app` brick, and verifies it
+- `create` makes a fresh Flutter project, overlays the `agentic_app` brick, materializes typed Slang output, and verifies it
 - `init` adds agentic scaffolding to an existing Flutter project without overwriting existing files
+
+Generated starter apps now follow one explicit ownership contract:
+
+- Flutter layer source of truth lives in `lib/app/**`, `lib/main*.dart`, `assets/i18n/**`, `.vscode/**`, and `.idea/runConfigurations/**`
+- native shells come from `flutter create`
+- native flavor assets come from `flutter_flavorizr`
+- duplicate root shell files such as `lib/app.dart`, `lib/flavors.dart`, and `lib/pages/**` are deleted and asserted absent
 
 The app brick also ships its own generated-project docs under the template `docs/` folder, which means this repo has two doc surfaces:
 
@@ -82,19 +89,17 @@ Current tests are mostly fast unit tests:
 
 What is not present yet in this repo CI:
 
-- end-to-end "generate a full app and compile it" tests
-- brick smoke tests for both app and feature templates
-- release or deployment workflow validation
+- release or pub.dev publish automation
 
 ## Notable Findings
 
 - `ModuleRegistry` currently exposes 27 modules, while the package README still advertises 25
-- only one repo workflow is checked in: CI
-- `deploy` expects target-project workflows that are not included here
+- repo automation remains GitHub-hosted, but generated projects can now scaffold either GitHub or GitLab CI from one persisted provider contract
+- `deploy` now resolves the target-project provider from `.info/agentic.yaml` and routes through `gh` or `glab`
+- generated app smoke coverage now exists in `test/integration/generated_app_smoke_test.dart`
+- root GitHub Actions now validates both scaffold variants and a pinned macOS generated-app native gate
 - some command/orchestration files exceed the repo's 200 LOC target:
   - `init_command.dart`
-  - `project_generator.dart`
-  - `deploy_command.dart`
   - `brick_command.dart`
   - `eval_command.dart`
 
@@ -102,6 +107,7 @@ What is not present yet in this repo CI:
 
 - [`lib/src/cli/cli_runner.dart`](../lib/src/cli/cli_runner.dart)
 - [`lib/src/generators/project_generator.dart`](../lib/src/generators/project_generator.dart)
+- [`lib/src/generators/generated_project_contract.dart`](../lib/src/generators/generated_project_contract.dart)
 - [`lib/src/modules/module_registry.dart`](../lib/src/modules/module_registry.dart)
 - [`bricks/agentic_app/brick.yaml`](../bricks/agentic_app/brick.yaml)
 - [`test/src/modules/module_registry_test.dart`](../test/src/modules/module_registry_test.dart)

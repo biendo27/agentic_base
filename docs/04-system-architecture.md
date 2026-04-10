@@ -17,6 +17,8 @@ flowchart LR
   Create --> ProjectGenerator["ProjectGenerator"]
   ProjectGenerator --> FlutterCreate["flutter create"]
   ProjectGenerator --> AppBrick["agentic_app brick"]
+  ProjectGenerator --> Contract["GeneratedProjectContract"]
+  ProjectGenerator --> Slang["dart run slang"]
   ProjectGenerator --> Config["AgenticConfig"]
   ProjectGenerator --> Verify["analyze + test"]
 
@@ -28,7 +30,7 @@ flowchart LR
   ModuleImpl --> Installer["ModuleInstaller"]
   Installer --> Target["target Flutter project"]
 
-  Ops --> Tooling["flutter / dart / git / gh"]
+  Ops --> Tooling["flutter / dart / git / gh / glab"]
 ```
 
 ## Main Layers
@@ -50,7 +52,7 @@ Files under `lib/src/generators/` own scaffold workflows:
 - `FeatureGenerator` applies feature bricks
 - `TestGenerator` turns a feature spec into test stubs
 
-`ProjectGenerator` is the central create-flow orchestrator. It calls native tooling, overlays templates, writes config, installs modules, then verifies the generated project.
+`ProjectGenerator` is the central create-flow orchestrator. It calls native tooling, overlays templates, writes config, installs modules, applies ownership cleanup, materializes typed translations, then verifies the generated project.
 
 ### 3. Project State Layer
 
@@ -90,9 +92,12 @@ The app brick also carries generated-project documentation and Mason hooks for v
 2. CLI validates name, org, platforms, and color input
 3. `ProjectGenerator` runs `flutter create`
 4. app brick overlays opinionated project files
-5. `.info/agentic.yaml` is written
+5. `.info/agentic.yaml` is written with one persisted `ci_provider`
 6. selected modules are installed
-7. codegen, lint fixes, analyze, and tests run
+7. `build_runner` runs for DI/router/model codegen
+8. duplicate root shell files and forbidden IDE artifacts are removed
+9. `dart run slang` materializes typed localization output from `build.yaml`
+10. analyze and tests run on the generated app
 
 ### Add Module Flow
 
@@ -112,23 +117,24 @@ The app brick also carries generated-project documentation and Mason hooks for v
 
 ## CI And Operations
 
-Repo CI currently lives in one workflow:
+Repo CI currently lives in one GitHub Actions workflow:
 
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
 
-That workflow verifies the package itself, not a generated app. Release automation and generated-project CD workflows are not checked in here.
+That workflow verifies the package, runs generated-app smoke coverage for both CI providers, and enforces a separate pinned macOS generated-app native gate. Generated-project CI is scaffolded into downstream repos, not executed from this package repo.
 
 ## Architectural Pressure Points
 
 - command files are trending large and mix orchestration with reporting
-- deployment behavior depends on target-project workflows that are not bundled in this repo
+- deployment behavior now depends on one persisted provider contract and provider-specific downstream CI templates
 - README and registry inventory must stay in sync as modules change
-- brick correctness still needs stronger integration testing in CI
+- generated app provider contracts now exist in two forms and need docs/tests to stay aligned
 
 ## References
 
 - [`lib/src/cli/cli_runner.dart`](../lib/src/cli/cli_runner.dart)
 - [`lib/src/generators/project_generator.dart`](../lib/src/generators/project_generator.dart)
+- [`lib/src/generators/generated_project_contract.dart`](../lib/src/generators/generated_project_contract.dart)
 - [`lib/src/generators/feature_generator.dart`](../lib/src/generators/feature_generator.dart)
 - [`lib/src/modules/module_registry.dart`](../lib/src/modules/module_registry.dart)
 - [`bricks/agentic_app/brick.yaml`](../bricks/agentic_app/brick.yaml)

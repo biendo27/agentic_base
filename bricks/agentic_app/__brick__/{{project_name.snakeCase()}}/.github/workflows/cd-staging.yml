@@ -21,7 +21,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - run: flutter pub get
-      - run: dart run build_runner build --delete-conflicting-outputs
-      - run: flutter build apk --flavor staging -t lib/main_staging.dart
+      - run: chmod +x tools/*.sh
+      - run: ./tools/build.sh staging
       - name: Deploy to TestFlight / Internal Testing
         run: echo "TODO - Configure TestFlight and Play Store Internal Testing"
