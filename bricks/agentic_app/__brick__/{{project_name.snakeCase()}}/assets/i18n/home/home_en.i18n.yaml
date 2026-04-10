@@ -1,0 +1,20 @@
+headline: "Build from a starter that teaches the right architecture."
+body: "This screen proves the generated app shell, router, flavor config, and localization pipeline all work together on day 0."
+diagnosticsTitle: "Runtime diagnostics"
+diagnosticsHint: "These values come from compile-time env files and the active flavor entrypoint."
+appNameLabel: "App name"
+flavorLabel: "Flavor"
+apiBaseUrlLabel: "API base URL"
+checklistTitle: "Starter checklist"
+retry: "Retry"
+loadError: "Could not load starter modules."
+cards:
+  ownership:
+    title: "One Flutter app shell"
+    description: "Bootstrap, routing, and flavor state live under lib/app only."
+  localization:
+    title: "Typed localization"
+    description: "Strings are sourced from assets/i18n and generated into lib/app/i18n."
+  flavors:
+    title: "Env-driven flavors"
+    description: "CLI and IDE launches share the same dart-define contract."

@@ -21,6 +21,8 @@ dependencies:
   injectable: ^2.7.1
   intl: any
   json_annotation: ^4.11.0
+  slang: ^4.13.0
+  slang_flutter: ^4.13.0
 
 dev_dependencies:
   auto_route_generator: ^10.5.0
@@ -35,8 +37,10 @@ dev_dependencies:
     sdk: flutter
   json_serializable: ^6.13.1
   mocktail: ^1.0.4
+  slang_build_runner: ^4.13.0
   very_good_analysis: ^10.2.0
 
 flutter:
   uses-material-design: true
-  generate: true
+  assets:
+    - assets/i18n/

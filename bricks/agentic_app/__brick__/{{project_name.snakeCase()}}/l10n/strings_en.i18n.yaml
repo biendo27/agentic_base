@@ -1,6 +1,0 @@
-app_name: {{project_name.titleCase()}}
-home:
-  title: Home
-  error: Something went wrong
-  retry: Retry
-  empty: No items found

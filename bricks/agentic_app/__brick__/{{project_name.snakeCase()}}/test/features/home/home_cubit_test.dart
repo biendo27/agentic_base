@@ -29,17 +29,21 @@ void main() {
     'emits [loading, loaded] when loadItems succeeds',
     build: () {
       when(() => mockGetHomeItems()).thenAnswer(
-        (_) async => ([
-          HomeItem(id: '1', title: 'Test', description: 'Desc'),
-        ], null),
+        (_) async => (
+          [
+            HomeItem(id: 'ownership'),
+          ],
+          null,
+        ),
       );
       return cubit;
     },
     act: (cubit) => cubit.loadItems(),
-    expect: () => [
-      HomeState.loading(),
-      isA<HomeLoaded>(),
-    ],
+    expect:
+        () => [
+          HomeState.loading(),
+          isA<HomeLoaded>(),
+        ],
   );
 
   blocTest<HomeCubit, HomeState>(
@@ -54,9 +58,10 @@ void main() {
       return cubit;
     },
     act: (cubit) => cubit.loadItems(),
-    expect: () => [
-      HomeState.loading(),
-      HomeState.error('fail'),
-    ],
+    expect:
+        () => [
+          HomeState.loading(),
+          HomeState.error('fail'),
+        ],
   );
 }

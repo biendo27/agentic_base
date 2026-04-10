@@ -1,11 +1,10 @@
 feature: home
-description: Main home screen displaying a list of items
+description: Starter home screen demonstrating app shell contracts
 acceptance_criteria:
-  - Items load on page open
-  - Loading indicator shown while fetching
-  - Error state shows retry button
-  - Items displayed in scrollable list
+  - Starter screen renders localized copy on first boot
+  - Runtime diagnostics show app name, flavor, and API base URL
+  - Architecture checklist cards load through the home feature flow
 edge_cases:
-  - Empty items list
-  - Network failure
-  - Very long item titles
+  - Missing dart-define values
+  - Unsupported device locale falls back to English
+  - Repository load failure shows retry state

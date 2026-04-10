@@ -1,22 +1,76 @@
+{{#has_native_flavors}}
+instructions:
+  - assets:download
+  - assets:extract
+{{#has_android}}
+  - android:androidManifest
+  - android:flavorizrGradle
+  - android:buildGradle
+  - android:dummyAssets
+{{/has_android}}
+{{#has_ios}}
+  - ios:podfile
+  - ios:xcconfig
+  - ios:buildTargets
+  - ios:schema
+  - ios:dummyAssets
+  - ios:plist
+  - ios:launchScreen
+{{/has_ios}}
+{{#has_macos}}
+  - macos:podfile
+  - macos:xcconfig
+  - macos:configs
+  - macos:buildTargets
+  - macos:schema
+  - macos:dummyAssets
+  - macos:plist
+{{/has_macos}}
+  - assets:clean
+{{/has_native_flavors}}
 flavors:
   dev:
     app:
       name: "{{project_name.titleCase()}} Dev"
+{{#has_android}}
     android:
-      applicationId: "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}.dev"
+      applicationId: "{{app_id_base}}.dev"
+{{/has_android}}
+{{#has_ios}}
     ios:
-      bundleId: "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}.dev"
+      bundleId: "{{app_id_base}}.dev"
+{{/has_ios}}
+{{#has_macos}}
+    macos:
+      bundleId: "{{app_id_base}}.dev"
+{{/has_macos}}
   staging:
     app:
       name: "{{project_name.titleCase()}} Staging"
+{{#has_android}}
     android:
-      applicationId: "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}.staging"
+      applicationId: "{{app_id_base}}.staging"
+{{/has_android}}
+{{#has_ios}}
     ios:
-      bundleId: "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}.staging"
+      bundleId: "{{app_id_base}}.staging"
+{{/has_ios}}
+{{#has_macos}}
+    macos:
+      bundleId: "{{app_id_base}}.staging"
+{{/has_macos}}
   prod:
     app:
       name: "{{project_name.titleCase()}}"
+{{#has_android}}
     android:
-      applicationId: "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}"
+      applicationId: "{{app_id_base}}"
+{{/has_android}}
+{{#has_ios}}
     ios:
-      bundleId: "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}"
+      bundleId: "{{app_id_base}}"
+{{/has_ios}}
+{{#has_macos}}
+    macos:
+      bundleId: "{{app_id_base}}"
+{{/has_macos}}

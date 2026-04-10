@@ -8,17 +8,13 @@ class HomeRepositoryImpl implements HomeRepository {
   @override
   Future<(List<HomeItem>, Failure?)> getHomeItems() async {
     try {
-      // TODO(api): Replace with actual API call
-      await Future<void>.delayed(const Duration(seconds: 1));
+      await Future<void>.delayed(const Duration(milliseconds: 250));
       return (
-        List.generate(
-          10,
-          (i) => HomeItem(
-            id: '$i',
-            title: 'Item $i',
-            description: 'Description for item $i',
-          ),
-        ),
+        const [
+          HomeItem(id: 'ownership'),
+          HomeItem(id: 'localization'),
+          HomeItem(id: 'flavors'),
+        ],
         null,
       );
     } on Exception catch (e) {

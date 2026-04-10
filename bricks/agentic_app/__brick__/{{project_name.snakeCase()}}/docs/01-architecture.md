@@ -1,67 +1,44 @@
 # Architecture Overview
 
-## Pattern: Clean Architecture
+## Pattern
 
-Dependencies flow inward — outer layers depend on inner layers, never the reverse.
+Dependencies flow inward:
 
-```
-presentation  →  domain  ←  data
-(Cubit/Pages)    (Entities)   (Repos/Models)
-```
-
-## Layers
-
-### domain (innermost — pure Dart, no Flutter)
-- **Entities**: plain Dart classes, no serialization
-- **Repository interfaces**: abstract contracts only
-- **Use cases**: single-responsibility, depend only on repository interfaces
-
-### data (implements domain contracts)
-- **Models**: Freezed + JSON serialization (`*.g.dart` generated)
-- **Repository implementations**: wire API responses to domain entities
-- **Data sources**: `ApiClient` (Dio) calls
-
-### presentation (Flutter UI)
-- **Cubit**: extends `Cubit<State>`, holds business logic, calls use cases
-- **State**: sealed class via `@freezed` — `initial`, `loading`, `success`, `failure`
-- **Pages**: `BlocProvider` + `BlocBuilder`, no logic
-- **Widgets**: pure UI, receive data via constructor
-
-## Dependency Injection
-
-`get_it` + `injectable` with auto-scanning:
-
-```dart
-@injectable          // transient
-@singleton           // single instance
-@lazySingleton       // created on first access
-@module              // third-party bindings
+```text
+presentation -> domain <- data
 ```
 
-Entry point: `lib/core/di/injection.dart` — call `configureDependencies()` in bootstrap.
+## App Bootstrap
 
-## Feature Module Structure
+1. `FlavorConfig.init(flavor)` resolves env-driven runtime values
+2. `bootstrap(() => App())` initializes bindings, locale, DI, and observers
+3. `App` mounts `TranslationProvider` and `MaterialApp.router`
+4. `AppRouter` lands on the starter home route
 
-```
-lib/features/<name>/
-├── data/
-│   ├── models/
-│   └── repositories/
-├── domain/
-│   ├── entities/
-│   ├── repositories/
-│   └── usecases/
-├── presentation/
-│   ├── cubit/
-│   ├── pages/
-│   └── widgets/
-├── <name>.module.dart
-└── <name>.spec.yaml
-```
+## Ownership Boundary
 
-## App Bootstrap Sequence
+- Brick-owned Flutter layer:
+  - `lib/app/**`
+  - `lib/main*.dart`
+  - `assets/i18n/**`
+  - `.vscode/**`
+  - `.idea/runConfigurations/**`
+- Tool-owned outputs:
+  - native platform folders from `flutter create`
+  - native flavor artifacts from `flutter_flavorizr`
+  - generated router/DI/i18n code
+- Forbidden leftovers:
+  - `lib/app.dart`
+  - `lib/flavors.dart`
+  - `lib/pages/**`
+  - `.idea/workspace.xml`
+  - `.idea/modules.xml`
+  - `.idea/libraries/**`
 
-1. `FlavorConfig.init(flavor)` — set env config
-2. `bootstrap(() => App())` — initialize DI, BlocObserver, run app
-3. `AppRouter` — auto_route handles navigation
-4. `ScreenUtilInit` — responsive sizing setup
+## Localization Contract
+
+- Source translations live in `assets/i18n/<module>/<module>_<locale>.i18n.yaml`
+- `build_runner` + Slang generate typed APIs into `lib/app/i18n/translations.g.dart`
+- Starter namespaces:
+  - `app`
+  - `home`
