@@ -47,35 +47,6 @@ class CreatePrompts {
     );
   }
 
-  List<String> promptFlavors(String? flagValue) {
-    if (flagValue != null) {
-      return flagValue.split(',').map((f) => f.trim()).toList();
-    }
-
-    // Let user pick from defaults + offer custom input
-    final selected = _logger.chooseAny(
-      'Build flavors',
-      choices: [...defaultFlavors, '(custom)'],
-      defaultValues: defaultFlavors,
-    );
-
-    // If user selected (custom), prompt for custom flavors
-    if (selected.contains('(custom)')) {
-      final custom = _logger.prompt(
-        'Enter custom flavors (comma-separated)',
-        defaultValue: 'dev,staging,prod',
-      );
-      final customList = custom.split(',').map((f) => f.trim()).toList();
-      // Merge selected defaults (minus the custom marker) + custom entries
-      return [
-        ...selected.where((f) => f != '(custom)'),
-        ...customList,
-      ];
-    }
-
-    return selected;
-  }
-
   String promptPrimaryColor(String? flagValue) {
     if (flagValue != null) return flagValue;
     return _logger.prompt('Primary color (hex)', defaultValue: '6750A4');

@@ -44,8 +44,14 @@ final class GeneratedProjectContract {
     '.vscode/launch.json',
     '.vscode/settings.json',
     '.idea/runConfigurations/dev_dart.xml',
+    '.idea/runConfigurations/dev_profile.xml',
+    '.idea/runConfigurations/dev_release.xml',
     '.idea/runConfigurations/staging_dart.xml',
+    '.idea/runConfigurations/staging_profile.xml',
+    '.idea/runConfigurations/staging_release.xml',
     '.idea/runConfigurations/prod_dart.xml',
+    '.idea/runConfigurations/prod_profile.xml',
+    '.idea/runConfigurations/prod_release.xml',
   ];
 
   static const forbiddenFiles = <String>[

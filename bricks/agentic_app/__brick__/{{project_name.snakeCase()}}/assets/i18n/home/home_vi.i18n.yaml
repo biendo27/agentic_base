@@ -1,0 +1,20 @@
+headline: "Bat dau tu mot starter day dung kien truc ngay tu dau."
+body: "Man hinh nay xac nhan app shell, router, cau hinh flavor va pipeline noi dia hoa cung hoat dong ngay khi tao du an."
+diagnosticsTitle: "Chan doan runtime"
+diagnosticsHint: "Cac gia tri nay den tu file env compile-time va entrypoint flavor dang chay."
+appNameLabel: "Ten ung dung"
+flavorLabel: "Flavor"
+apiBaseUrlLabel: "API base URL"
+checklistTitle: "Danh sach starter"
+retry: "Thu lai"
+loadError: "Khong the tai du lieu starter."
+cards:
+  ownership:
+    title: "Mot app shell Flutter"
+    description: "Bootstrap, routing va state flavor chi ton tai trong lib/app."
+  localization:
+    title: "Noi dia hoa typed"
+    description: "Chuoi duoc dat trong assets/i18n va sinh code vao lib/app/i18n."
+  flavors:
+    title: "Flavor dua tren env"
+    description: "CLI va IDE dung cung mot hop dong dart-define."

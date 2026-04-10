@@ -19,12 +19,14 @@ Generated apps should bias toward:
 - use the `primary_color` create input as a seed for the global theme, not as a per-screen override
 - keep reusable UI primitives in shared locations; keep feature-specific widgets inside the feature
 - prefer generated docs and clear file names over hidden conventions
+- keep starter surfaces honest: app shell, flavor diagnostics, router, and localization should all be visible in the default home flow
 
 ## Feature UI Boundaries
 
 Generated project structure should keep these concerns separate:
 
 - `app/`: bootstrap, flavors, observers
+- `assets/i18n/`: localization source of truth
 - `core/`: cross-cutting services, routing, DI, theme, errors
 - `features/`: feature-owned presentation and business logic
 - `shared/`: reusable widgets and utilities

@@ -9,9 +9,13 @@ build/
 *.config.dart
 
 # IDE
-.idea/
 *.iml
-.vscode/
+.idea/*
+!.idea/runConfigurations/
+!.idea/runConfigurations/*.xml
+.vscode/*
+!.vscode/launch.json
+!.vscode/settings.json
 
 # Environment
 .env

@@ -59,6 +59,9 @@ Each command should:
 - brick hooks should validate inputs early and keep post-generation steps minimal
 - generated app docs inside the app brick should stay aligned with CLI behavior
 - generated-project claims must be backed by actual template files or post-gen steps
+- generated app localization source belongs in `assets/i18n/**`
+- typed Slang output belongs in `lib/app/i18n/**`
+- generated apps must not keep duplicate root shell files such as `lib/app.dart` or `lib/flavors.dart`
 
 ## Testing Standards
 
@@ -90,7 +93,6 @@ Current files over the 200 LOC target:
 
 Current process gaps:
 
-- no repo-level integration test that generates a full app in CI
 - no checked-in release automation for pub.dev publishing
 - root `CLAUDE.md` is still absent if you want repo-level AI instructions beyond `AGENTS.md`
 
