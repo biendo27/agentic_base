@@ -6,9 +6,7 @@
 .vscode/
 !bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/.idea/
 !bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/.idea/runConfigurations/
-!bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/.idea/runConfigurations/dev_dart.xml
-!bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/.idea/runConfigurations/staging_dart.xml
-!bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/.idea/runConfigurations/prod_dart.xml
+!bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/.idea/runConfigurations/*.xml
 !bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/.vscode/
 !bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/.vscode/launch.json
 !bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/.vscode/settings.json

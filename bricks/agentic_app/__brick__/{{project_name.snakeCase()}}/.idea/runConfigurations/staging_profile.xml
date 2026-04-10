@@ -1,8 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="staging.debug.dart" type="FlutterRunConfigurationType" factoryName="Flutter">
+  <configuration default="false" name="staging.profile.dart" type="FlutterRunConfigurationType" factoryName="Flutter">
     <option name="buildFlavor" value="staging" />
     <option name="filePath" value="$PROJECT_DIR$/lib/main_staging.dart" />
-    <option name="additionalArgs" value="--debug --dart-define-from-file=env/staging.env.example" />
+    <option name="additionalArgs" value="--profile --dart-define-from-file=env/staging.env.example" />
     <method v="2" />
   </configuration>
 </component>
