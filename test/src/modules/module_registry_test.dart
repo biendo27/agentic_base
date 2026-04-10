@@ -69,11 +69,13 @@ void main() {
     test('findOrThrow throws ArgumentError for unknown module', () {
       expect(
         () => ModuleRegistry.findOrThrow('unknown_module'),
-        throwsA(isA<ArgumentError>().having(
-          (e) => e.message,
-          'message',
-          contains('Unknown module'),
-        )),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('Unknown module'),
+          ),
+        ),
       );
     });
 

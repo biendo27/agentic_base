@@ -33,11 +33,13 @@ acceptance_criteria:
 
       expect(
         () => SpecParser.parse(yaml),
-        throwsA(isA<FormatException>().having(
-          (e) => e.message,
-          'message',
-          contains('feature'),
-        )),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('feature'),
+          ),
+        ),
       );
     });
 
@@ -50,11 +52,13 @@ acceptance_criteria:
 
       expect(
         () => SpecParser.parse(yaml),
-        throwsA(isA<FormatException>().having(
-          (e) => e.message,
-          'message',
-          contains('description'),
-        )),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('description'),
+          ),
+        ),
       );
     });
 
@@ -145,11 +149,13 @@ acceptance_criteria:
 
       expect(
         () => SpecParser.parse(yaml),
-        throwsA(isA<FormatException>().having(
-          (e) => e.message,
-          'message',
-          contains('expected a YAML mapping'),
-        )),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('expected a YAML mapping'),
+          ),
+        ),
       );
     });
 
@@ -162,11 +168,13 @@ acceptance_criteria: "not a list"
 
       expect(
         () => SpecParser.parse(yaml),
-        throwsA(isA<FormatException>().having(
-          (e) => e.message,
-          'message',
-          contains('must be a YAML list'),
-        )),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('must be a YAML list'),
+          ),
+        ),
       );
     });
 
@@ -251,7 +259,10 @@ acceptance_criteria:
 
       expect(spec.feature, equals('user signup'));
       expect(spec.description, equals('Allow users to create a new account'));
-      expect(spec.acceptanceCriteria.first, equals('User enters email and password'));
+      expect(
+        spec.acceptanceCriteria.first,
+        equals('User enters email and password'),
+      );
     });
   });
 }

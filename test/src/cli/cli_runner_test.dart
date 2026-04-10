@@ -22,8 +22,9 @@ void main() {
       final exitCode = await runner.run(['--version']);
 
       expect(exitCode, ExitCode.success.code);
-      verify(() => mockLogger.info('agentic_base v${AgenticBaseCliRunner.version}'))
-          .called(1);
+      verify(
+        () => mockLogger.info('agentic_base v${AgenticBaseCliRunner.version}'),
+      ).called(1);
     });
 
     test('prints version on -v flag', () async {
@@ -32,8 +33,9 @@ void main() {
       final exitCode = await runner.run(['-v']);
 
       expect(exitCode, ExitCode.success.code);
-      verify(() => mockLogger.info('agentic_base v${AgenticBaseCliRunner.version}'))
-          .called(1);
+      verify(
+        () => mockLogger.info('agentic_base v${AgenticBaseCliRunner.version}'),
+      ).called(1);
     });
 
     test('shows help on --help flag', () async {

@@ -86,11 +86,13 @@ void main() {
     test('fromString throws ArgumentError for unknown name', () {
       expect(
         () => StateConfig.fromString('unknown'),
-        throwsA(isA<ArgumentError>().having(
-          (e) => e.message,
-          'message',
-          contains('Unknown state management'),
-        )),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('Unknown state management'),
+          ),
+        ),
       );
     });
 
@@ -137,7 +139,11 @@ void main() {
     });
 
     test('package versions are valid semantic version constraints', () {
-      for (final config in [StateConfig.cubit, StateConfig.riverpod, StateConfig.mobx]) {
+      for (final config in [
+        StateConfig.cubit,
+        StateConfig.riverpod,
+        StateConfig.mobx,
+      ]) {
         for (final version in config.packages.values) {
           expect(version, matches(RegExp(r'^[\^~>=<]')));
         }
