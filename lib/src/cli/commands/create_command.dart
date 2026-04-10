@@ -1,14 +1,23 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/generators/project_generator.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:agentic_base/src/tui/prompts.dart';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
 
+typedef ProjectGeneratorBuilder =
+    ProjectGenerator Function(AgenticLogger logger);
+
 /// Generates a new Flutter project optimized for AI-agent development.
 class CreateCommand extends Command<int> {
-  CreateCommand({required AgenticLogger logger}) : _logger = logger {
+  CreateCommand({
+    required AgenticLogger logger,
+    ProjectGeneratorBuilder? projectGeneratorBuilder,
+  }) : _logger = logger,
+       _projectGeneratorBuilder =
+           projectGeneratorBuilder ?? _defaultProjectGeneratorBuilder {
     argParser
       ..addOption('org', help: 'Organization (reverse domain)', abbr: 'o')
       ..addOption(
@@ -23,7 +32,10 @@ class CreateCommand extends Command<int> {
         allowed: stateManagementOptions,
         defaultsTo: 'cubit',
       )
-      ..addOption('flavors', help: 'Flavors (comma-separated)')
+      ..addOption(
+        'flavors',
+        help: 'Flavors (must remain the default contract: dev,staging,prod)',
+      )
       ..addOption(
         'output-dir',
         help: 'Output directory (default: ./<app_name>)',
@@ -37,6 +49,12 @@ class CreateCommand extends Command<int> {
         help: 'Modules to install (comma-separated)',
         abbr: 'm',
       )
+      ..addOption(
+        'ci-provider',
+        help: 'CI provider: github or gitlab',
+        allowed: supportedCiProviders,
+        defaultsTo: defaultCiProvider.name,
+      )
       ..addFlag(
         'no-interactive',
         help: 'Skip prompts, use defaults for missing values',
@@ -45,6 +63,7 @@ class CreateCommand extends Command<int> {
   }
 
   final AgenticLogger _logger;
+  final ProjectGeneratorBuilder _projectGeneratorBuilder;
 
   @override
   String get name => 'create';
@@ -101,6 +120,16 @@ class CreateCommand extends Command<int> {
       return 1;
     }
     final prompts = CreatePrompts(_logger);
+    final requestedPlatforms = _normalizeCsvOption(
+      args['platforms'] as String?,
+    );
+    final requestedFlavors = _resolveSupportedFlavors(
+      args['flavors'] as String?,
+    );
+    final requestedModules = _normalizeCsvOption(args['modules'] as String?);
+    final ciProvider = parseCiProvider(
+      args['ci-provider'] as String? ?? defaultCiProvider.name,
+    );
 
     final org =
         noInteractive
@@ -118,12 +147,17 @@ class CreateCommand extends Command<int> {
 
     final platforms =
         noInteractive
-            ? (args['platforms'] as String?)?.split(',') ?? defaultPlatforms
-            : prompts.promptPlatforms(args['platforms'] as String?);
+            ? requestedPlatforms ?? defaultPlatforms
+            : requestedPlatforms ?? prompts.promptPlatforms(null);
+
+    if (platforms.isEmpty) {
+      _logger.err('At least one target platform is required.');
+      return 1;
+    }
 
     // Validate platforms
     for (final platform in platforms) {
-      if (!allPlatforms.contains(platform.trim())) {
+      if (!allPlatforms.contains(platform)) {
         _logger.err(
           'Invalid platform: "$platform". '
           'Allowed: ${allPlatforms.join(', ')}',
@@ -134,10 +168,15 @@ class CreateCommand extends Command<int> {
 
     final state = args['state'] as String? ?? 'cubit';
 
-    final flavors =
-        noInteractive
-            ? (args['flavors'] as String?)?.split(',') ?? defaultFlavors
-            : prompts.promptFlavors(args['flavors'] as String?);
+    if (requestedFlavors == null) {
+      _logger.err(
+        'Only the default flavor contract is supported: '
+        '${defaultFlavors.join(', ')}.',
+      );
+      return 1;
+    }
+
+    final flavors = requestedFlavors;
 
     final primaryColor =
         noInteractive
@@ -155,17 +194,13 @@ class CreateCommand extends Command<int> {
 
     final modules =
         noInteractive
-            ? (args['modules'] as String?)
-                    ?.split(',')
-                    .map((m) => m.trim())
-                    .toList() ??
-                <String>[]
-            : prompts.promptModules(args['modules'] as String?);
+            ? requestedModules ?? <String>[]
+            : requestedModules ?? prompts.promptModules(null);
 
     _logger.header('Creating $projectName...');
 
     try {
-      await ProjectGenerator(logger: _logger).generate(
+      await _projectGeneratorBuilder(_logger).generate(
         projectName: projectName,
         outputDirectory: outputDir,
         org: org,
@@ -173,6 +208,7 @@ class CreateCommand extends Command<int> {
         stateManagement: state,
         flavors: flavors,
         primaryColor: primaryColor,
+        ciProvider: ciProvider,
         modules: modules,
       );
 
@@ -181,7 +217,10 @@ class CreateCommand extends Command<int> {
         ..info('')
         ..info('Next steps:')
         ..info('  cd $projectName')
-        ..info('  flutter run');
+        ..info(
+          '  flutter run --flavor dev -t lib/main_dev.dart '
+          '--dart-define-from-file=env/dev.env.example',
+        );
       return 0;
     } on Exception catch (e) {
       _logger.err('Failed to create project: $e');
@@ -197,4 +236,51 @@ class CreateCommand extends Command<int> {
   static final _validName = RegExp(r'^[a-z][a-z0-9_]*$');
   static final _validOrg = RegExp(r'^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$');
   static final _validHex = RegExp(r'^[0-9a-fA-F]{6}$');
+
+  static ProjectGenerator _defaultProjectGeneratorBuilder(
+    AgenticLogger logger,
+  ) {
+    return ProjectGenerator(logger: logger);
+  }
+
+  static List<String>? _normalizeCsvOption(String? rawValue) {
+    if (rawValue == null) {
+      return null;
+    }
+
+    final values = <String>[];
+    final seen = <String>{};
+    for (final value in rawValue.split(',')) {
+      final trimmed = value.trim();
+      if (trimmed.isEmpty || !seen.add(trimmed)) {
+        continue;
+      }
+      values.add(trimmed);
+    }
+
+    if (values.isEmpty) {
+      return null;
+    }
+
+    return values;
+  }
+
+  static List<String>? _resolveSupportedFlavors(String? rawValue) {
+    final requestedFlavors = _normalizeCsvOption(rawValue);
+    if (requestedFlavors == null) {
+      return List.of(defaultFlavors);
+    }
+
+    final requestedSet = requestedFlavors.toSet();
+    final defaultSet = defaultFlavors.toSet();
+    final matchesDefaultContract =
+        requestedSet.length == defaultSet.length &&
+        requestedSet.containsAll(defaultSet);
+
+    if (!matchesDefaultContract) {
+      return null;
+    }
+
+    return List.of(defaultFlavors);
+  }
 }

@@ -3,6 +3,8 @@ import 'dart:isolate';
 
 import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
+import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/generators/generated_project_contract.dart';
 import 'package:agentic_base/src/modules/module_registry.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
@@ -24,8 +26,14 @@ class ProjectGenerator {
     required String stateManagement,
     required List<String> flavors,
     required String primaryColor,
+    required CiProvider ciProvider,
     List<String> modules = const [],
   }) async {
+    final appIdBase = GeneratedProjectContract.buildAppIdBase(
+      org: org,
+      projectName: projectName,
+    );
+
     // Step 1: flutter create for native platform scaffolding
     await _flutterCreate(
       projectName: projectName,
@@ -43,6 +51,13 @@ class ProjectGenerator {
       stateManagement: stateManagement,
       flavors: flavors,
       primaryColor: primaryColor,
+      ciProvider: ciProvider,
+      appIdBase: appIdBase,
+    );
+
+    GeneratedProjectContract.enforceCiProviderOutputs(
+      outputDirectory,
+      ciProvider: ciProvider,
     );
 
     // Step 3: Write agentic.yaml config
@@ -50,6 +65,7 @@ class ProjectGenerator {
       projectPath: outputDirectory,
       projectName: projectName,
       org: org,
+      ciProvider: ciProvider,
       stateManagement: stateManagement,
       platforms: platforms,
       flavors: flavors,
@@ -63,10 +79,18 @@ class ProjectGenerator {
     ]);
 
     // Step 5: Run flavorizr to configure native flavor builds
-    await _runInteractive(outputDirectory, 'Configuring flavors', 'dart', [
-      'run',
-      'flutter_flavorizr',
-    ]);
+    if (GeneratedProjectContract.requiresNativeFlavorization(platforms)) {
+      await _runInteractive(outputDirectory, 'Configuring flavors', 'dart', [
+        'run',
+        'flutter_flavorizr',
+        '-f',
+      ]);
+      GeneratedProjectContract.validateNativeFlavorOutputs(outputDirectory);
+    } else {
+      _logger.detail(
+        'Skipping flutter_flavorizr: no native platforms selected',
+      );
+    }
 
     // Step 6: Install selected modules
     if (modules.isNotEmpty) {
@@ -79,6 +103,7 @@ class ProjectGenerator {
     }
 
     // Step 7: Code generation (freezed, injectable, auto_route)
+    GeneratedProjectContract.deleteGeneratedI18nOutputs(outputDirectory);
     await _runInProject(outputDirectory, 'Running code generation', 'dart', [
       'run',
       'build_runner',
@@ -86,13 +111,29 @@ class ProjectGenerator {
       '--delete-conflicting-outputs',
     ]);
 
-    // Step 8: Auto-fix lint (sort imports)
+    // Step 8: Remove tool-owned Flutter-layer outputs.
+    GeneratedProjectContract.cleanupForbiddenOutputs(outputDirectory);
+
+    // Step 9: Auto-fix lint (sort imports)
     await _runInProject(outputDirectory, 'Applying lint fixes', 'dart', [
       'fix',
       '--apply',
     ]);
 
-    // Step 9: Verify — analyze + test
+    // Step 10: Materialize Slang outputs from build.yaml.
+    await _runInProject(
+      outputDirectory,
+      'Generating typed translations',
+      'dart',
+      ['run', 'slang'],
+    );
+
+    GeneratedProjectContract.validate(
+      outputDirectory,
+      ciProvider: ciProvider,
+    );
+
+    // Step 11: Verify — analyze + test
     await _verify(outputDirectory);
   }
 
@@ -132,37 +173,29 @@ class ProjectGenerator {
       }
     }
     // Re-run pub get after adding module deps
-    await Process.run('flutter', ['pub', 'get'], workingDirectory: projectDir);
+    await _runInProject(
+      projectDir,
+      'Refreshing dependencies after module install',
+      'flutter',
+      ['pub', 'get'],
+    );
     progress.complete('Modules installed');
   }
 
   /// Run analyze + test to verify the generated project is clean.
   Future<void> _verify(String projectDir) async {
-    final analyzeProgress = _logger.progress('Verifying (dart analyze)');
-    final analyzeResult = await Process.run(
-      'dart',
-      ['analyze', 'lib/'],
-      workingDirectory: projectDir,
+    await _runInProject(
+      projectDir,
+      'Verifying generated app with flutter analyze',
+      'flutter',
+      ['analyze'],
     );
-    if (analyzeResult.exitCode == 0) {
-      analyzeProgress.complete('Analysis clean');
-    } else {
-      analyzeProgress.fail('Analysis has warnings');
-      _logger.warn((analyzeResult.stdout as String).trim());
-    }
-
-    final testProgress = _logger.progress('Verifying (flutter test)');
-    final testResult = await Process.run(
+    await _runInProject(
+      projectDir,
+      'Verifying generated app with flutter test',
       'flutter',
       ['test'],
-      workingDirectory: projectDir,
     );
-    if (testResult.exitCode == 0) {
-      testProgress.complete('Tests passed');
-    } else {
-      testProgress.fail('Some tests failed');
-      _logger.warn((testResult.stdout as String).trim());
-    }
   }
 
   /// Run a command with inherited stdio (for tools that need a terminal).
@@ -181,7 +214,9 @@ class ProjectGenerator {
     );
     final exitCode = await process.exitCode;
     if (exitCode != 0) {
-      _logger.warn('$label exited with $exitCode (non-fatal)');
+      throw ProjectGenerationException(
+        '$label failed with exit code $exitCode',
+      );
     }
   }
 
@@ -196,8 +231,15 @@ class ProjectGenerator {
     final result = await Process.run(cmd, args, workingDirectory: projectDir);
     if (result.exitCode != 0) {
       progress.fail('$label failed');
-      _logger.err((result.stderr as String).trim());
-      return;
+      final stderr = (result.stderr as String).trim();
+      final stdout = (result.stdout as String).trim();
+      if (stderr.isNotEmpty) {
+        _logger.err(stderr);
+      }
+      if (stdout.isNotEmpty) {
+        _logger.err(stdout);
+      }
+      throw ProjectGenerationException('$label failed');
     }
     progress.complete(label);
   }
@@ -240,6 +282,8 @@ class ProjectGenerator {
     required String stateManagement,
     required List<String> flavors,
     required String primaryColor,
+    required CiProvider ciProvider,
+    required String appIdBase,
   }) async {
     final progress = _logger.progress('Applying agentic templates');
     try {
@@ -257,6 +301,14 @@ class ProjectGenerator {
           'state_management': stateManagement,
           'flavors': flavors,
           'primary_color': primaryColor,
+          'ci_provider': ciProvider.name,
+          'app_id_base': appIdBase,
+          'has_native_flavors': platforms.any(
+            (platform) => const {'android', 'ios', 'macos'}.contains(platform),
+          ),
+          'has_android': platforms.contains('android'),
+          'has_ios': platforms.contains('ios'),
+          'has_macos': platforms.contains('macos'),
         },
         fileConflictResolution: FileConflictResolution.overwrite,
       );

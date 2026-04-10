@@ -33,3 +33,8 @@ vars:
     description: Primary color hex
     default: "6750A4"
     prompt: "Primary color:"
+  ci_provider:
+    type: string
+    description: CI provider choice
+    default: github
+    prompt: "CI provider:"

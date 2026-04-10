@@ -1,0 +1,8 @@
+# Requires a project-registered macOS runner with a shell executor and Xcode.
+native_validate:
+  stage: verify
+  tags: [macos]
+  script:
+    - chmod +x tools/*.sh
+    - flutter pub get
+    - ./tools/ci-check.sh

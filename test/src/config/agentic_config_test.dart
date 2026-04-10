@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:agentic_base/src/config/agentic_config.dart';
+import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -8,8 +9,9 @@ void _createConfigFile(Directory tempDir, String content) {
   Directory(p.join(tempDir.path, '.info'))
     ..createSync(recursive: true)
     ..uri; // force eval
-  File(p.join(tempDir.path, '.info', 'agentic.yaml'))
-      .writeAsStringSync(content);
+  File(
+    p.join(tempDir.path, '.info', 'agentic.yaml'),
+  ).writeAsStringSync(content);
 }
 
 void main() {
@@ -84,5 +86,40 @@ void main() {
       expect(data['platforms'], isA<List<dynamic>>());
       expect((data['platforms'] as List<dynamic>).length, equals(4));
     });
+
+    test('createInitial persists ci_provider from enum serialization', () {
+      AgenticConfig.createInitial(
+        projectPath: tempDir.path,
+        projectName: 'demo_app',
+        org: 'com.example',
+        stateManagement: 'cubit',
+        platforms: const ['android', 'ios'],
+        flavors: const ['dev', 'staging', 'prod'],
+        toolVersion: '0.1.0',
+        ciProvider: CiProvider.gitlab,
+      );
+
+      final data = AgenticConfig(projectPath: tempDir.path).read();
+      expect(data['ci_provider'], equals('gitlab'));
+    });
+
+    test(
+      'resolveCiProviderFromConfig falls back to inferred provider files',
+      () {
+        Directory(p.join(tempDir.path, '.gitlab', 'ci')).createSync(
+          recursive: true,
+        );
+        File(
+          p.join(tempDir.path, '.gitlab-ci.yml'),
+        ).writeAsStringSync('include: []');
+
+        final resolved = resolveCiProviderFromConfig(
+          config: const <String, dynamic>{},
+          projectPath: tempDir.path,
+        );
+
+        expect(resolved, equals(CiProvider.gitlab));
+      },
+    );
   });
 }

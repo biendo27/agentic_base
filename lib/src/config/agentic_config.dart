@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
@@ -50,11 +51,13 @@ class AgenticConfig {
     required List<String> platforms,
     required List<String> flavors,
     required String toolVersion,
+    CiProvider ciProvider = defaultCiProvider,
   }) {
     AgenticConfig(projectPath: projectPath).write({
       'tool_version': toolVersion,
       'project_name': projectName,
       'org': org,
+      'ci_provider': ciProvider.name,
       'state_management': stateManagement,
       'platforms': platforms,
       'flavors': flavors,
