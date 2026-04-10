@@ -1,0 +1,2 @@
+title: "{{feature_name.titleCase()}}"
+subtitle: "Start building the {{feature_name.titleCase()}} feature here."

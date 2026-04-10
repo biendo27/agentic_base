@@ -1,0 +1,2 @@
+title: "{{feature_name.titleCase()}}"
+subtitle: "Bat dau xay dung tinh nang {{feature_name.titleCase()}} tai day."
