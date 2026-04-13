@@ -11,6 +11,7 @@
 !bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/.vscode/launch.json
 !bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/.vscode/settings.json
 .dart_tool/
+coverage/
 pubspec.lock
 my_app/
 
