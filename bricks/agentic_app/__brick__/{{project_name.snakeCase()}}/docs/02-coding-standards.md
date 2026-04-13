@@ -4,11 +4,11 @@
 
 | Element | Convention | Example |
 |---------|-----------|---------|
-| Files | snake_case | `home_cubit.dart` |
-| Classes | PascalCase | `HomeCubit` |
+| Files | snake_case | `home_state.dart` |
+| Classes | PascalCase | `HomeState` |
 | Variables | camelCase | `isLoading` |
 | Constants | kCamelCase | `kDefaultTimeout` |
-| Cubits | `<Feature>Cubit` | `ProfileCubit` |
+| Presentation controllers | runtime-specific | `ProfileCubit`, `ProfileController`, `ProfileStore` |
 | States | `<Feature>State` | `ProfileState` |
 | Use cases | verb phrase | `GetHomeItems` |
 | Repos (interface) | `<Name>Repository` | `HomeRepository` |
@@ -44,7 +44,7 @@ Never manually edit:
 - `*.g.dart` — JSON serialization
 - `*.freezed.dart` — Freezed unions/data classes
 - `*.gr.dart` — auto_route generated routes
-- `*.config.dart` — injectable DI configuration
+{{#uses_get_it}}- `*.config.dart` — injectable DI configuration{{/uses_get_it}}
 
 Run `make gen` after any model or annotation change.
 
@@ -61,7 +61,8 @@ sealed class HomeState with _$HomeState {
 }
 ```
 
-### Cubit
+### State Runtime
+{{#is_cubit}}
 ```dart
 @injectable
 class HomeCubit extends Cubit<HomeState> {
@@ -79,6 +80,48 @@ class HomeCubit extends Cubit<HomeState> {
   }
 }
 ```
+{{/is_cubit}}
+{{#is_riverpod}}
+```dart
+final homeControllerProvider =
+    NotifierProvider<HomeController, HomeState>(HomeController.new);
+
+class HomeController extends Notifier<HomeState> {
+  @override
+  HomeState build() => const HomeState.initial();
+
+  Future<void> loadItems() async {
+    state = const HomeState.loading();
+    final (items, failure) = await ref.read(getHomeItemsProvider)();
+    if (failure != null) {
+      state = HomeState.error(failure.message);
+    } else {
+      state = HomeState.loaded(items);
+    }
+  }
+}
+```
+{{/is_riverpod}}
+{{#is_mobx}}
+```dart
+@injectable
+class HomeStore {
+  HomeStore(this._getHomeItems);
+
+  final GetHomeItems _getHomeItems;
+  final Observable<HomeState> state = Observable(const HomeState.initial());
+
+  Future<void> loadItems() async {
+    runInAction(() => state.value = const HomeState.loading());
+    final (items, failure) = await _getHomeItems();
+    runInAction(() {
+      state.value =
+          failure != null ? HomeState.error(failure.message) : HomeState.loaded(items);
+    });
+  }
+}
+```
+{{/is_mobx}}
 
 ## Analysis
 

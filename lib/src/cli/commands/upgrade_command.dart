@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
+import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
@@ -158,9 +159,19 @@ class UpgradeCommand extends Command<int> {
 
   /// Write the current CLI version into `.info/agentic.yaml`.
   void _stampToolVersion(AgenticConfig config) {
-    config.write({
-      'tool_version': AgenticBaseCliRunner.version,
-      'last_upgraded': DateTime.now().toIso8601String(),
-    });
+    final metadata = config.readMetadata(
+      fallbackToolVersion: AgenticBaseCliRunner.version,
+    );
+    config
+      ..writeMetadata(
+        metadata.copyWith(
+          toolVersion: AgenticBaseCliRunner.version,
+          provenance: {
+            ...metadata.provenance,
+            'tool_version': MetadataProvenance.explicit,
+          },
+        ),
+      )
+      ..write({'last_upgraded': DateTime.now().toIso8601String()});
   }
 }

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
@@ -86,6 +85,15 @@ class ModuleInstaller {
     if (!file.existsSync()) {
       throw StateError('pubspec.yaml not found at $pubspecPath');
     }
+    final journal = ctx.mutationJournal;
+    if (journal != null) {
+      journal.mutateTextFile(pubspecPath, (current) {
+        final editor = YamlEditor(current);
+        mutate(editor);
+        return editor.toString();
+      });
+      return;
+    }
     final content = file.readAsStringSync();
     final editor = YamlEditor(content);
     mutate(editor);
@@ -99,6 +107,17 @@ class ModuleInstaller {
     final file = File(pubspecPath);
     if (!file.existsSync()) {
       throw StateError('pubspec.yaml not found at $pubspecPath');
+    }
+    final journal = ctx.mutationJournal;
+    if (journal != null) {
+      journal.mutateTextFile(pubspecPath, (current) {
+        final parsed = loadYaml(current);
+        if (parsed is! YamlMap) return current;
+        final editor = YamlEditor(current);
+        mutate(parsed, editor);
+        return editor.toString();
+      });
+      return;
     }
     final content = file.readAsStringSync();
     final parsed = loadYaml(content);
@@ -115,14 +134,26 @@ class ModuleInstaller {
   /// Write [content] to [relPath] (relative to project root).
   /// Creates parent directories as needed.
   void writeFile(String relPath, String content) {
-    final file = File(p.join(ctx.projectPath, relPath));
+    final path = p.join(ctx.projectPath, relPath);
+    final journal = ctx.mutationJournal;
+    if (journal != null) {
+      journal.writeFile(path, content);
+      return;
+    }
+    final file = File(path);
     file.parent.createSync(recursive: true);
     file.writeAsStringSync(content);
   }
 
   /// Delete the file at [relPath] if it exists.
   void deleteFile(String relPath) {
-    final file = File(p.join(ctx.projectPath, relPath));
+    final path = p.join(ctx.projectPath, relPath);
+    final journal = ctx.mutationJournal;
+    if (journal != null) {
+      journal.deleteFile(path);
+      return;
+    }
+    final file = File(path);
     if (file.existsSync()) file.deleteSync();
   }
 
@@ -137,25 +168,8 @@ class ModuleInstaller {
   // ---------------------------------------------------------------------------
 
   /// Mark [moduleName] as installed in `.info/agentic.yaml`.
-  void markInstalled(String moduleName) {
-    final config = AgenticConfig(projectPath: ctx.projectPath);
-    final data = config.read();
-    final modules = List<String>.from(
-      (data['modules'] as List?)?.cast<String>() ?? [],
-    );
-    if (!modules.contains(moduleName)) {
-      modules.add(moduleName);
-      config.write({'modules': modules});
-    }
-  }
+  void markInstalled(String moduleName) {}
 
   /// Remove [moduleName] from `.info/agentic.yaml` modules list.
-  void markUninstalled(String moduleName) {
-    final config = AgenticConfig(projectPath: ctx.projectPath);
-    final data = config.read();
-    final modules = List<String>.from(
-      (data['modules'] as List?)?.cast<String>() ?? [],
-    )..remove(moduleName);
-    config.write({'modules': modules});
-  }
+  void markUninstalled(String moduleName) {}
 }

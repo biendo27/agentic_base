@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/generators/feature_generator.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
@@ -63,10 +64,12 @@ class FeatureCommand extends Command<int> {
       return 1;
     }
 
-    final data = config.read();
-    final projectName =
-        data['project_name'] as String? ?? p.basename(projectPath);
-    final stateManagement = data['state_management'] as String? ?? 'cubit';
+    final metadata = config.readMetadata(
+      fallbackProjectName: p.basename(projectPath),
+      fallbackToolVersion: AgenticBaseCliRunner.version,
+    );
+    final projectName = metadata.projectName;
+    final stateManagement = metadata.stateManagement;
     final simple = args['simple'] as bool;
 
     _logger.header('Scaffolding feature: $featureName');

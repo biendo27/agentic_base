@@ -29,15 +29,13 @@ void main() {
       const config = StateConfig.riverpod;
 
       expect(config.packages, contains('flutter_riverpod'));
-      expect(config.packages, contains('riverpod_annotation'));
-      expect(config.packages['flutter_riverpod'], equals('^2.6.1'));
+      expect(config.packages['flutter_riverpod'], equals('^3.3.1'));
     });
 
     test('riverpod has correct dev packages', () {
       const config = StateConfig.riverpod;
 
-      expect(config.devPackages, contains('riverpod_generator'));
-      expect(config.devPackages, contains('riverpod_lint'));
+      expect(config.devPackages, isEmpty);
     });
 
     test('riverpod uses riverpod DI system', () {
@@ -132,9 +130,8 @@ void main() {
       expect(StateConfig.mobx.packages.isNotEmpty, true);
     });
 
-    test('all configs have at least one dev package', () {
+    test('get_it-driven configs have at least one dev package', () {
       expect(StateConfig.cubit.devPackages.isNotEmpty, true);
-      expect(StateConfig.riverpod.devPackages.isNotEmpty, true);
       expect(StateConfig.mobx.devPackages.isNotEmpty, true);
     });
 

@@ -2,7 +2,9 @@
 
 ## Technology: Dio
 
-`ApiClient` wraps Dio and is registered as a `@singleton` in the DI container.
+`ApiClient` wraps Dio and is exposed through the scaffold runtime contract.
+{{#uses_get_it}}Generated apps register it through `@singleton` + injectable/GetIt.{{/uses_get_it}}
+{{#is_riverpod}}Generated apps read it through Riverpod provider composition.{{/is_riverpod}}
 
 ## Setup
 
@@ -60,7 +62,7 @@ class FeatureRepositoryImpl implements FeatureRepository {
 
 All repository methods return `Either<AppFailure, T>` (using `dartz` or inline).
 Never throw from a repository — always return `Left(failure)`.
-Cubits call `.fold()` on the result to emit appropriate states.
+The presentation runtime maps repository/use case results into state transitions.
 
 ## Environment URLs
 

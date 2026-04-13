@@ -1,0 +1,23 @@
+import 'package:injectable/injectable.dart';
+import 'package:mobx/mobx.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/{{feature_name.snakeCase()}}_state.dart';
+
+@injectable
+class {{feature_name.pascalCase()}}Store {
+  final Observable<{{feature_name.pascalCase()}}State> state =
+      Observable(const {{feature_name.pascalCase()}}State.initial());
+
+  Future<void> load() async {
+    runInAction(() => state.value = const {{feature_name.pascalCase()}}State.loading());
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      runInAction(() {
+        state.value = const {{feature_name.pascalCase()}}State.loaded([]);
+      });
+    } on Exception catch (e) {
+      runInAction(() {
+        state.value = {{feature_name.pascalCase()}}State.error(e.toString());
+      });
+    }
+  }
+}

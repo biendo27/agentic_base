@@ -1,0 +1,25 @@
+import 'package:injectable/injectable.dart';
+import 'package:mobx/mobx.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/domain/usecases/get_{{feature_name.snakeCase()}}.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/presentation/cubit/{{feature_name.snakeCase()}}_state.dart';
+
+@injectable
+class {{feature_name.pascalCase()}}Store {
+  {{feature_name.pascalCase()}}Store(this._get{{feature_name.pascalCase()}});
+
+  final Get{{feature_name.pascalCase()}} _get{{feature_name.pascalCase()}};
+  final Observable<{{feature_name.pascalCase()}}State> state =
+      Observable(const {{feature_name.pascalCase()}}State.initial());
+
+  Future<void> load() async {
+    runInAction(() => state.value = const {{feature_name.pascalCase()}}State.loading());
+    final (items, failure) = await _get{{feature_name.pascalCase()}}();
+    runInAction(() {
+      if (failure != null) {
+        state.value = {{feature_name.pascalCase()}}State.error(failure.message);
+      } else {
+        state.value = {{feature_name.pascalCase()}}State.loaded(items);
+      }
+    });
+  }
+}

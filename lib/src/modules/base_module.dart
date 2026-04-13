@@ -33,9 +33,9 @@ abstract class AgenticModule {
   /// - Add [dependencies]/[devDependencies] to pubspec.yaml via yaml_edit
   /// - Write service contract + implementation files
   /// - Register DI bindings
-  /// - Update `.info/agentic.yaml` modules list
+  /// - Leave config mutation to command/generator orchestration
   Future<void> install(ProjectContext ctx);
 
-  /// Undo the install: remove files, clean pubspec, update agentic.yaml.
+  /// Undo the install: remove files and clean pubspec.
   Future<void> uninstall(ProjectContext ctx);
 }

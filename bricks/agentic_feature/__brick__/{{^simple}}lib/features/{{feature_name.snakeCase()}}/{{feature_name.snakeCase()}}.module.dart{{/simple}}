@@ -1,3 +1,9 @@
-// {{feature_name.titleCase()}} feature DI module.
+// {{feature_name.titleCase()}} feature runtime module.
+{{#uses_get_it}}
 // Registration handled via @injectable and @LazySingleton annotations.
 // No manual registration needed — injectable scans these automatically.
+{{/uses_get_it}}
+{{^uses_get_it}}
+// Riverpod features compose dependencies inside provider files.
+// No generated DI scan is required for this feature module.
+{{/uses_get_it}}

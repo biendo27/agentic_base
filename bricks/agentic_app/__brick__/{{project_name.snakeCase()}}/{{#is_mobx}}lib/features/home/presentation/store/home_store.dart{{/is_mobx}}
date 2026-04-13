@@ -1,0 +1,24 @@
+import 'package:injectable/injectable.dart';
+import 'package:mobx/mobx.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/domain/usecases/get_home_items.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/presentation/cubit/home_state.dart';
+
+@injectable
+class HomeStore {
+  HomeStore(this._getHomeItems);
+
+  final GetHomeItems _getHomeItems;
+  final Observable<HomeState> state = Observable(const HomeState.initial());
+
+  Future<void> loadItems() async {
+    runInAction(() => state.value = const HomeState.loading());
+    final (items, failure) = await _getHomeItems();
+    runInAction(() {
+      if (failure != null) {
+        state.value = HomeState.error(failure.message);
+      } else {
+        state.value = HomeState.loaded(items);
+      }
+    });
+  }
+}

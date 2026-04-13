@@ -18,6 +18,51 @@ vars:
     description: "State management choice: cubit, riverpod, or mobx"
     default: cubit
     prompt: "State management (cubit, riverpod, mobx)"
+  state_display_name:
+    type: string
+    description: Human-readable state management label
+    default: Flutter Bloc / Cubit
+    prompt: State management label
+  is_cubit:
+    type: boolean
+    description: Whether the feature should generate Cubit presentation files
+    default: true
+    prompt: Generate Cubit files?
+  is_riverpod:
+    type: boolean
+    description: Whether the feature should generate Riverpod presentation files
+    default: false
+    prompt: Generate Riverpod files?
+  is_mobx:
+    type: boolean
+    description: Whether the feature should generate MobX presentation files
+    default: false
+    prompt: Generate MobX files?
+  uses_get_it:
+    type: boolean
+    description: Whether the feature relies on GetIt/injectable DI
+    default: true
+    prompt: Use GetIt?
+  uses_injectable:
+    type: boolean
+    description: Whether the feature uses injectable annotations
+    default: true
+    prompt: Use injectable?
+  uses_riverpod:
+    type: boolean
+    description: Whether the feature uses Riverpod providers
+    default: false
+    prompt: Use Riverpod providers?
+  uses_mobx:
+    type: boolean
+    description: Whether the feature uses MobX
+    default: false
+    prompt: Use MobX?
+  presentation_runtime:
+    type: string
+    description: State runtime keyword used by the feature
+    default: cubit
+    prompt: Presentation runtime
   project_name:
     type: string
     description: Project package name (snake_case)

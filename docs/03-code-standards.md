@@ -38,14 +38,21 @@ Each command should:
 - mutate YAML with `yaml_edit` when preserving comments or ordering matters
 - avoid destructive rewrites of user-managed files
 - `init` should only add files when absent
+- `init` metadata repair must distinguish explicit, inferred, migrated, and defaulted provenance
 
 ## Generator And Module Patterns
 
 - keep command files thin where practical; orchestration should live in generators or helpers
 - `ProjectGenerator` owns create-flow orchestration
 - `FeatureGenerator` owns feature brick generation
+- `ScaffoldStateProfile` must keep cubit, riverpod, and mobx branches aligned
+- `InitProjectMetadataResolver` is the only place that should infer or repair project metadata from existing project files
 - every installable module implements `AgenticModule`
 - shared file and `pubspec.yaml` edits go through `ModuleInstaller`
+- module add/remove flows must use `ProjectMutationJournal` so file, dependency, and bootstrap changes can roll back together
+- installable modules must land as working runtime integrations, not inert file drops
+- `add` and `remove` flows must refresh generated code after dependency/file changes when DI or codegen contracts are affected
+- `ModuleIntegrationGenerator` must derive provider/registration files from discovered service contracts, not hand-written registries
 - module definitions must declare:
   - `dependencies`
   - `devDependencies`
@@ -61,24 +68,27 @@ Each command should:
 - generated-project claims must be backed by actual template files or post-gen steps
 - generated app localization source belongs in `assets/i18n/**`
 - typed Slang output belongs in `lib/app/i18n/**`
+- generated apps must preserve state parity across `cubit`, `riverpod`, and `mobx`
 - generated apps must not keep duplicate root shell files such as `lib/app.dart` or `lib/flavors.dart`
+- when changing module integrations, update smoke tests and `GeneratedProjectContract` together
 
 ## Testing Standards
 
 - use `package:test` and `mocktail` for package tests
 - keep parser and registry tests deterministic and fast
-- when changing brick behavior or shell orchestration, add integration coverage, not only unit coverage
+- when changing brick behavior, module integration generation, init repair behavior, or shell orchestration, add integration coverage, not only unit coverage
 - CI baseline for the package:
   - `dart pub get`
   - `dart analyze --fatal-infos`
   - `dart format --set-exit-if-changed lib bin`
   - `dart test`
+- state-specific starter apps should be validated with `GeneratedProjectContract.validate(..., stateManagement: ...)`
 
 ## Documentation Standards
 
 - root `docs/` is the repo-level source of truth
 - package usage and installation stay in `README.md`
-- update architecture, roadmap, and summary docs when command surface, module inventory, or delivery workflow changes
+- update architecture, roadmap, and summary docs when state parity, module integrations, metadata provenance, or delivery workflow changes
 - do not hide known gaps; docs should record them explicitly
 
 ## Known Deviations
@@ -99,6 +109,9 @@ Current process gaps:
 ## References
 
 - [`lib/src/config/agentic_config.dart`](../lib/src/config/agentic_config.dart)
+- [`lib/src/config/init_project_metadata_resolver.dart`](../lib/src/config/init_project_metadata_resolver.dart)
 - [`lib/src/modules/base_module.dart`](../lib/src/modules/base_module.dart)
 - [`lib/src/modules/module_installer.dart`](../lib/src/modules/module_installer.dart)
+- [`lib/src/modules/module_integration_generator.dart`](../lib/src/modules/module_integration_generator.dart)
+- [`lib/src/modules/project_mutation_journal.dart`](../lib/src/modules/project_mutation_journal.dart)
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)

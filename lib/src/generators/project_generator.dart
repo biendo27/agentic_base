@@ -4,7 +4,10 @@ import 'dart:isolate';
 import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/project_metadata.dart';
+import 'package:agentic_base/src/config/scaffold_state_profile.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
+import 'package:agentic_base/src/modules/module_integration_generator.dart';
 import 'package:agentic_base/src/modules/module_registry.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
@@ -33,6 +36,7 @@ class ProjectGenerator {
       org: org,
       projectName: projectName,
     );
+    final stateProfile = ScaffoldStateProfile.fromState(stateManagement);
 
     // Step 1: flutter create for native platform scaffolding
     await _flutterCreate(
@@ -48,7 +52,7 @@ class ProjectGenerator {
       outputDirectory: outputDirectory,
       org: org,
       platforms: platforms,
-      stateManagement: stateManagement,
+      stateProfile: stateProfile,
       flavors: flavors,
       primaryColor: primaryColor,
       ciProvider: ciProvider,
@@ -70,6 +74,16 @@ class ProjectGenerator {
       platforms: platforms,
       flavors: flavors,
       toolVersion: AgenticBaseCliRunner.version,
+      provenance: const {
+        'tool_version': MetadataProvenance.explicit,
+        'project_name': MetadataProvenance.explicit,
+        'org': MetadataProvenance.explicit,
+        'ci_provider': MetadataProvenance.explicit,
+        'state_management': MetadataProvenance.explicit,
+        'platforms': MetadataProvenance.explicit,
+        'flavors': MetadataProvenance.explicit,
+        'modules': MetadataProvenance.defaulted,
+      },
     );
 
     // Step 4: Install dependencies
@@ -128,12 +142,25 @@ class ProjectGenerator {
       ['run', 'slang'],
     );
 
+    // Step 11: Normalize starter formatting after all generators finish.
+    await _runInProject(
+      outputDirectory,
+      'Formatting generated sources',
+      'dart',
+      [
+        'format',
+        'lib',
+        'test',
+      ],
+    );
+
     GeneratedProjectContract.validate(
       outputDirectory,
       ciProvider: ciProvider,
+      stateManagement: stateManagement,
     );
 
-    // Step 11: Verify — analyze + test
+    // Step 12: Verify — analyze + test
     await _verify(outputDirectory);
   }
 
@@ -144,40 +171,71 @@ class ProjectGenerator {
     String stateManagement,
     List<String> modules,
   ) async {
-    final progress = _logger.progress(
-      'Installing ${modules.length} module(s)',
-    );
-    final ctx = ProjectContext(
-      projectPath: projectDir,
-      projectName: projectName,
-      stateManagement: stateManagement,
-      installedModules: [],
-    );
+    final progress = _logger.progress('Installing ${modules.length} module(s)');
+    final installed = <String>[];
+    final requestedModules = <String>[];
     for (final name in modules) {
-      final module = ModuleRegistry.find(name);
-      if (module == null) {
-        _logger.warn('Module "$name" not found, skipping');
-        continue;
+      final missing = ModuleRegistry.missingPrerequisites(
+        name,
+        installed: requestedModules,
+      );
+      for (final prereq in missing) {
+        if (!requestedModules.contains(prereq)) {
+          requestedModules.add(prereq);
+        }
       }
-      try {
-        await module.install(ctx);
-        // Update config
-        final config = AgenticConfig(projectPath: projectDir);
-        final data = config.read();
-        final installed = List<String>.from(
-          (data['modules'] as List<dynamic>?) ?? [],
-        )..add(name);
-        config.write({'modules': installed});
-      } on Exception catch (e) {
-        _logger.warn('Failed to install $name: $e');
+      if (!requestedModules.contains(name)) {
+        requestedModules.add(name);
       }
     }
+
+    for (final name in requestedModules) {
+      final module = ModuleRegistry.find(name);
+      if (module == null) {
+        progress.fail('Module install failed');
+        throw ProjectGenerationException('Module "$name" not found.');
+      }
+      final ctx = ProjectContext(
+        projectPath: projectDir,
+        projectName: projectName,
+        stateManagement: stateManagement,
+        installedModules: List.unmodifiable(installed),
+      );
+      await module.install(ctx);
+      if (!installed.contains(name)) {
+        installed.add(name);
+      }
+    }
+    const ModuleIntegrationGenerator().sync(
+      ProjectContext(
+        projectPath: projectDir,
+        projectName: projectName,
+        stateManagement: stateManagement,
+        installedModules: List.unmodifiable(installed),
+      ),
+    );
     // Re-run pub get after adding module deps
     await _runInProject(
       projectDir,
       'Refreshing dependencies after module install',
       'flutter',
       ['pub', 'get'],
+    );
+    final config = AgenticConfig(projectPath: projectDir);
+    final metadata = config.readMetadata(
+      fallbackProjectName: projectName,
+      fallbackToolVersion: AgenticBaseCliRunner.version,
+    );
+    config.writeMetadata(
+      metadata.copyWith(
+        toolVersion: AgenticBaseCliRunner.version,
+        modules: installed,
+        provenance: {
+          ...metadata.provenance,
+          'tool_version': MetadataProvenance.explicit,
+          'modules': MetadataProvenance.explicit,
+        },
+      ),
     );
     progress.complete('Modules installed');
   }
@@ -279,7 +337,7 @@ class ProjectGenerator {
     required String outputDirectory,
     required String org,
     required List<String> platforms,
-    required String stateManagement,
+    required ScaffoldStateProfile stateProfile,
     required List<String> flavors,
     required String primaryColor,
     required CiProvider ciProvider,
@@ -298,7 +356,6 @@ class ProjectGenerator {
           'project_name': projectName,
           'org': org,
           'platforms': platforms,
-          'state_management': stateManagement,
           'flavors': flavors,
           'primary_color': primaryColor,
           'ci_provider': ciProvider.name,
@@ -309,6 +366,7 @@ class ProjectGenerator {
           'has_android': platforms.contains('android'),
           'has_ios': platforms.contains('ios'),
           'has_macos': platforms.contains('macos'),
+          ...stateProfile.masonVars,
         },
         fileConflictResolution: FileConflictResolution.overwrite,
       );

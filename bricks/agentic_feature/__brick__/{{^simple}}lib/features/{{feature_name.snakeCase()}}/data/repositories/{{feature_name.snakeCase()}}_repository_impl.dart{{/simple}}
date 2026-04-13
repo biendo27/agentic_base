@@ -1,9 +1,13 @@
+{{^is_riverpod}}
 import 'package:injectable/injectable.dart';
+{{/is_riverpod}}
 import 'package:{{project_name.snakeCase()}}/core/error/failures.dart';
 import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/domain/entities/{{feature_name.snakeCase()}}_entity.dart';
 import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/domain/repositories/{{feature_name.snakeCase()}}_repository.dart';
 
+{{^is_riverpod}}
 @LazySingleton(as: {{feature_name.pascalCase()}}Repository)
+{{/is_riverpod}}
 class {{feature_name.pascalCase()}}RepositoryImpl implements {{feature_name.pascalCase()}}Repository {
   @override
   Future<(List<{{feature_name.pascalCase()}}Entity>, Failure?)> getAll() async {

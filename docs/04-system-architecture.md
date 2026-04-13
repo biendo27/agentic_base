@@ -71,7 +71,7 @@ Files under `lib/src/modules/` define installable capabilities:
 - `AgenticModule` is the contract
 - `ModuleRegistry` is the inventory plus dependency/conflict resolver
 - `ModuleInstaller` performs file and YAML mutations
-- concrete modules generate service contracts, implementations, and manual platform instructions
+- concrete modules generate service contracts, runtime wiring, and manual platform instructions
 
 Current registry count: 27 modules.
 
@@ -106,7 +106,8 @@ The app brick also carries generated-project documentation and Mason hooks for v
 3. `ModuleRegistry` resolves the module plus transitive prerequisites
 4. concrete module writes files and dependency entries through `ModuleInstaller`
 5. `flutter pub get` runs
-6. manual platform steps are printed when needed
+6. `build_runner` plus `dart format` refresh the generated project graph
+7. manual platform steps are printed when needed
 
 ### Existing Project Init Flow
 
