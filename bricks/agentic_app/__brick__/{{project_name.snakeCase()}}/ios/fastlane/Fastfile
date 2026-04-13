@@ -2,22 +2,24 @@ default_platform(:ios)
 
 platform :ios do
   desc "Build and deploy to TestFlight"
-  lane :beta do
-    # Build is done by Flutter CLI before calling fastlane
-    # flutter build ipa --flavor staging -t lib/main_staging.dart
+  lane :beta do |options|
+    flavor = options[:flavor] || "staging"
     upload_to_testflight(
       ipa: "../build/ios/ipa/{{project_name.snakeCase()}}.ipa",
-      skip_waiting_for_build_processing: true
+      skip_waiting_for_build_processing: true,
+      distribute_external: false
     )
   end
 
-  desc "Deploy to App Store"
-  lane :release do
-    # flutter build ipa --flavor prod -t lib/main_prod.dart
+  desc "Upload to App Store Connect without final publish"
+  lane :release do |options|
+    flavor = options[:flavor] || "prod"
     upload_to_app_store(
       ipa: "../build/ios/ipa/{{project_name.snakeCase()}}.ipa",
       skip_metadata: true,
-      skip_screenshots: true
+      skip_screenshots: true,
+      submit_for_review: false,
+      automatic_release: false
     )
   end
 

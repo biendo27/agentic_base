@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/config/agent_ready_repo_contract.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:path/path.dart' as p;
@@ -55,7 +56,10 @@ class AgenticConfig {
   }
 
   void writeMetadata(ProjectMetadata metadata) {
-    write(metadata.toConfigMap());
+    write(<String, dynamic>{
+      ...metadata.toConfigMap(),
+      ...buildAgentReadyConfigMap(metadata),
+    });
   }
 
   /// Create initial config for a new project.

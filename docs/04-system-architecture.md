@@ -2,7 +2,7 @@
 
 ## Overview
 
-`agentic_base` is a generator package, not an app runtime. The repo architecture centers on a command-line control plane that shells out to Flutter and Dart tooling, applies Mason templates, and mutates target-project files in a controlled way.
+`agentic_base` is a generator package, not an app runtime. The repo architecture centers on a command-line control plane that shells out to Flutter and Dart tooling, applies Mason templates, and mutates target-project files in a controlled way so generated repos have one canonical context contract and deterministic execution surfaces.
 
 ```mermaid
 flowchart LR
@@ -17,10 +17,11 @@ flowchart LR
   Create --> ProjectGenerator["ProjectGenerator"]
   ProjectGenerator --> FlutterCreate["flutter create"]
   ProjectGenerator --> AppBrick["agentic_app brick"]
+  ProjectGenerator --> ContractYaml[".info/agentic.yaml"]
   ProjectGenerator --> Contract["GeneratedProjectContract"]
   ProjectGenerator --> Slang["dart run slang"]
   ProjectGenerator --> Config["AgenticConfig"]
-  ProjectGenerator --> Verify["analyze + test"]
+  ProjectGenerator --> Verify["setup / run / verify / build / release-preflight"]
 
   Feature --> FeatureGenerator["FeatureGenerator"]
   FeatureGenerator --> FeatureBrick["agentic_feature brick"]
@@ -82,7 +83,7 @@ Mason bricks under `bricks/` hold generated project structure:
 - `agentic_app` for whole-app bootstrap
 - `agentic_feature` for feature scaffolding
 
-The app brick also carries generated-project documentation and Mason hooks for validation and post-generation dependency install.
+The app brick also carries generated-project documentation, thin agent adapters, harness scripts, CI/release templates, and post-generation dependency install behavior.
 
 ## Key Flows
 
@@ -92,12 +93,13 @@ The app brick also carries generated-project documentation and Mason hooks for v
 2. CLI validates name, org, platforms, and color input
 3. `ProjectGenerator` runs `flutter create`
 4. app brick overlays opinionated project files
-5. `.info/agentic.yaml` is written with one persisted `ci_provider`
+5. `.info/agentic.yaml` is written with one persisted machine-readable repo contract
 6. selected modules are installed
 7. `build_runner` runs for DI/router/model codegen
 8. duplicate root shell files and forbidden IDE artifacts are removed
 9. `dart run slang` materializes typed localization output from `build.yaml`
 10. analyze and tests run on the generated app
+11. generated repos ship deterministic `tools/` entrypoints and thin adapters that point back to canonical docs
 
 ### Add Module Flow
 
@@ -130,6 +132,7 @@ That workflow verifies the package, runs generated-app smoke coverage for both C
 - deployment behavior now depends on one persisted provider contract and provider-specific downstream CI templates
 - README and registry inventory must stay in sync as modules change
 - generated app provider contracts now exist in two forms and need docs/tests to stay aligned
+- upgrade now needs to sync generator-owned surfaces without rewriting app-layer code
 
 ## References
 

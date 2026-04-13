@@ -1,3 +1,4 @@
+{{=<% %>=}}
 name: Deploy Staging
 on:
   workflow_dispatch:
@@ -7,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  android_internal:
     runs-on: ubuntu-latest
     environment: staging
     steps:
@@ -20,8 +21,33 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - run: flutter pub get
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
       - run: chmod +x tools/*.sh
-      - run: ./tools/build.sh staging
-      - name: Deploy to TestFlight / Internal Testing
-        run: echo "TODO - Configure TestFlight and Play Store Internal Testing"
+      - run: bundle install
+        working-directory: android/fastlane
+      - run: ./tools/release.sh staging play-internal
+        env:
+          PLAY_STORE_JSON_KEY: ${{ secrets.PLAY_STORE_JSON_KEY }}
+
+  ios_testflight:
+    runs-on: macos-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+      - run: chmod +x tools/*.sh
+      - run: bundle install
+        working-directory: ios/fastlane
+      - run: ./tools/release.sh staging testflight
+        env:
+          APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}

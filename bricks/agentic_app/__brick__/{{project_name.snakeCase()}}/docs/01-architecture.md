@@ -1,5 +1,12 @@
 # Architecture Overview
 
+## Canonical Context
+
+- Machine source of truth: `.info/agentic.yaml`
+- Human-readable context: `README.md` plus `docs/01-06`
+- Thin adapters: `AGENTS.md`, `CLAUDE.md`
+- If adapters drift, follow `README.md` and `docs/`
+
 ## Pattern
 
 Dependencies flow inward:
@@ -34,6 +41,21 @@ presentation -> domain <- data
   - `.idea/workspace.xml`
   - `.idea/modules.xml`
   - `.idea/libraries/**`
+
+## Deterministic Entrypoints
+
+- setup: `./tools/setup.sh`
+- default run: `./tools/run-dev.sh`
+- verify: `./tools/verify.sh`
+- build: `./tools/build.sh <flavor> [artifact]`
+- release preflight: `./tools/release-preflight.sh <flavor> <target>`
+- release upload: `./tools/release.sh <flavor> <target>`
+
+## Human Checkpoints
+
+- humans own secrets, signing, and store credentials
+- agents can prepare builds and uploads
+- final production store publish remains human-approved
 
 ## Localization Contract
 

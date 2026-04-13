@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/config/agent_ready_repo_contract.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/generators/feature_generator.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
@@ -8,10 +9,83 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 Future<void> seedRequiredContractFiles(String projectDir) async {
+  const appId = 'com.example.demoapp';
+  final seededContent = <String, String>{
+    '.info/agentic.yaml': '''
+schema_version: 2
+project_kind: agent_ready_flutter_repo
+tool_version: 0.1.0
+project_name: demo_app
+org: com.example
+ci_provider: github
+state_management: cubit
+platforms:
+  - android
+  - ios
+  - web
+flavors:
+  - dev
+  - staging
+  - prod
+modules: []
+context:
+  canonical_docs:
+${canonicalContextDocs.map((doc) => '    - $doc').join('\n')}
+  thin_adapters:
+${thinAdapterFiles.map((doc) => '    - $doc').join('\n')}
+  state_runtime: cubit
+  ci_provider: github
+execution:
+  setup: ./tools/setup.sh
+  run: ./tools/run-dev.sh
+  verify: ./tools/verify.sh
+  build: ./tools/build.sh
+  release_preflight: ./tools/release-preflight.sh
+  release: ./tools/release.sh
+  default_run_flavor: dev
+checkpoints:
+  requires_human:
+    - product-decisions
+    - credential-setup
+    - final-store-publish-approval
+  release_human_boundary: Agents prepare and upload; humans approve the final store publish.
+ownership:
+  generator_owned:
+    - AGENTS.md
+  human_owned:
+    - lib/features/
+''',
+    'AGENTS.md': 'Thin adapter\n./tools/verify.sh\n',
+    'CLAUDE.md':
+        'Thin Claude adapter\nMachine contract: `.info/agentic.yaml`\n',
+    'README.md':
+        'An agent-ready Flutter repository\n./tools/run-dev.sh\nfinal production store publish remains a human approval step\n',
+    'tools/release-preflight.sh': 'human approval step\n',
+    'tools/release.sh': '#!/bin/bash\necho release\n',
+    '.github/workflows/ci.yml':
+        r'./tools/verify.sh ${{ github.workflow }}-${{ github.ref }} ./tools/build.sh ${{ matrix.flavor }}',
+    '.github/workflows/cd-dev.yml': './tools/release.sh dev firebase\n',
+    '.github/workflows/cd-staging.yml':
+        './tools/release.sh staging play-internal\n./tools/release.sh staging testflight\n',
+    '.github/workflows/cd-prod.yml':
+        './tools/release.sh prod play-production\n./tools/release.sh prod app-store\n',
+    '.github/workflows/release.yml':
+        './tools/release-preflight.sh prod play-production\n./tools/build.sh prod appbundle\n',
+    'ios/fastlane/Appfile': appId,
+    'ios/fastlane/Matchfile': appId,
+    'android/fastlane/Appfile': appId,
+  };
+
   for (final path in GeneratedProjectContract.requiredPaths) {
     final file = File(p.join(projectDir, path));
     await file.parent.create(recursive: true);
-    await file.writeAsString('ok');
+    await file.writeAsString(seededContent[path] ?? 'ok');
+  }
+
+  for (final entry in seededContent.entries) {
+    final file = File(p.join(projectDir, entry.key));
+    await file.parent.create(recursive: true);
+    await file.writeAsString(entry.value);
   }
 }
 
@@ -259,6 +333,19 @@ void main() {
       addTearDown(() => tempDir.delete(recursive: true));
 
       await seedRequiredContractFiles(tempDir.path);
+      await File(
+        p.join(tempDir.path, '.info/agentic.yaml'),
+      ).writeAsString(
+        File(
+              p.join(tempDir.path, '.info/agentic.yaml'),
+            )
+            .readAsStringSync()
+            .replaceAll('ci_provider: github', 'ci_provider: gitlab')
+            .replaceAll(
+              '  ci_provider: github',
+              '  ci_provider: gitlab',
+            ),
+      );
 
       for (final path in [
         '.gitlab-ci.yml',
@@ -277,15 +364,18 @@ void main() {
       await File(
         p.join(tempDir.path, '.gitlab/ci/verify.yml'),
       ).writeAsString(
-        'native_validate:\n  tags: [macos]\n  script:\n    - ./tools/ci-check.sh\n',
+        'native_validate:\n  tags: [macos]\n  script:\n    - ./tools/verify.sh\n',
       );
       await File(
         p.join(tempDir.path, '.gitlab/ci/deploy.yml'),
       ).writeAsString(
-        'deploy_dev:\n  when: manual\n  script:\n    - ./tools/build.sh dev\n'
-        'deploy_staging:\n  when: manual\n  script:\n    - ./tools/build.sh staging\n'
-        'deploy_prod:\n  when: manual\n  script:\n    - ./tools/build.sh prod\n',
+        'deploy_dev:\n  when: manual\n  script:\n    - ./tools/release.sh dev firebase\n'
+        'deploy_staging_android_internal:\n  when: manual\n  script:\n    - ./tools/release.sh staging play-internal\n'
+        'deploy_staging_testflight:\n  when: manual\n  script:\n    - ./tools/release.sh staging testflight\n'
+        'deploy_prod_play:\n  when: manual\n  script:\n    - ./tools/release.sh prod play-production\n'
+        'deploy_prod_app_store:\n  when: manual\n  script:\n    - ./tools/release.sh prod app-store\n',
       );
+      await Directory(p.join(tempDir.path, '.github')).delete(recursive: true);
 
       expect(
         () => GeneratedProjectContract.validate(

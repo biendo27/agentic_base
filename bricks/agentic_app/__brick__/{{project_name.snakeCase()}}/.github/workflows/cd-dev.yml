@@ -1,3 +1,4 @@
+{{=<% %>=}}
 name: Deploy Dev
 on:
   push:
@@ -9,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  firebase_distribution:
     runs-on: ubuntu-latest
     environment: development
     steps:
@@ -22,8 +23,14 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - run: flutter pub get
       - run: chmod +x tools/*.sh
-      - run: ./tools/build.sh dev
-      - name: Deploy to Firebase App Distribution
-        run: echo "TODO - Configure Firebase App Distribution"
+      - run: ./tools/release-preflight.sh dev firebase
+        env:
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID_DEV }}
+          FIREBASE_GROUPS: ${{ vars.FIREBASE_GROUPS_DEV }}
+          FIREBASE_TESTERS: ${{ vars.FIREBASE_TESTERS_DEV }}
+      - run: ./tools/release.sh dev firebase
+        env:
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID_DEV }}
+          FIREBASE_GROUPS: ${{ vars.FIREBASE_GROUPS_DEV }}
+          FIREBASE_TESTERS: ${{ vars.FIREBASE_TESTERS_DEV }}

@@ -1,10 +1,11 @@
+{{=<% %>=}}
 name: Release
 on:
   push:
     tags: ['v*']
 
 jobs:
-  release:
+  build_android_release:
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -17,9 +18,28 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - run: flutter pub get
-      - run: dart run build_runner build --delete-conflicting-outputs
-      - name: Build Release APK
-        run: flutter build apk --flavor prod -t lib/main_prod.dart --obfuscate --split-debug-info=build/debug-info
-      - name: Build Release AAB
-        run: flutter build appbundle --flavor prod -t lib/main_prod.dart --obfuscate --split-debug-info=build/debug-info
+      - run: chmod +x tools/*.sh
+      - run: ./tools/release-preflight.sh prod play-production
+        env:
+          PLAY_STORE_JSON_KEY: ${{ secrets.PLAY_STORE_JSON_KEY }}
+      - run: ./tools/build.sh prod appbundle
+
+  build_ios_release:
+    runs-on: macos-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+      - run: chmod +x tools/*.sh
+      - run: ./tools/release-preflight.sh prod app-store
+        env:
+          APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+      - run: ./tools/build.sh prod ipa

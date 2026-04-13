@@ -23,7 +23,7 @@ It runs on pushes and pull requests to `main` and does:
 - generated-app smoke coverage for `--ci-provider gitlab`
 - a pinned macOS generated-app native gate that fresh-generates an app and runs `./tools/ci-check.sh`
 
-There is no checked-in release workflow or pub.dev publish workflow in this repo today.
+There is no checked-in pub.dev publish workflow in this repo today. Release automation focus remains on generated downstream repos.
 
 ## Local Validation Before Any Package Release
 
@@ -54,7 +54,7 @@ Recommended manual publish sequence:
 3. run `dart pub publish`
 4. tag the release in git
 
-This sequence is partly inference. The repo does not currently codify it in scripts or workflows.
+This sequence is partly inference. The repo does not currently codify pub.dev publishing in scripts or workflows.
 
 ## Generated-Project Deployment
 
@@ -75,24 +75,21 @@ Supported environments in source:
 ### GitHub generated projects
 
 - scaffold `.github/workflows/*.yml`
-- `agentic_base deploy <env>` requires authenticated `gh`
-- deploy routing uses `gh workflow run cd-<env>.yml`
-- generated workflows call the shared project scripts:
-  - `./tools/ci-check.sh`
-  - `./tools/build.sh <env>`
+- generated workflows call shared local scripts such as:
+  - `./tools/verify.sh`
+  - `./tools/build.sh <env> [artifact]`
+  - `./tools/release-preflight.sh <env> <target>`
+  - `./tools/release.sh <env> <target>`
+- final production store publish remains a human approval boundary even when upload plumbing is automated
 
 ### GitLab generated projects
 
 - scaffold root `.gitlab-ci.yml` plus `.gitlab/ci/verify.yml` and `.gitlab/ci/deploy.yml`
-- `agentic_base deploy <env>` requires authenticated `glab`
-- deploy routing creates a pipeline on the current branch, then targets the matching manual job:
-  - `deploy_dev`
-  - `deploy_staging`
-  - `deploy_prod`
 - generated GitLab CI keeps native validation explicit and blocking:
   - the verification job is tagged `macos`
   - the project must provide a macOS runner with shell executor and Xcode
   - Linux runners may handle Dart-only work, but they do not satisfy native validation
+- deploy jobs route through the same shared project scripts and stay manual
 
 ## Important Caveat
 
@@ -101,7 +98,7 @@ Generated-project GitLab support does not mean this package repo itself runs on 
 - repo automation: GitHub Actions only
 - generated project automation: GitHub or GitLab, selected by one persisted provider contract
 
-GitLab production protection is still configured in GitLab project settings via protected environments. The scaffold keeps `deploy_prod` manual, but GitLab UI policy must still be applied by the downstream repo owner.
+GitLab production protection is still configured in GitLab project settings via protected environments. The scaffold keeps production deploy jobs manual, but GitLab UI policy must still be applied by the downstream repo owner.
 
 ## References
 

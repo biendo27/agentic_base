@@ -1,4 +1,5 @@
 import 'package:agentic_base/src/modules/base_module.dart';
+import 'package:agentic_base/src/modules/firebase_runtime_template.dart';
 import 'package:agentic_base/src/modules/module_installer.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
 
@@ -14,7 +15,7 @@ class RemoteConfigModule implements AgenticModule {
       'firebase_remote_config — server-side app configuration without republishing.';
 
   @override
-  List<String> get dependencies => ['firebase_remote_config'];
+  List<String> get dependencies => ['firebase_core', 'firebase_remote_config'];
 
   @override
   List<String> get devDependencies => [];
@@ -36,6 +37,10 @@ class RemoteConfigModule implements AgenticModule {
   Future<void> install(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
+      ..writeFile(
+        'lib/core/firebase/firebase_runtime.dart',
+        firebaseRuntimeFileContent(),
+      )
       ..writeFile(
         'lib/core/remote_config/remote_config_service.dart',
         _contractContent(ctx.projectName),
@@ -63,6 +68,9 @@ class RemoteConfigModule implements AgenticModule {
   String _contractContent(String pkg) => '''
 /// Remote configuration service contract.
 abstract class RemoteConfigService {
+  /// Ensure the Firebase runtime is ready before the first fetch.
+  Future<void> init();
+
   /// Fetch latest values from the server and activate them.
   Future<bool> fetchAndActivate();
 
@@ -83,6 +91,7 @@ abstract class RemoteConfigService {
   String _implContent(String pkg) => '''
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:$pkg/core/remote_config/remote_config_service.dart';
+import 'package:$pkg/core/firebase/firebase_runtime.dart';
 
 /// Firebase implementation of [RemoteConfigService].
 class FirebaseRemoteConfigService implements RemoteConfigService {
@@ -92,7 +101,15 @@ class FirebaseRemoteConfigService implements RemoteConfigService {
   final FirebaseRemoteConfig _config;
 
   @override
-  Future<bool> fetchAndActivate() => _config.fetchAndActivate();
+  Future<void> init() async {
+    await ensureFirebaseInitialized();
+  }
+
+  @override
+  Future<bool> fetchAndActivate() async {
+    await init();
+    return _config.fetchAndActivate();
+  }
 
   @override
   String getString(String key, {String defaultValue = ''}) {
