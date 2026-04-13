@@ -31,11 +31,10 @@ Future<void> bootstrap(Widget Function() builder) async {
   final container = ProviderContainer();
   await initializeModuleProviders(container);
 {{/is_riverpod}}
+  final existingFlutterErrorHandler = FlutterError.onError;
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
-    if (kReleaseMode) {
-      // Hook crash reporting here.
-    }
+    existingFlutterErrorHandler?.call(details);
   };
   runZonedGuarded(
     () {
@@ -52,6 +51,14 @@ Future<void> bootstrap(Widget Function() builder) async {
 {{/is_riverpod}}
     },
     (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'bootstrap',
+          context: ErrorDescription('while running the application zone'),
+        ),
+      );
       if (kDebugMode) {
         debugPrint('Uncaught error: $error\nStack trace: $stackTrace');
       }

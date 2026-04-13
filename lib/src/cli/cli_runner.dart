@@ -19,8 +19,8 @@ class AgenticBaseCliRunner extends CommandRunner<int> {
     : _logger = logger ?? AgenticLogger(),
       super(
         'agentic_base',
-        'Generate production-ready Flutter codebases '
-            'optimized for AI-agent-driven development.',
+        'Generate agent-ready Flutter repositories with canonical context '
+            'and deterministic workflows.',
       ) {
     argParser.addFlag(
       'version',

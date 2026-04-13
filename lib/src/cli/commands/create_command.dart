@@ -10,7 +10,7 @@ import 'package:path/path.dart' as p;
 typedef ProjectGeneratorBuilder =
     ProjectGenerator Function(AgenticLogger logger);
 
-/// Generates a new Flutter project optimized for AI-agent development.
+/// Generates a new agent-ready Flutter repository.
 class CreateCommand extends Command<int> {
   CreateCommand({
     required AgenticLogger logger,
@@ -69,7 +69,7 @@ class CreateCommand extends Command<int> {
   String get name => 'create';
 
   @override
-  String get description => 'Create a new Flutter project.';
+  String get description => 'Create a new agent-ready Flutter repository.';
 
   @override
   String get invocation => 'agentic_base create <app_name>';

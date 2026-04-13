@@ -4,30 +4,40 @@
   tags: [macos]
   needs: [native_validate]
   when: manual
+  before_script:
+    - chmod +x tools/*.sh
 
 deploy_dev:
   extends: .deploy_template
   environment:
     name: development
   script:
-    - chmod +x tools/*.sh
-    - flutter pub get
-    - ./tools/build.sh dev
+    - ./tools/release.sh dev firebase
 
-deploy_staging:
+deploy_staging_android_internal:
   extends: .deploy_template
   environment:
     name: staging
   script:
-    - chmod +x tools/*.sh
-    - flutter pub get
-    - ./tools/build.sh staging
+    - ./tools/release.sh staging play-internal
 
-deploy_prod:
+deploy_staging_testflight:
+  extends: .deploy_template
+  environment:
+    name: staging
+  script:
+    - ./tools/release.sh staging testflight
+
+deploy_prod_play:
   extends: .deploy_template
   environment:
     name: production
   script:
-    - chmod +x tools/*.sh
-    - flutter pub get
-    - ./tools/build.sh prod
+    - ./tools/release.sh prod play-production
+
+deploy_prod_app_store:
+  extends: .deploy_template
+  environment:
+    name: production
+  script:
+    - ./tools/release.sh prod app-store

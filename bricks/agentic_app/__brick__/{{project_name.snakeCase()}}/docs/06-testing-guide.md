@@ -1,5 +1,16 @@
 # Testing Guide
 
+## Verify Ladder
+
+The primary verification surface is `./tools/verify.sh`. It runs the same local contract that CI wrappers call:
+
+1. regenerate typed outputs
+2. run static analysis
+3. run tests
+4. run native readiness checks where the host can support them
+
+Use `./tools/release-preflight.sh` before any upload-oriented release command.
+
 ## Test Structure
 
 ```
@@ -198,13 +209,14 @@ test('returns items from repository', () async {
 ## Running Tests
 
 ```bash
+./tools/verify.sh                     # full local verify ladder
 flutter test                          # all tests
 flutter test test/features/home/      # single feature
 flutter test --coverage               # with coverage
 genhtml coverage/lcov.info -o coverage/html  # HTML report
 ```
 
-Or use: `make test`
+Or use: `make verify` / `make test`
 
 ## Coverage Target
 

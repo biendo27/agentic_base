@@ -1,18 +1,15 @@
 import 'dart:io';
-import 'dart:isolate';
 
 import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
-import 'package:agentic_base/src/config/scaffold_state_profile.dart';
+import 'package:agentic_base/src/generators/agentic_app_surface_synchronizer.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
 import 'package:agentic_base/src/modules/module_integration_generator.dart';
 import 'package:agentic_base/src/modules/module_registry.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
-import 'package:mason/mason.dart';
-import 'package:path/path.dart' as p;
 
 /// Orchestrates Flutter project creation + Mason brick overlay.
 class ProjectGenerator {
@@ -32,12 +29,6 @@ class ProjectGenerator {
     required CiProvider ciProvider,
     List<String> modules = const [],
   }) async {
-    final appIdBase = GeneratedProjectContract.buildAppIdBase(
-      org: org,
-      projectName: projectName,
-    );
-    final stateProfile = ScaffoldStateProfile.fromState(stateManagement);
-
     // Step 1: flutter create for native platform scaffolding
     await _flutterCreate(
       projectName: projectName,
@@ -47,16 +38,15 @@ class ProjectGenerator {
     );
 
     // Step 2: Overlay Mason brick templates
-    await _overlayBrickTemplates(
+    await const AgenticAppSurfaceSynchronizer().overlay(
       projectName: projectName,
       outputDirectory: outputDirectory,
       org: org,
       platforms: platforms,
-      stateProfile: stateProfile,
+      stateManagement: stateManagement,
       flavors: flavors,
       primaryColor: primaryColor,
       ciProvider: ciProvider,
-      appIdBase: appIdBase,
     );
 
     GeneratedProjectContract.enforceCiProviderOutputs(
@@ -329,67 +319,5 @@ class ProjectGenerator {
       );
     }
     progress.complete('Flutter project created');
-  }
-
-  /// Overlay Mason brick templates onto flutter create output.
-  Future<void> _overlayBrickTemplates({
-    required String projectName,
-    required String outputDirectory,
-    required String org,
-    required List<String> platforms,
-    required ScaffoldStateProfile stateProfile,
-    required List<String> flavors,
-    required String primaryColor,
-    required CiProvider ciProvider,
-    required String appIdBase,
-  }) async {
-    final progress = _logger.progress('Applying agentic templates');
-    try {
-      final bricksRoot = await _resolveBricksRoot();
-      final brick = Brick.path(p.join(bricksRoot, 'agentic_app'));
-      final generator = await MasonGenerator.fromBrick(brick);
-      final parentDir = p.dirname(outputDirectory);
-      final target = DirectoryGeneratorTarget(Directory(parentDir));
-      await generator.generate(
-        target,
-        vars: <String, dynamic>{
-          'project_name': projectName,
-          'org': org,
-          'platforms': platforms,
-          'flavors': flavors,
-          'primary_color': primaryColor,
-          'ci_provider': ciProvider.name,
-          'app_id_base': appIdBase,
-          'has_native_flavors': platforms.any(
-            (platform) => const {'android', 'ios', 'macos'}.contains(platform),
-          ),
-          'has_android': platforms.contains('android'),
-          'has_ios': platforms.contains('ios'),
-          'has_macos': platforms.contains('macos'),
-          ...stateProfile.masonVars,
-        },
-        fileConflictResolution: FileConflictResolution.overwrite,
-      );
-      progress.complete('Agentic templates applied');
-    } on Exception {
-      progress.fail('Template overlay failed');
-      rethrow;
-    }
-  }
-
-  /// Resolve bricks root — works for dev, pub global, and AOT.
-  static Future<String> _resolveBricksRoot() async {
-    final packageUri = Uri.parse('package:agentic_base/agentic_base.dart');
-    final resolved = await Isolate.resolvePackageUri(packageUri);
-    if (resolved != null) {
-      final root = p.dirname(p.dirname(resolved.toFilePath()));
-      final dir = p.join(root, 'bricks');
-      if (Directory(dir).existsSync()) return dir;
-    }
-    final script = Platform.script.toFilePath();
-    final root = p.dirname(p.dirname(script));
-    final dir = p.join(root, 'bricks');
-    if (Directory(dir).existsSync()) return dir;
-    throw StateError('Could not locate bricks directory.');
   }
 }

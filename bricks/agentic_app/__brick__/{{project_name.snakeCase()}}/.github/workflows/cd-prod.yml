@@ -1,3 +1,4 @@
+{{=<% %>=}}
 name: Deploy Production
 on:
   workflow_dispatch:
@@ -7,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  play_production:
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -20,8 +21,33 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - run: flutter pub get
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
       - run: chmod +x tools/*.sh
-      - run: ./tools/build.sh prod
-      - name: Deploy to App Store / Play Store
-        run: echo "TODO - Configure App Store and Play Store Production deployment"
+      - run: bundle install
+        working-directory: android/fastlane
+      - run: ./tools/release.sh prod play-production
+        env:
+          PLAY_STORE_JSON_KEY: ${{ secrets.PLAY_STORE_JSON_KEY }}
+
+  app_store:
+    runs-on: macos-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+      - run: chmod +x tools/*.sh
+      - run: bundle install
+        working-directory: ios/fastlane
+      - run: ./tools/release.sh prod app-store
+        env:
+          APP_STORE_CONNECT_API_KEY_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}

@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/config/agent_ready_repo_contract.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 /// Thrown when a generated project violates the starter-app contract.
 class ProjectGenerationException implements Exception {
@@ -24,6 +26,11 @@ final class GeneratedProjectContract {
   };
 
   static const requiredPaths = <String>[
+    '.info/agentic.yaml',
+    'AGENTS.md',
+    'CLAUDE.md',
+    'README.md',
+    'Makefile',
     'build.yaml',
     'flavorizr.yaml',
     'assets/i18n/app/app_en.i18n.yaml',
@@ -33,6 +40,12 @@ final class GeneratedProjectContract {
     'env/dev.env.example',
     'env/staging.env.example',
     'env/prod.env.example',
+    'docs/01-architecture.md',
+    'docs/02-coding-standards.md',
+    'docs/03-state-management.md',
+    'docs/04-network-layer.md',
+    'docs/05-theming-guide.md',
+    'docs/06-testing-guide.md',
     'lib/app/app.dart',
     'lib/app/bootstrap.dart',
     'lib/app/flavors.dart',
@@ -52,6 +65,19 @@ final class GeneratedProjectContract {
     '.idea/runConfigurations/prod_dart.xml',
     '.idea/runConfigurations/prod_profile.xml',
     '.idea/runConfigurations/prod_release.xml',
+    'tools/_common.sh',
+    'tools/build.sh',
+    'tools/ci-check.sh',
+    'tools/clean.sh',
+    'tools/format.sh',
+    'tools/gen.sh',
+    'tools/lint.sh',
+    'tools/release-preflight.sh',
+    'tools/release.sh',
+    'tools/run-dev.sh',
+    'tools/setup.sh',
+    'tools/test.sh',
+    'tools/verify.sh',
   ];
 
   static const forbiddenFiles = <String>[
@@ -185,9 +211,21 @@ final class GeneratedProjectContract {
       }
     }
 
+    final resolvedCiProvider =
+        ciProvider ?? _resolveConfiguredCiProvider(projectDir);
+
+    _validateAgentReadyConfig(
+      projectDir,
+      ciProvider: resolvedCiProvider,
+    );
+    _validateDocumentationAdapters(projectDir);
+    _validateReleaseSurfaces(
+      projectDir,
+      ciProvider: resolvedCiProvider,
+    );
     validateNativeFlavorOutputs(projectDir);
-    if (ciProvider != null) {
-      validateCiProviderOutputs(projectDir, ciProvider: ciProvider);
+    if (resolvedCiProvider != null) {
+      validateCiProviderOutputs(projectDir, ciProvider: resolvedCiProvider);
     }
     if (stateManagement != null) {
       validateStateOutput(projectDir, stateManagement: stateManagement);
@@ -346,15 +384,21 @@ final class GeneratedProjectContract {
   }
 
   static void validateNativeFlavorOutputs(String projectDir) {
-    if (Directory(_resolveProjectPath(projectDir, 'android')).existsSync()) {
+    if (Directory(
+      _resolveProjectPath(projectDir, 'android/app'),
+    ).existsSync()) {
       _validateAndroidFlavorOutputs(projectDir);
     }
 
-    if (Directory(_resolveProjectPath(projectDir, 'ios')).existsSync()) {
+    if (Directory(
+      _resolveProjectPath(projectDir, 'ios/Flutter'),
+    ).existsSync()) {
       _validateIosFlavorOutputs(projectDir);
     }
 
-    if (Directory(_resolveProjectPath(projectDir, 'macos')).existsSync()) {
+    if (Directory(
+      _resolveProjectPath(projectDir, 'macos/Flutter'),
+    ).existsSync()) {
       _validateMacosFlavorOutputs(projectDir);
     }
   }
@@ -453,23 +497,52 @@ final class GeneratedProjectContract {
       projectDir,
       '.github/workflows/ci.yml',
     );
-    if (!ciContents.contains('./tools/ci-check.sh')) {
+    if (!ciContents.contains('./tools/verify.sh') ||
+        !ciContents.contains(r'${{ github.workflow }}-${{ github.ref }}') ||
+        ciContents.contains(r'\${{ github.workflow }}-\${{ github.ref }}')) {
       throw const ProjectGenerationException(
-        'GitHub CI workflow must call ./tools/ci-check.sh.',
+        'GitHub CI workflow must preserve GitHub expressions and call ./tools/verify.sh.',
       );
     }
 
-    for (final flavor in generatedFlavors) {
-      final workflowContents = _readRequiredFile(
-        projectDir,
-        '.github/workflows/cd-$flavor.yml',
+    if (!ciContents.contains(r'./tools/build.sh ${{ matrix.flavor }}') ||
+        ciContents.contains(r'./tools/build.sh \${{ matrix.flavor }}')) {
+      throw const ProjectGenerationException(
+        'GitHub build matrix must preserve the matrix.flavor expression.',
       );
-      if (!workflowContents.contains('./tools/build.sh $flavor')) {
-        throw ProjectGenerationException(
-          'GitHub deploy workflow must call ./tools/build.sh $flavor.',
-        );
-      }
     }
+
+    _requireContent(
+      _readRequiredFile(projectDir, '.github/workflows/cd-dev.yml'),
+      './tools/release.sh dev firebase',
+    );
+
+    final stagingContents = _readRequiredFile(
+      projectDir,
+      '.github/workflows/cd-staging.yml',
+    );
+    _requireContent(
+      stagingContents,
+      './tools/release.sh staging play-internal',
+    );
+    _requireContent(stagingContents, './tools/release.sh staging testflight');
+
+    final prodContents = _readRequiredFile(
+      projectDir,
+      '.github/workflows/cd-prod.yml',
+    );
+    _requireContent(prodContents, './tools/release.sh prod play-production');
+    _requireContent(prodContents, './tools/release.sh prod app-store');
+
+    final releaseContents = _readRequiredFile(
+      projectDir,
+      '.github/workflows/release.yml',
+    );
+    _requireContent(
+      releaseContents,
+      './tools/release-preflight.sh prod play-production',
+    );
+    _requireContent(releaseContents, './tools/build.sh prod appbundle');
   }
 
   static void _validateGitLabCiOutputs(String projectDir) {
@@ -487,7 +560,7 @@ final class GeneratedProjectContract {
       '.gitlab/ci/verify.yml',
     );
     if (!verifyContents.contains('native_validate:') ||
-        !verifyContents.contains('./tools/ci-check.sh') ||
+        !verifyContents.contains('./tools/verify.sh') ||
         !verifyContents.contains('tags: [macos]') ||
         verifyContents.contains('allow_failure: true')) {
       throw const ProjectGenerationException(
@@ -499,18 +572,155 @@ final class GeneratedProjectContract {
       projectDir,
       '.gitlab/ci/deploy.yml',
     );
-    for (final flavor in generatedFlavors) {
-      if (!deployContents.contains('deploy_$flavor:') ||
-          !deployContents.contains('./tools/build.sh $flavor')) {
-        throw ProjectGenerationException(
-          'GitLab deploy contract must define deploy_$flavor.',
-        );
-      }
-    }
+    _requireContent(deployContents, 'deploy_dev:');
+    _requireContent(deployContents, './tools/release.sh dev firebase');
+    _requireContent(deployContents, 'deploy_staging_android_internal:');
+    _requireContent(
+      deployContents,
+      './tools/release.sh staging play-internal',
+    );
+    _requireContent(deployContents, 'deploy_staging_testflight:');
+    _requireContent(deployContents, './tools/release.sh staging testflight');
+    _requireContent(deployContents, 'deploy_prod_play:');
+    _requireContent(deployContents, './tools/release.sh prod play-production');
+    _requireContent(deployContents, 'deploy_prod_app_store:');
+    _requireContent(deployContents, './tools/release.sh prod app-store');
 
     if (!deployContents.contains('when: manual')) {
       throw const ProjectGenerationException(
         'GitLab deploy jobs must remain manual.',
+      );
+    }
+  }
+
+  static void _validateAgentReadyConfig(
+    String projectDir, {
+    CiProvider? ciProvider,
+  }) {
+    final config = _readRequiredYamlMap(projectDir, '.info/agentic.yaml');
+    final context = _requireYamlMap(config, 'context');
+    final execution = _requireYamlMap(config, 'execution');
+    final checkpoints = _requireYamlMap(config, 'checkpoints');
+
+    _requireYamlListValue(context, 'canonical_docs', 'docs/01-architecture.md');
+    _requireYamlListValue(context, 'thin_adapters', 'AGENTS.md');
+    _requireYamlListValue(context, 'thin_adapters', 'CLAUDE.md');
+
+    final storedCiProvider = config['ci_provider'];
+    if (storedCiProvider is! String) {
+      throw const ProjectGenerationException(
+        'Generated YAML contract is missing ci_provider.',
+      );
+    }
+
+    final expectedCiProvider = ciProvider ?? parseCiProvider(storedCiProvider);
+    if (context['ci_provider'] != expectedCiProvider.name ||
+        storedCiProvider != expectedCiProvider.name) {
+      throw ProjectGenerationException(
+        'Generated YAML contract must keep ci_provider synchronized as ${expectedCiProvider.name}.',
+      );
+    }
+
+    for (final entry in deterministicExecutionScripts.entries) {
+      final value = execution[entry.key];
+      if (value != entry.value) {
+        throw ProjectGenerationException(
+          'Generated execution contract is missing ${entry.key}: ${entry.value}',
+        );
+      }
+    }
+
+    _requireYamlListValue(
+      checkpoints,
+      'requires_human',
+      'final-store-publish-approval',
+    );
+    final boundary = checkpoints['release_human_boundary'];
+    if (boundary is! String || !boundary.contains('human')) {
+      throw const ProjectGenerationException(
+        'Release human boundary must stay explicit in .info/agentic.yaml.',
+      );
+    }
+  }
+
+  static void _validateDocumentationAdapters(String projectDir) {
+    final agents = _readRequiredFile(projectDir, 'AGENTS.md');
+    final claude = _readRequiredFile(projectDir, 'CLAUDE.md');
+    final readme = _readRequiredFile(projectDir, 'README.md');
+
+    _requireContent(agents, 'Thin adapter');
+    _requireContent(agents, './tools/verify.sh');
+    _forbidContent(agents, 'Feature Workflow');
+
+    _requireContent(claude, 'Thin Claude adapter');
+    _requireContent(claude, 'Machine contract: `.info/agentic.yaml`');
+
+    _requireContent(readme, 'An agent-ready Flutter repository');
+    _requireContent(readme, './tools/run-dev.sh');
+    _requireContent(
+      readme,
+      'final production store publish remains a human approval step',
+    );
+  }
+
+  static void _validateReleaseSurfaces(
+    String projectDir, {
+    CiProvider? ciProvider,
+  }) {
+    final effectiveCiProvider =
+        ciProvider ?? _resolveConfiguredCiProvider(projectDir);
+    final releaseSurfacePaths = <String>[
+      'tools/release-preflight.sh',
+      'tools/release.sh',
+      if (effectiveCiProvider == CiProvider.github) ...[
+        '.github/workflows/cd-dev.yml',
+        '.github/workflows/cd-staging.yml',
+        '.github/workflows/cd-prod.yml',
+        '.github/workflows/release.yml',
+      ] else ...[
+        '.gitlab/ci/deploy.yml',
+      ],
+    ];
+
+    for (final path in releaseSurfacePaths) {
+      _forbidContent(_readRequiredFile(projectDir, path), 'TODO');
+    }
+
+    final config = _readRequiredYamlMap(projectDir, '.info/agentic.yaml');
+    final expectedAppId = buildAppIdBase(
+      org: config['org'] as String,
+      projectName: config['project_name'] as String,
+    );
+    _requireContent(
+      _readRequiredFile(projectDir, 'ios/fastlane/Appfile'),
+      expectedAppId,
+    );
+    _requireContent(
+      _readRequiredFile(projectDir, 'ios/fastlane/Matchfile'),
+      expectedAppId,
+    );
+    _requireContent(
+      _readRequiredFile(projectDir, 'android/fastlane/Appfile'),
+      expectedAppId,
+    );
+    _requireContent(
+      _readRequiredFile(projectDir, 'tools/release-preflight.sh'),
+      'human approval step',
+    );
+  }
+
+  static CiProvider? _resolveConfiguredCiProvider(String projectDir) {
+    final config = _readRequiredYamlMap(projectDir, '.info/agentic.yaml');
+    final storedCiProvider = config['ci_provider'];
+    if (storedCiProvider is! String || storedCiProvider.trim().isEmpty) {
+      return null;
+    }
+
+    try {
+      return parseCiProvider(storedCiProvider);
+    } on FormatException catch (error) {
+      throw ProjectGenerationException(
+        'Generated YAML contract has invalid ci_provider: $error',
       );
     }
   }
@@ -561,6 +771,35 @@ final class GeneratedProjectContract {
       );
     }
     return file.readAsStringSync();
+  }
+
+  static YamlMap _readRequiredYamlMap(String projectDir, String relativePath) {
+    final yaml = loadYaml(_readRequiredFile(projectDir, relativePath));
+    if (yaml is! YamlMap) {
+      throw ProjectGenerationException(
+        'Generated YAML file is not a map: $relativePath',
+      );
+    }
+    return yaml;
+  }
+
+  static YamlMap _requireYamlMap(YamlMap yaml, String key) {
+    final value = yaml[key];
+    if (value is! YamlMap) {
+      throw ProjectGenerationException(
+        'Generated YAML contract is missing map key: $key',
+      );
+    }
+    return value;
+  }
+
+  static void _requireYamlListValue(YamlMap yaml, String key, String expected) {
+    final value = yaml[key];
+    if (value is! YamlList || !value.contains(expected)) {
+      throw ProjectGenerationException(
+        'Generated YAML contract is missing $expected in $key',
+      );
+    }
   }
 
   static void _deleteDirectoryIfEmpty(String projectDir, String relativePath) {

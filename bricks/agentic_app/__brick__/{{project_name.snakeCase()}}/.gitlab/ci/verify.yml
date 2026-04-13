@@ -4,5 +4,4 @@ native_validate:
   tags: [macos]
   script:
     - chmod +x tools/*.sh
-    - flutter pub get
-    - ./tools/ci-check.sh
+    - ./tools/verify.sh

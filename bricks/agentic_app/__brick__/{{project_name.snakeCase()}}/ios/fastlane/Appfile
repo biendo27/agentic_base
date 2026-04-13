@@ -1,4 +1,4 @@
-app_identifier ENV["APP_IDENTIFIER"] || "{{org}}.{{project_name.snakeCase().replaceAll('_', '')}}"
+app_identifier ENV["APP_IDENTIFIER"] || "{{app_id_base}}"
 apple_id ENV["APPLE_ID"]
 team_id ENV["TEAM_ID"]
 itc_team_id ENV["ITC_TEAM_ID"]

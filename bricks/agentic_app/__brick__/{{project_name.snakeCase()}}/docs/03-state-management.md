@@ -1,5 +1,7 @@
 # State Management
 
+The selected runtime is persisted in `.info/agentic.yaml` and mirrored here as canonical human-readable context.
+
 ## Technology: flutter_bloc / Cubit
 
 Cubit is preferred over full Bloc for simplicity. Use Bloc only when event-driven

@@ -33,8 +33,8 @@ final class ProjectMetadata {
     required this.flavors,
     required this.modules,
     required this.provenance,
-    this.schemaVersion = 1,
-    this.projectKind = 'flutter_app',
+    this.schemaVersion = 2,
+    this.projectKind = 'agent_ready_flutter_repo',
     this.createdAt,
   });
 
@@ -45,8 +45,9 @@ final class ProjectMetadata {
   }) {
     final provenance = _parseProvenanceMap(data['metadata_provenance']);
     return ProjectMetadata(
-      schemaVersion: _readInt(data['schema_version']) ?? 1,
-      projectKind: _readString(data['project_kind']) ?? 'flutter_app',
+      schemaVersion: _readInt(data['schema_version']) ?? 2,
+      projectKind:
+          _readString(data['project_kind']) ?? 'agent_ready_flutter_repo',
       toolVersion: _readString(data['tool_version']) ?? fallbackToolVersion,
       projectName: _readString(data['project_name']) ?? fallbackProjectName,
       org: _readString(data['org']) ?? 'com.example',

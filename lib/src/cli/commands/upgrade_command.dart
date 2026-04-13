@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
+import 'package:agentic_base/src/deploy/process_runner.dart';
+import 'package:agentic_base/src/generators/agentic_app_surface_synchronizer.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
-/// Upgrades Flutter dependencies and stamps the current tool version.
+/// Upgrades Flutter dependencies and syncs generator-owned repo surfaces.
 ///
 /// Usage: `agentic_base upgrade`
 ///
@@ -17,23 +19,42 @@ import 'package:yaml/yaml.dart';
 ///   2. Detect major-version bumps in pubspec.lock and warn about each
 ///   3. Update `.info/agentic.yaml` → `tool_version`
 class UpgradeCommand extends Command<int> {
-  UpgradeCommand({required AgenticLogger logger}) : _logger = logger;
+  UpgradeCommand({
+    required AgenticLogger logger,
+    ProcessRunner? processRunner,
+    String Function()? projectPathProvider,
+    Future<void> Function({
+      required String projectPath,
+      required ProjectMetadata metadata,
+    })?
+    surfaceSync,
+  }) : _logger = logger,
+       _processRunner = processRunner ?? runProcess,
+       _projectPathProvider = projectPathProvider,
+       _surfaceSync = surfaceSync;
 
   final AgenticLogger _logger;
+  final ProcessRunner _processRunner;
+  final String Function()? _projectPathProvider;
+  final Future<void> Function({
+    required String projectPath,
+    required ProjectMetadata metadata,
+  })?
+  _surfaceSync;
 
   @override
   String get name => 'upgrade';
 
   @override
   String get description =>
-      'Upgrade Flutter dependencies and update tool version stamp.';
+      'Upgrade dependencies and sync generator-owned repo surfaces.';
 
   @override
   String get invocation => 'agentic_base upgrade';
 
   @override
   Future<int> run() async {
-    final projectPath = Directory.current.path;
+    final projectPath = _projectPathProvider?.call() ?? Directory.current.path;
 
     // Must be inside an agentic_base project.
     final config = AgenticConfig(projectPath: projectPath);
@@ -51,6 +72,11 @@ class UpgradeCommand extends Command<int> {
 
     _logger.header('Upgrading dependencies...');
 
+    final metadata = config.readMetadata(
+      fallbackProjectName: p.basename(projectPath),
+      fallbackToolVersion: AgenticBaseCliRunner.version,
+    );
+
     // Run flutter pub upgrade.
     final upgradeResult = await _runFlutterPubUpgrade(projectPath);
     if (upgradeResult != 0) return upgradeResult;
@@ -59,8 +85,32 @@ class UpgradeCommand extends Command<int> {
     final snapshotAfter = _readLockVersions(lockFile);
     _reportMajorBumps(snapshotBefore, snapshotAfter);
 
+    final syncProgress = _logger.progress(
+      'Syncing generator-owned repo assets',
+    );
+    try {
+      final sync =
+          _surfaceSync ??
+          ({
+            required String projectPath,
+            required ProjectMetadata metadata,
+          }) {
+            return const AgenticAppSurfaceSynchronizer()
+                .syncUpgradeOwnedSurfaces(
+                  projectPath: projectPath,
+                  metadata: metadata,
+                );
+          };
+      await sync(projectPath: projectPath, metadata: metadata);
+      syncProgress.complete('Generator-owned repo assets synced');
+    } on Exception catch (error) {
+      syncProgress.fail('Generator-owned repo asset sync failed');
+      _logger.err('$error');
+      return 1;
+    }
+
     // Stamp current tool version into agentic.yaml.
-    _stampToolVersion(config);
+    _stampToolVersion(config, metadata: metadata);
 
     _logger
       ..info('')
@@ -78,7 +128,7 @@ class UpgradeCommand extends Command<int> {
   Future<int> _runFlutterPubUpgrade(String projectPath) async {
     final progress = _logger.progress('Running flutter pub upgrade');
 
-    final result = await Process.run(
+    final result = await _processRunner(
       'flutter',
       ['pub', 'upgrade'],
       workingDirectory: projectPath,
@@ -158,10 +208,10 @@ class UpgradeCommand extends Command<int> {
   }
 
   /// Write the current CLI version into `.info/agentic.yaml`.
-  void _stampToolVersion(AgenticConfig config) {
-    final metadata = config.readMetadata(
-      fallbackToolVersion: AgenticBaseCliRunner.version,
-    );
+  void _stampToolVersion(
+    AgenticConfig config, {
+    required ProjectMetadata metadata,
+  }) {
     config
       ..writeMetadata(
         metadata.copyWith(

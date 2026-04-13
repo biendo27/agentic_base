@@ -1,4 +1,5 @@
 import 'package:agentic_base/src/modules/base_module.dart';
+import 'package:agentic_base/src/modules/firebase_runtime_template.dart';
 import 'package:agentic_base/src/modules/module_installer.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
 
@@ -13,7 +14,7 @@ class CrashlyticsModule implements AgenticModule {
   String get description => 'Firebase Crashlytics — crash and error reporting.';
 
   @override
-  List<String> get dependencies => ['firebase_crashlytics'];
+  List<String> get dependencies => ['firebase_core', 'firebase_crashlytics'];
 
   @override
   List<String> get devDependencies => [];
@@ -35,6 +36,10 @@ class CrashlyticsModule implements AgenticModule {
   Future<void> install(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
+      ..writeFile(
+        'lib/core/firebase/firebase_runtime.dart',
+        firebaseRuntimeFileContent(),
+      )
       ..writeFile(
         'lib/core/crash_reporting/crash_reporting_service.dart',
         _contractContent(ctx.projectName),
@@ -84,20 +89,31 @@ abstract class CrashReportingService {
 ''';
 
   String _implContent(String pkg) => '''
+import 'dart:ui';
+
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:$pkg/core/crash_reporting/crash_reporting_service.dart';
+import 'package:$pkg/core/firebase/firebase_runtime.dart';
 
 /// Firebase implementation of [CrashReportingService].
 class FirebaseCrashReportingService implements CrashReportingService {
   FirebaseCrashReportingService({FirebaseCrashlytics? crashlytics})
-      : _crashlytics = crashlytics ?? FirebaseCrashlytics.instance;
+      : _overrideCrashlytics = crashlytics;
 
-  final FirebaseCrashlytics _crashlytics;
+  final FirebaseCrashlytics? _overrideCrashlytics;
+
+  FirebaseCrashlytics get _crashlytics =>
+      _overrideCrashlytics ?? FirebaseCrashlytics.instance;
 
   @override
   Future<void> init() async {
+    await ensureFirebaseInitialized();
     await _crashlytics.setCrashlyticsCollectionEnabled(true);
-    FlutterError.onError = _crashlytics.recordFlutterFatalError;
+    PlatformDispatcher.instance.onError = (error, stackTrace) {
+      _crashlytics.recordError(error, stackTrace, fatal: true);
+      return true;
+    };
   }
 
   @override

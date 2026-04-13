@@ -1,4 +1,5 @@
 import 'package:agentic_base/src/modules/base_module.dart';
+import 'package:agentic_base/src/modules/firebase_runtime_template.dart';
 import 'package:agentic_base/src/modules/module_installer.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
 
@@ -13,7 +14,7 @@ class AnalyticsModule implements AgenticModule {
   String get description => 'Firebase Analytics — event tracking service.';
 
   @override
-  List<String> get dependencies => ['firebase_analytics'];
+  List<String> get dependencies => ['firebase_core', 'firebase_analytics'];
 
   @override
   List<String> get devDependencies => [];
@@ -34,6 +35,10 @@ class AnalyticsModule implements AgenticModule {
   Future<void> install(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
+      ..writeFile(
+        'lib/core/firebase/firebase_runtime.dart',
+        firebaseRuntimeFileContent(),
+      )
       ..writeFile(
         'lib/core/analytics/analytics_service.dart',
         _analyticsServiceContract(ctx.projectName),
@@ -63,6 +68,9 @@ class AnalyticsModule implements AgenticModule {
 ///
 /// Swap the implementation in the DI module to use any analytics provider.
 abstract class AnalyticsService {
+  /// Ensure the Firebase runtime is ready before the first call.
+  Future<void> init();
+
   /// Log a named event with optional string parameters.
   Future<void> logEvent(String name, {Map<String, String>? parameters});
 
@@ -84,41 +92,54 @@ abstract class AnalyticsService {
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:injectable/injectable.dart';
 import 'package:$pkg/core/analytics/analytics_service.dart';
+import 'package:$pkg/core/firebase/firebase_runtime.dart';
 
 /// Firebase implementation of [AnalyticsService].
 @LazySingleton(as: AnalyticsService)
 class FirebaseAnalyticsService implements AnalyticsService {
   FirebaseAnalyticsService({FirebaseAnalytics? analytics})
-      : _analytics = analytics ?? FirebaseAnalytics.instance;
+      : _overrideAnalytics = analytics;
 
-  final FirebaseAnalytics _analytics;
+  final FirebaseAnalytics? _overrideAnalytics;
+
+  FirebaseAnalytics get _analytics =>
+      _overrideAnalytics ?? FirebaseAnalytics.instance;
 
   @override
-  Future<void> logEvent(
-    String name, {
-    Map<String, String>? parameters,
-  }) =>
-      _analytics.logEvent(name: name, parameters: parameters);
+  Future<void> init() => ensureFirebaseInitialized();
+
+  @override
+  Future<void> logEvent(String name, {Map<String, String>? parameters}) async {
+    await init();
+    await _analytics.logEvent(name: name, parameters: parameters);
+  }
 
   @override
   Future<void> setUserProperty({
     required String name,
     required String value,
-  }) =>
-      _analytics.setUserProperty(name: name, value: value);
+  }) async {
+    await init();
+    await _analytics.setUserProperty(name: name, value: value);
+  }
 
   @override
-  Future<void> setUserId(String? id) => _analytics.setUserId(id: id);
+  Future<void> setUserId(String? id) async {
+    await init();
+    await _analytics.setUserId(id: id);
+  }
 
   @override
   Future<void> logScreenView({
     required String screenName,
     String? screenClass,
-  }) =>
-      _analytics.logScreenView(
-        screenName: screenName,
-        screenClass: screenClass,
-      );
+  }) async {
+    await init();
+    await _analytics.logScreenView(
+      screenName: screenName,
+      screenClass: screenClass,
+    );
+  }
 }
 ''';
 }

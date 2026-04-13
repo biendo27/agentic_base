@@ -2,21 +2,22 @@ default_platform(:android)
 
 platform :android do
   desc "Deploy to Play Store Internal Testing"
-  lane :beta do
-    # Build is done by Flutter CLI before calling fastlane
-    # flutter build appbundle --flavor staging -t lib/main_staging.dart
+  lane :internal do |options|
+    flavor = options[:flavor] || "staging"
     upload_to_play_store(
       track: "internal",
-      aab: "../build/app/outputs/bundle/stagingRelease/app-staging-release.aab"
+      aab: "../build/app/outputs/bundle/#{flavor}Release/app-#{flavor}-release.aab",
+      release_status: "completed"
     )
   end
 
-  desc "Deploy to Play Store Production"
-  lane :release do
-    # flutter build appbundle --flavor prod -t lib/main_prod.dart
+  desc "Upload to Play production as a draft release"
+  lane :production do |options|
+    flavor = options[:flavor] || "prod"
     upload_to_play_store(
       track: "production",
-      aab: "../build/app/outputs/bundle/prodRelease/app-prod-release.aab"
+      aab: "../build/app/outputs/bundle/#{flavor}Release/app-#{flavor}-release.aab",
+      release_status: "draft"
     )
   end
 end

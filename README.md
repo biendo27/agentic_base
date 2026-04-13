@@ -1,6 +1,6 @@
 # agentic_base
 
-A Dart CLI tool that generates production-ready Flutter codebases optimized for AI-agent-driven development.
+A Dart CLI tool that generates agent-ready Flutter repositories with canonical context, deterministic harness scripts, and honest verify/release contracts.
 
 The package now lives at the repository root. Root-level [`docs/`](./docs/) stores evergreen project documentation, and [`plans/`](./plans/) stores implementation plans and reports.
 
@@ -13,7 +13,7 @@ dart pub global activate agentic_base
 ## Quick Start
 
 ```bash
-# Create a new project
+# Create a new agent-ready repo
 agentic_base create my_app --org com.example
 
 # Add modules
@@ -54,6 +54,16 @@ agentic_base create my_app --state cubit     # Default
 agentic_base create my_app --state riverpod
 agentic_base create my_app --state mobx
 ```
+
+## Generated Repo Contract
+
+Every generated repo ships:
+
+- one machine-readable source of truth in `.info/agentic.yaml`
+- canonical human-readable context in `README.md` and `docs/`
+- thin vendor adapters in `AGENTS.md` and `CLAUDE.md`
+- deterministic local entrypoints in `tools/` for setup, run, verify, build, and release preflight
+- explicit human checkpoints for credentials and final store publish
 
 ## Available Modules (27)
 
@@ -130,8 +140,8 @@ dart test
 
 ## Notes
 
-- Root `docs/` is repo-level documentation.
-- Generated Flutter app docs inside Mason templates are separate from the root `docs/` set.
+- Root `docs/` is repo-level documentation for this package.
+- Generated Flutter repos ship their own canonical docs, thin agent adapters, and harness scripts.
 
 ## License
 

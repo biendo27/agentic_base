@@ -1,4 +1,5 @@
 import 'package:agentic_base/src/modules/base_module.dart';
+import 'package:agentic_base/src/modules/firebase_runtime_template.dart';
 import 'package:agentic_base/src/modules/module_installer.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
 
@@ -13,7 +14,7 @@ class AuthModule implements AgenticModule {
   String get description => 'Firebase Auth — authentication service.';
 
   @override
-  List<String> get dependencies => ['firebase_auth'];
+  List<String> get dependencies => ['firebase_core', 'firebase_auth'];
 
   @override
   List<String> get devDependencies => [];
@@ -34,6 +35,10 @@ class AuthModule implements AgenticModule {
   Future<void> install(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
+      ..writeFile(
+        'lib/core/firebase/firebase_runtime.dart',
+        firebaseRuntimeFileContent(),
+      )
       ..writeFile(
         'lib/core/auth/auth_service.dart',
         _contractContent(ctx.projectName),
@@ -63,6 +68,9 @@ class AuthModule implements AgenticModule {
 ///
 /// Implementations can use Firebase, Supabase, or a custom backend.
 abstract class AuthService {
+  /// Ensure the Firebase runtime is ready before the first call.
+  Future<void> init();
+
   /// Stream of authenticated user IDs; emits null when signed out.
   Stream<String?> get authStateChanges;
 
@@ -92,13 +100,18 @@ abstract class AuthService {
   String _implContent(String pkg) => '''
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:$pkg/core/auth/auth_service.dart';
+import 'package:$pkg/core/firebase/firebase_runtime.dart';
 
 /// Firebase implementation of [AuthService].
 class FirebaseAuthService implements AuthService {
-  FirebaseAuthService({FirebaseAuth? auth})
-      : _auth = auth ?? FirebaseAuth.instance;
+  FirebaseAuthService({FirebaseAuth? auth}) : _overrideAuth = auth;
 
-  final FirebaseAuth _auth;
+  final FirebaseAuth? _overrideAuth;
+
+  FirebaseAuth get _auth => _overrideAuth ?? FirebaseAuth.instance;
+
+  @override
+  Future<void> init() => ensureFirebaseInitialized();
 
   @override
   Stream<String?> get authStateChanges =>
@@ -112,6 +125,7 @@ class FirebaseAuthService implements AuthService {
     required String email,
     required String password,
   }) async {
+    await init();
     final credential = await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
@@ -124,6 +138,7 @@ class FirebaseAuthService implements AuthService {
     required String email,
     required String password,
   }) async {
+    await init();
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
@@ -132,11 +147,16 @@ class FirebaseAuthService implements AuthService {
   }
 
   @override
-  Future<void> signOut() => _auth.signOut();
+  Future<void> signOut() async {
+    await init();
+    await _auth.signOut();
+  }
 
   @override
-  Future<void> sendPasswordResetEmail(String email) =>
-      _auth.sendPasswordResetEmail(email: email);
+  Future<void> sendPasswordResetEmail(String email) async {
+    await init();
+    await _auth.sendPasswordResetEmail(email: email);
+  }
 }
 ''';
 }

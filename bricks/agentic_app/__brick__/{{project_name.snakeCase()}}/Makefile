@@ -1,4 +1,4 @@
-.PHONY: gen test build clean setup format lint release ci-check
+.PHONY: gen test build clean setup format lint release ci-check run-dev verify release-preflight
 
 gen:
 	./tools/gen.sh
@@ -15,6 +15,12 @@ clean:
 setup:
 	./tools/setup.sh
 
+run-dev:
+	./tools/run-dev.sh
+
+verify:
+	./tools/verify.sh
+
 format:
 	./tools/format.sh
 
@@ -23,6 +29,9 @@ lint:
 
 release:
 	./tools/release.sh
+
+release-preflight:
+	./tools/release-preflight.sh
 
 ci-check:
 	./tools/ci-check.sh

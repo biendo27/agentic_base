@@ -102,6 +102,15 @@ void main() {
 
       final data = AgenticConfig(projectPath: tempDir.path).read();
       expect(data['ci_provider'], equals('gitlab'));
+      expect(data['schema_version'], equals(2));
+      expect(data['project_kind'], equals('agent_ready_flutter_repo'));
+      expect(data['context'], isA<Map<String, dynamic>>());
+      expect(data['execution'], isA<Map<String, dynamic>>());
+      expect(data['checkpoints'], isA<Map<String, dynamic>>());
+      expect(
+        (data['execution'] as Map<String, dynamic>)['verify'],
+        equals('./tools/verify.sh'),
+      );
     });
 
     test('writeMetadata round-trips typed metadata and provenance', () {
@@ -147,6 +156,12 @@ void main() {
       expect(
         restored.provenance['modules'],
         equals(MetadataProvenance.explicit),
+      );
+      final raw = config.read();
+      expect((raw['context'] as Map<String, dynamic>)['ci_provider'], 'github');
+      expect(
+        (raw['checkpoints'] as Map<String, dynamic>)['requires_human'],
+        contains('final-store-publish-approval'),
       );
     });
 
