@@ -1,0 +1,31 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/data/repositories/home_repository_impl.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/domain/repositories/home_repository.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/domain/usecases/get_home_items.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/presentation/cubit/home_state.dart';
+
+final homeRepositoryProvider = Provider<HomeRepository>(
+  (ref) => HomeRepositoryImpl(),
+);
+
+final getHomeItemsProvider = Provider<GetHomeItems>(
+  (ref) => GetHomeItems(ref.watch(homeRepositoryProvider)),
+);
+
+final homeControllerProvider =
+    NotifierProvider<HomeController, HomeState>(HomeController.new);
+
+class HomeController extends Notifier<HomeState> {
+  @override
+  HomeState build() => const HomeState.initial();
+
+  Future<void> loadItems() async {
+    state = const HomeState.loading();
+    final (items, failure) = await ref.read(getHomeItemsProvider)();
+    if (failure != null) {
+      state = HomeState.error(failure.message);
+    } else {
+      state = HomeState.loaded(items);
+    }
+  }
+}

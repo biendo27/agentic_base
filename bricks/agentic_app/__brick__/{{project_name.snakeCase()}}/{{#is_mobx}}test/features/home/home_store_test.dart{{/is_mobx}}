@@ -1,0 +1,24 @@
+// ignore_for_file: prefer_const_constructors — test values are dynamic
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/domain/usecases/get_home_items.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/data/repositories/home_repository_impl.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/presentation/cubit/home_state.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/presentation/store/home_store.dart';
+
+void main() {
+  late HomeStore store;
+
+  setUp(() {
+    store = HomeStore(GetHomeItems(HomeRepositoryImpl()));
+  });
+
+  test('initial state is HomeInitial', () {
+    expect(store.state.value, equals(HomeState.initial()));
+  });
+
+  test('loadItems emits loaded state', () async {
+    await store.loadItems();
+
+    expect(store.state.value, isA<HomeLoaded>());
+  });
+}

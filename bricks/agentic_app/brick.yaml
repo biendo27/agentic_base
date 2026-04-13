@@ -24,6 +24,51 @@ vars:
     description: State management choice
     default: cubit
     prompt: "State management:"
+  state_display_name:
+    type: string
+    description: Human-readable state management label
+    default: Flutter Bloc / Cubit
+    prompt: "State management label:"
+  is_cubit:
+    type: boolean
+    description: Whether the scaffold should generate Cubit runtime seams
+    default: true
+    prompt: "Generate Cubit seams?"
+  is_riverpod:
+    type: boolean
+    description: Whether the scaffold should generate Riverpod runtime seams
+    default: false
+    prompt: "Generate Riverpod seams?"
+  is_mobx:
+    type: boolean
+    description: Whether the scaffold should generate MobX runtime seams
+    default: false
+    prompt: "Generate MobX seams?"
+  uses_get_it:
+    type: boolean
+    description: Whether the scaffold uses GetIt-based DI
+    default: true
+    prompt: "Use GetIt?"
+  uses_injectable:
+    type: boolean
+    description: Whether the scaffold uses injectable code generation
+    default: true
+    prompt: "Use injectable?"
+  uses_riverpod:
+    type: boolean
+    description: Whether the scaffold uses Riverpod providers
+    default: false
+    prompt: "Use Riverpod providers?"
+  uses_mobx:
+    type: boolean
+    description: Whether the scaffold uses MobX
+    default: false
+    prompt: "Use MobX?"
+  presentation_runtime:
+    type: string
+    description: State runtime keyword used by starter features
+    default: cubit
+    prompt: "Presentation runtime:"
   flavors:
     type: list
     description: Build flavors

@@ -53,5 +53,102 @@ void main() {
       final config = AgenticConfig(projectPath: tempDir.path).read();
       expect(config['ci_provider'], equals('github'));
     });
+
+    test(
+      'writes safe analysis options without very_good_analysis include',
+      () async {
+        final exitCode = await runner.run(['init']);
+
+        expect(exitCode, equals(0));
+        final analysisOptions =
+            File(
+              p.join(tempDir.path, 'analysis_options.yaml'),
+            ).readAsStringSync();
+        expect(analysisOptions, isNot(contains('very_good_analysis')));
+        expect(analysisOptions, contains('public_member_api_docs: false'));
+      },
+    );
+
+    test('infers runtime metadata from project files', () async {
+      Directory(p.join(tempDir.path, 'android', 'app')).createSync(
+        recursive: true,
+      );
+      File(
+        p.join(tempDir.path, 'android', 'app', 'build.gradle'),
+      ).writeAsStringSync('applicationId "com.acme.demo_app"');
+      Directory(p.join(tempDir.path, 'web')).createSync(recursive: true);
+      File(p.join(tempDir.path, 'lib', 'main_dev.dart'))
+        ..createSync(recursive: true)
+        ..writeAsStringSync('void main() {}');
+      File(p.join(tempDir.path, 'lib', 'main_prod.dart'))
+        ..createSync(recursive: true)
+        ..writeAsStringSync('void main() {}');
+      File(
+        p.join(tempDir.path, 'pubspec.yaml'),
+      ).writeAsStringSync(
+        'name: demo_app\ndependencies:\n  flutter_riverpod: any\n',
+      );
+
+      final exitCode = await runner.run(['init']);
+
+      expect(exitCode, equals(0));
+      final metadata = AgenticConfig(projectPath: tempDir.path).readMetadata(
+        fallbackProjectName: 'fallback',
+        fallbackToolVersion: 'test',
+      );
+      expect(metadata.org, equals('com.acme'));
+      expect(metadata.stateManagement, equals('riverpod'));
+      expect(metadata.platforms, equals(['android', 'web']));
+      expect(metadata.flavors, equals(['dev', 'prod']));
+    });
+
+    test(
+      'repairs existing fabricated metadata using inferred project state',
+      () async {
+        Directory(p.join(tempDir.path, '.info')).createSync(recursive: true);
+        File(
+          p.join(tempDir.path, '.info', 'agentic.yaml'),
+        ).writeAsStringSync(
+          'project_name: demo_app\n'
+          'org: com.example\n'
+          'ci_provider: github\n'
+          'state_management: cubit\n'
+          'platforms:\n'
+          '  - android\n'
+          '  - ios\n'
+          'flavors:\n'
+          '  - dev\n'
+          '  - staging\n'
+          '  - prod\n',
+        );
+        Directory(p.join(tempDir.path, 'android', 'app')).createSync(
+          recursive: true,
+        );
+        File(
+          p.join(tempDir.path, 'android', 'app', 'build.gradle'),
+        ).writeAsStringSync('applicationId "com.acme.demo_app"');
+        Directory(p.join(tempDir.path, 'web')).createSync(recursive: true);
+        File(p.join(tempDir.path, 'lib', 'main_prod.dart'))
+          ..createSync(recursive: true)
+          ..writeAsStringSync('void main() {}');
+        File(
+          p.join(tempDir.path, 'pubspec.yaml'),
+        ).writeAsStringSync(
+          'name: demo_app\ndependencies:\n  flutter_riverpod: any\n',
+        );
+
+        final exitCode = await runner.run(['init']);
+
+        expect(exitCode, equals(0));
+        final metadata = AgenticConfig(projectPath: tempDir.path).readMetadata(
+          fallbackProjectName: 'fallback',
+          fallbackToolVersion: 'test',
+        );
+        expect(metadata.org, equals('com.acme'));
+        expect(metadata.stateManagement, equals('riverpod'));
+        expect(metadata.platforms, equals(['android', 'web']));
+        expect(metadata.flavors, equals(['prod']));
+      },
+    );
   });
 }

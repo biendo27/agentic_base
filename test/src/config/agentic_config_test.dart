@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -101,6 +102,80 @@ void main() {
 
       final data = AgenticConfig(projectPath: tempDir.path).read();
       expect(data['ci_provider'], equals('gitlab'));
+    });
+
+    test('writeMetadata round-trips typed metadata and provenance', () {
+      final metadata = ProjectMetadata(
+        toolVersion: '0.1.0',
+        projectName: 'demo_app',
+        org: 'com.example',
+        ciProvider: CiProvider.github,
+        stateManagement: 'riverpod',
+        platforms: const ['android', 'web'],
+        flavors: const ['dev', 'prod'],
+        modules: const ['analytics'],
+        provenance: const {
+          'schema_version': MetadataProvenance.defaulted,
+          'project_kind': MetadataProvenance.defaulted,
+          'tool_version': MetadataProvenance.explicit,
+          'project_name': MetadataProvenance.explicit,
+          'org': MetadataProvenance.inferred,
+          'ci_provider': MetadataProvenance.explicit,
+          'state_management': MetadataProvenance.inferred,
+          'platforms': MetadataProvenance.inferred,
+          'flavors': MetadataProvenance.inferred,
+          'modules': MetadataProvenance.explicit,
+          'created_at': MetadataProvenance.defaulted,
+        },
+        createdAt: '2026-04-13T00:00:00.000Z',
+      );
+
+      final config = AgenticConfig(projectPath: tempDir.path)
+        ..writeMetadata(metadata);
+      final restored = config.readMetadata(
+        fallbackProjectName: 'fallback_app',
+        fallbackToolVersion: 'fallback',
+      );
+
+      expect(restored.projectName, equals('demo_app'));
+      expect(restored.stateManagement, equals('riverpod'));
+      expect(restored.modules, equals(['analytics']));
+      expect(
+        restored.provenance['state_management'],
+        equals(MetadataProvenance.inferred),
+      );
+      expect(
+        restored.provenance['modules'],
+        equals(MetadataProvenance.explicit),
+      );
+    });
+
+    test('readMetadata marks legacy stored fields as migrated provenance', () {
+      _createConfigFile(
+        tempDir,
+        'project_name: legacy_app\nstate_management: mobx\norg: com.legacy\n',
+      );
+
+      final metadata = AgenticConfig(projectPath: tempDir.path).readMetadata(
+        fallbackProjectName: 'fallback_app',
+        fallbackToolVersion: '0.2.0',
+      );
+
+      expect(metadata.projectName, equals('legacy_app'));
+      expect(metadata.stateManagement, equals('mobx'));
+      expect(metadata.org, equals('com.legacy'));
+      expect(
+        metadata.provenance['project_name'],
+        equals(MetadataProvenance.migrated),
+      );
+      expect(
+        metadata.provenance['state_management'],
+        equals(MetadataProvenance.migrated),
+      );
+      expect(
+        metadata.provenance['platforms'],
+        equals(MetadataProvenance.defaulted),
+      );
     });
 
     test(

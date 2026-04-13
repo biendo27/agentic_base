@@ -1,0 +1,24 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/{{feature_name.snakeCase()}}_state.dart';
+
+final {{feature_name.camelCase()}}ControllerProvider = NotifierProvider<
+  {{feature_name.pascalCase()}}Controller,
+  {{feature_name.pascalCase()}}State
+>({{feature_name.pascalCase()}}Controller.new);
+
+class {{feature_name.pascalCase()}}Controller
+    extends Notifier<{{feature_name.pascalCase()}}State> {
+  @override
+  {{feature_name.pascalCase()}}State build() =>
+      const {{feature_name.pascalCase()}}State.initial();
+
+  Future<void> load() async {
+    state = const {{feature_name.pascalCase()}}State.loading();
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      state = const {{feature_name.pascalCase()}}State.loaded([]);
+    } on Exception catch (e) {
+      state = {{feature_name.pascalCase()}}State.error(e.toString());
+    }
+  }
+}

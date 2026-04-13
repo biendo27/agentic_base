@@ -1,8 +1,14 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/cli/cli_runner.dart';
+import 'package:agentic_base/src/cli/commands/gen_command.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
+import 'package:agentic_base/src/config/project_metadata.dart';
+import 'package:agentic_base/src/deploy/process_runner.dart';
+import 'package:agentic_base/src/modules/module_integration_generator.dart';
 import 'package:agentic_base/src/modules/module_registry.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
+import 'package:agentic_base/src/modules/project_mutation_journal.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
@@ -11,9 +17,17 @@ import 'package:path/path.dart' as p;
 ///
 /// Usage: `agentic_base remove <module_name>`
 class RemoveCommand extends Command<int> {
-  RemoveCommand({required AgenticLogger logger}) : _logger = logger;
+  RemoveCommand({
+    required AgenticLogger logger,
+    ProcessRunner? processRunner,
+    String Function()? projectPathProvider,
+  }) : _logger = logger,
+       _processRunner = processRunner ?? runProcess,
+       _projectPathProvider = projectPathProvider;
 
   final AgenticLogger _logger;
+  final ProcessRunner _processRunner;
+  final String Function()? _projectPathProvider;
 
   @override
   String get name => 'remove';
@@ -36,7 +50,7 @@ class RemoveCommand extends Command<int> {
     }
 
     final moduleName = rest.first.trim();
-    final projectPath = Directory.current.path;
+    final projectPath = _projectPathProvider?.call() ?? Directory.current.path;
     final config = AgenticConfig(projectPath: projectPath);
 
     if (!config.exists) {
@@ -56,13 +70,13 @@ class RemoveCommand extends Command<int> {
       return 1;
     }
 
-    final data = config.read();
-    final projectName =
-        data['project_name'] as String? ?? p.basename(projectPath);
-    final stateManagement = data['state_management'] as String? ?? 'cubit';
-    final installed = List<String>.from(
-      (data['modules'] as List?)?.cast<String>() ?? [],
+    final metadata = config.readMetadata(
+      fallbackProjectName: p.basename(projectPath),
+      fallbackToolVersion: AgenticBaseCliRunner.version,
     );
+    final projectName = metadata.projectName;
+    final stateManagement = metadata.stateManagement;
+    final installed = List<String>.from(metadata.modules);
 
     // Guard: not installed.
     if (!installed.contains(moduleName)) {
@@ -85,11 +99,13 @@ class RemoveCommand extends Command<int> {
     }
 
     final module = ModuleRegistry.findOrThrow(moduleName);
+    final journal = ProjectMutationJournal();
     final ctx = ProjectContext(
       projectPath: projectPath,
       projectName: projectName,
       stateManagement: stateManagement,
       installedModules: List.unmodifiable(installed),
+      mutationJournal: journal,
     );
 
     final progress = _logger.progress('Removing $moduleName');
@@ -99,22 +115,58 @@ class RemoveCommand extends Command<int> {
     } on Exception catch (e) {
       progress.fail('Failed to remove $moduleName');
       _logger.err('$e');
+      journal.rollback();
       return 1;
     }
 
+    const ModuleIntegrationGenerator().sync(
+      ProjectContext(
+        projectPath: projectPath,
+        projectName: projectName,
+        stateManagement: stateManagement,
+        installedModules: List.unmodifiable(
+          installed.where((entry) => entry != moduleName).toList(),
+        ),
+        mutationJournal: journal,
+      ),
+    );
+
     // Run flutter pub get to reflect removed dependencies.
     final pubProgress = _logger.progress('Running flutter pub get');
-    final pubResult = await Process.run(
-      'flutter',
-      ['pub', 'get'],
-      workingDirectory: projectPath,
-    );
+    final pubResult = await _processRunner('flutter', [
+      'pub',
+      'get',
+    ], workingDirectory: projectPath);
     if (pubResult.exitCode != 0) {
       pubProgress.fail('flutter pub get failed');
       _logger.err(pubResult.stderr.toString());
+      journal.rollback();
       return 1;
     }
     pubProgress.complete('Dependencies updated');
+
+    final codegenResult = await runProjectCodeGeneration(
+      logger: _logger,
+      projectRoot: projectPath,
+      processRunner: _processRunner,
+    );
+    if (codegenResult != 0) {
+      journal.rollback();
+      return codegenResult;
+    }
+
+    config.writeMetadata(
+      metadata.copyWith(
+        toolVersion: AgenticBaseCliRunner.version,
+        modules:
+            metadata.modules.where((entry) => entry != moduleName).toList(),
+        provenance: {
+          ...metadata.provenance,
+          'tool_version': MetadataProvenance.explicit,
+          'modules': MetadataProvenance.explicit,
+        },
+      ),
+    );
 
     _logger.success('Module "$moduleName" removed successfully.');
     return 0;

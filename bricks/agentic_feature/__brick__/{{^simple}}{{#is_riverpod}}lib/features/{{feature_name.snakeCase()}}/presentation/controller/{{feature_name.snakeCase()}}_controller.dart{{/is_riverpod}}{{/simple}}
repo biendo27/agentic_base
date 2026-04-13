@@ -1,0 +1,39 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/data/repositories/{{feature_name.snakeCase()}}_repository_impl.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/domain/repositories/{{feature_name.snakeCase()}}_repository.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/domain/usecases/get_{{feature_name.snakeCase()}}.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/presentation/cubit/{{feature_name.snakeCase()}}_state.dart';
+
+final {{feature_name.camelCase()}}RepositoryProvider =
+    Provider<{{feature_name.pascalCase()}}Repository>(
+      (ref) => {{feature_name.pascalCase()}}RepositoryImpl(),
+    );
+
+final get{{feature_name.pascalCase()}}Provider =
+    Provider<Get{{feature_name.pascalCase()}}>(
+      (ref) => Get{{feature_name.pascalCase()}}(
+        ref.watch({{feature_name.camelCase()}}RepositoryProvider),
+      ),
+    );
+
+final {{feature_name.camelCase()}}ControllerProvider = NotifierProvider<
+  {{feature_name.pascalCase()}}Controller,
+  {{feature_name.pascalCase()}}State
+>({{feature_name.pascalCase()}}Controller.new);
+
+class {{feature_name.pascalCase()}}Controller
+    extends Notifier<{{feature_name.pascalCase()}}State> {
+  @override
+  {{feature_name.pascalCase()}}State build() =>
+      const {{feature_name.pascalCase()}}State.initial();
+
+  Future<void> load() async {
+    state = const {{feature_name.pascalCase()}}State.loading();
+    final (items, failure) = await ref.read(get{{feature_name.pascalCase()}}Provider)();
+    if (failure != null) {
+      state = {{feature_name.pascalCase()}}State.error(failure.message);
+    } else {
+      state = {{feature_name.pascalCase()}}State.loaded(items);
+    }
+  }
+}

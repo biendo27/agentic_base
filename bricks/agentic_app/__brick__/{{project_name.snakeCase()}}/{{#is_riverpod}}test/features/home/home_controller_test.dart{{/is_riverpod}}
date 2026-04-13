@@ -1,0 +1,22 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/presentation/controller/home_controller.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/presentation/cubit/home_state.dart';
+
+void main() {
+  test('initial state is HomeInitial', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    expect(container.read(homeControllerProvider), equals(HomeState.initial()));
+  });
+
+  test('loadItems emits loaded state', () async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await container.read(homeControllerProvider.notifier).loadItems();
+
+    expect(container.read(homeControllerProvider), isA<HomeLoaded>());
+  });
+}

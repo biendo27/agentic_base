@@ -13,3 +13,6 @@
 .dart_tool/
 pubspec.lock
 my_app/
+
+# Generated repository snapshots
+repomix-output.*

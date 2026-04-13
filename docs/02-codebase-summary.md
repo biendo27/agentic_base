@@ -2,9 +2,9 @@
 
 ## Snapshot
 
-The repo root is now the real product root. `docs/` and `plans/` hold repo-level knowledge and delivery artifacts alongside the package source.
+The repo root is the real product root. `docs/` stores evergreen repo docs and `plans/` stores delivery artifacts.
 
-Before this init pass, `docs/` contained only one session journal. Evergreen project docs did not exist yet.
+For a repomix-backed machine snapshot, see [`codebase-summary.md`](./codebase-summary.md).
 
 ## Top-Level Layout
 
@@ -15,31 +15,19 @@ Before this init pass, `docs/` contained only one session journal. Evergreen pro
 | [`plans/`](../plans/) | Timestamped implementation plans and reports. |
 | [`.github/workflows/`](../.github/workflows/ci.yml) | Package CI automation. |
 
-## Package Metrics
-
-Counts below exclude generated caches such as `.dart_tool`.
-
-| Area | Files | LOC |
-| --- | ---: | ---: |
-| `lib` | 52 | 6762 |
-| `bricks` | 110 | 3087 |
-| `test` | 9 | 1489 |
-| repo root package files | 6 | 671 |
-| `example` | 1 | 22 |
-| `bin` | 1 | 13 |
-
 ## Main Code Areas
 
 | Area | Responsibility |
 | --- | --- |
 | `lib/src/cli/` | Command runner plus individual CLI commands. |
-| `lib/src/generators/` | Project, feature, and test generation orchestration. |
-| `lib/src/config/` | `.info/agentic.yaml` state plus feature spec and state config parsing. |
-| `lib/src/modules/` | Module contract, registry, install/uninstall helpers, module implementations. |
+| `lib/src/config/` | `.info/agentic.yaml` state, init metadata inference/repair, state profile config. |
+| `lib/src/generators/` | Project, feature, and contract generation orchestration. |
+| `lib/src/modules/` | Module contract, registry, rollback journal, integration generator, install/uninstall helpers. |
 | `lib/src/tui/` | Logging and interactive prompt helpers. |
-| `bricks/agentic_app` | Main app starter brick plus Mason hooks. |
-| `bricks/agentic_feature` | Feature scaffold brick. |
-| `test/src/` | Unit-focused tests around CLI metadata, parsers, registry logic, and generators. |
+| `bricks/agentic_app` | Main app starter brick plus Mason hooks and state-conditional scaffolding. |
+| `bricks/agentic_feature` | Feature scaffold brick with cubit/riverpod/mobx branches. |
+| `test/src/` | Unit tests around CLI metadata, parsers, registry logic, and generators. |
+| `test/integration/` | Generated-app smoke tests plus module wiring coverage. |
 
 ## Verified Command Surface
 
@@ -61,8 +49,8 @@ The CLI runner registers:
 
 The package creates or modifies Flutter projects in two main ways:
 
-- `create` makes a fresh Flutter project, overlays the `agentic_app` brick, materializes typed Slang output, and verifies it
-- `init` adds agentic scaffolding to an existing Flutter project without overwriting existing files
+- `create` makes a fresh Flutter project, overlays the `agentic_app` brick, writes `.info/agentic.yaml`, installs selected modules, materializes typed translations, and verifies the generated app.
+- `init` adds agentic scaffolding to an existing Flutter project without overwriting existing files and can repair stale or fabricated metadata with provenance.
 
 Generated starter apps now follow one explicit ownership contract:
 
@@ -70,6 +58,8 @@ Generated starter apps now follow one explicit ownership contract:
 - native shells come from `flutter create`
 - native flavor assets come from `flutter_flavorizr`
 - duplicate root shell files such as `lib/app.dart`, `lib/flavors.dart`, and `lib/pages/**` are deleted and asserted absent
+- starter scaffolds now keep cubit, riverpod, and mobx output aligned with the selected state profile
+- analytics now wires a concrete `AnalyticsService` seam into the generated DI graph and is smoke-tested
 
 The app brick also ships its own generated-project docs under the template `docs/` folder, which means this repo has two doc surfaces:
 
@@ -82,10 +72,13 @@ Current tests are mostly fast unit tests:
 
 - CLI runner behavior
 - create command parsing and validation
+- add/remove command transactional module-refresh orchestration
+- init metadata inference and repair
 - config parsing and state config mapping
 - test file generation
 - module registry dependency logic
-- prompt helpers
+- project contract validation and generated-app smoke tests
+- analytics module DI wiring in generated starter apps
 
 What is not present yet in this repo CI:
 
@@ -93,11 +86,11 @@ What is not present yet in this repo CI:
 
 ## Notable Findings
 
-- `ModuleRegistry` currently exposes 27 modules, while the package README still advertises 25
 - repo automation remains GitHub-hosted, but generated projects can now scaffold either GitHub or GitLab CI from one persisted provider contract
-- `deploy` now resolves the target-project provider from `.info/agentic.yaml` and routes through `gh` or `glab`
-- generated app smoke coverage now exists in `test/integration/generated_app_smoke_test.dart`
-- root GitHub Actions now validates both scaffold variants and a pinned macOS generated-app native gate
+- `deploy` resolves the target-project provider from `.info/agentic.yaml` and routes through `gh` or `glab`
+- generated app smoke coverage now asserts analytics module DI wiring in the emitted `injection.config.dart`
+- generated app smoke coverage now exercises cubit, riverpod, and mobx starter apps
+- `ProjectMutationJournal` keeps module mutations rollback-safe while `ModuleIntegrationGenerator` rewrites the live bootstrap seam
 - some command/orchestration files exceed the repo's 200 LOC target:
   - `init_command.dart`
   - `brick_command.dart`
@@ -109,5 +102,7 @@ What is not present yet in this repo CI:
 - [`lib/src/generators/project_generator.dart`](../lib/src/generators/project_generator.dart)
 - [`lib/src/generators/generated_project_contract.dart`](../lib/src/generators/generated_project_contract.dart)
 - [`lib/src/modules/module_registry.dart`](../lib/src/modules/module_registry.dart)
+- [`lib/src/modules/module_integration_generator.dart`](../lib/src/modules/module_integration_generator.dart)
+- [`lib/src/modules/project_mutation_journal.dart`](../lib/src/modules/project_mutation_journal.dart)
 - [`bricks/agentic_app/brick.yaml`](../bricks/agentic_app/brick.yaml)
 - [`test/src/modules/module_registry_test.dart`](../test/src/modules/module_registry_test.dart)

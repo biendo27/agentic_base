@@ -12,7 +12,7 @@ flutter run --flavor dev -t lib/main_dev.dart --dart-define-from-file=env/dev.en
 
 ## Architecture
 
-Clean Architecture with Cubit state management.
+Clean Architecture with `{{state_display_name}}` state management.
 
 ```text
 assets/i18n/
@@ -44,6 +44,13 @@ flutter run --flavor prod -t lib/main_prod.dart --dart-define-from-file=env/prod
 | `make build` | Build APK with flavor env |
 | `make ci-check` | Regenerate, analyze, and test |
 | `agentic_base deploy <dev|staging|prod>` | Trigger the configured remote CI deploy path |
+
+## State Runtime
+
+- Source of truth: `.info/agentic.yaml` → `state_management: {{state_management}}`
+- Presentation runtime: `{{state_display_name}}`
+{{#uses_get_it}}- DI/runtime wiring: `get_it` + `injectable` plus `lib/app/modules/module_registrations.dart` for installed modules{{/uses_get_it}}
+{{#is_riverpod}}- DI/runtime wiring: Riverpod providers plus `lib/app/modules/module_providers.dart` for installed modules{{/is_riverpod}}
 
 ## CI/CD Contract
 

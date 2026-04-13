@@ -1,6 +1,8 @@
 /// State management configuration — packages, dev packages, DI system.
 library;
 
+import 'package:agentic_base/src/config/scaffold_state_profile.dart';
+
 /// Supported state management paradigms with their associated dependency sets.
 ///
 /// Each value carries the exact pub constraints to inject into `pubspec.yaml`
@@ -20,16 +22,12 @@ enum StateConfig {
     diSystem: 'get_it',
   ),
 
-  /// Flutter Riverpod + riverpod_annotation (self-contained DI).
+  /// Flutter Riverpod with provider-based runtime composition.
   riverpod(
     packages: {
-      'flutter_riverpod': '^2.6.1',
-      'riverpod_annotation': '^2.6.1',
+      'flutter_riverpod': '^3.3.1',
     },
-    devPackages: {
-      'riverpod_generator': '^2.6.3',
-      'riverpod_lint': '^2.6.3',
-    },
+    devPackages: {},
     diSystem: 'riverpod',
   ),
 
@@ -88,4 +86,20 @@ enum StateConfig {
     riverpod => 'Riverpod',
     mobx => 'MobX',
   };
+
+  ScaffoldStateProfile get profile => ScaffoldStateProfile(
+    name: name,
+    displayName: displayName,
+    packages: Map<String, String>.unmodifiable(packages),
+    devPackages: Map<String, String>.unmodifiable(devPackages),
+    usesGetIt: diSystem == 'get_it',
+    usesInjectable: diSystem == 'get_it',
+    usesRiverpod: this == riverpod,
+    usesMobx: this == mobx,
+    presentationRuntime: switch (this) {
+      cubit => 'cubit',
+      riverpod => 'riverpod',
+      mobx => 'mobx',
+    },
+  );
 }

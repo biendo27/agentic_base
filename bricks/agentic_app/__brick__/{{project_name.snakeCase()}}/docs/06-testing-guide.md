@@ -6,7 +6,7 @@
 test/
 ├── features/
 │   └── <name>/
-│       ├── <name>_cubit_test.dart
+│       ├── <name>_state_runtime_test.dart
 │       └── mock_<name>_repository.dart
 ├── helpers/
 │   ├── mock_helpers.dart    # Shared mocks
@@ -16,11 +16,14 @@ test/
         └── api_client_test.dart
 ```
 
-## Unit Tests — Cubits
+## Unit Tests — State Runtime
 
-Use `bloc_test` + `mocktail`:
+{{#is_cubit}}Use `bloc_test` + `mocktail`:{{/is_cubit}}
+{{#is_riverpod}}Use `ProviderContainer` + `mocktail`:{{/is_riverpod}}
+{{#is_mobx}}Use `mobx` observable assertions + `mocktail`:{{/is_mobx}}
 
 ```dart
+{{#is_cubit}}
 class MockGetHomeItems extends Mock implements GetHomeItems {}
 
 void main() {
@@ -71,6 +74,61 @@ void main() {
   });
 }
 ```
+{{/is_cubit}}
+{{#is_riverpod}}
+class MockGetHomeItems extends Mock implements GetHomeItems {}
+
+void main() {
+  late ProviderContainer container;
+  late MockGetHomeItems mockGetHomeItems;
+
+  setUp(() {
+    mockGetHomeItems = MockGetHomeItems();
+    container = ProviderContainer(
+      overrides: [
+        getHomeItemsProvider.overrideWithValue(mockGetHomeItems),
+      ],
+    );
+  });
+
+  tearDown(() => container.dispose());
+
+  test('loads success state', () async {
+    when(() => mockGetHomeItems()).thenAnswer(
+      (_) async => (fakeItems, null),
+    );
+
+    await container.read(homeControllerProvider.notifier).loadItems();
+
+    expect(container.read(homeControllerProvider), isA<HomeLoaded>());
+  });
+}
+```
+{{/is_riverpod}}
+{{#is_mobx}}
+class MockGetHomeItems extends Mock implements GetHomeItems {}
+
+void main() {
+  late HomeStore store;
+  late MockGetHomeItems mockGetHomeItems;
+
+  setUp(() {
+    mockGetHomeItems = MockGetHomeItems();
+    store = HomeStore(mockGetHomeItems);
+  });
+
+  test('loads success state', () async {
+    when(() => mockGetHomeItems()).thenAnswer(
+      (_) async => (fakeItems, null),
+    );
+
+    await store.loadItems();
+
+    expect(store.state.value, isA<HomeLoaded>());
+  });
+}
+```
+{{/is_mobx}}
 
 ## Widget Tests
 
@@ -78,6 +136,7 @@ Use `pumpApp` helper from `test/helpers/pump_app.dart`:
 
 ```dart
 testWidgets('shows loading indicator', (tester) async {
+{{#is_cubit}}
   whenListen(
     mockCubit,
     Stream.value(const HomeState.loading()),
@@ -94,6 +153,32 @@ testWidgets('shows loading indicator', (tester) async {
   expect(find.byType(CircularProgressIndicator), findsOneWidget);
 });
 ```
+{{/is_cubit}}
+{{#is_riverpod}}
+  await tester.pumpApp(
+    ProviderScope(
+      overrides: [
+        homeControllerProvider.overrideWith(() => FakeHomeController()),
+      ],
+      child: const HomePage(),
+    ),
+  );
+
+  expect(find.byType(CircularProgressIndicator), findsOneWidget);
+});
+```
+{{/is_riverpod}}
+{{#is_mobx}}
+  final store = HomeStore(mockGetHomeItems);
+  runInAction(() => store.state.value = const HomeState.loading());
+
+  await tester.pumpApp(const HomePage());
+  await tester.pump();
+
+  expect(find.byType(CircularProgressIndicator), findsOneWidget);
+});
+```
+{{/is_mobx}}
 
 ## Unit Tests — Use Cases
 
@@ -124,7 +209,7 @@ Or use: `make test`
 ## Coverage Target
 
 Aim for >80% coverage on:
-- All Cubit classes
+- All presentation controllers/stores
 - All use cases
 - Critical utility functions
 

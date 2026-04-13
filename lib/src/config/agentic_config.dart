@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
@@ -27,6 +28,17 @@ class AgenticConfig {
     return _yamlMapToMap(yaml);
   }
 
+  ProjectMetadata readMetadata({
+    String fallbackProjectName = 'app',
+    String fallbackToolVersion = 'unknown',
+  }) {
+    return ProjectMetadata.fromConfigMap(
+      read(),
+      fallbackProjectName: fallbackProjectName,
+      fallbackToolVersion: fallbackToolVersion,
+    );
+  }
+
   /// Write [data] to agentic.yaml, preserving comments if file exists.
   void write(Map<String, dynamic> data) {
     final file = File(_configPath);
@@ -42,8 +54,12 @@ class AgenticConfig {
     file.writeAsStringSync(editor.toString());
   }
 
+  void writeMetadata(ProjectMetadata metadata) {
+    write(metadata.toConfigMap());
+  }
+
   /// Create initial config for a new project.
-  static void createInitial({
+  static ProjectMetadata createInitial({
     required String projectPath,
     required String projectName,
     required String org,
@@ -52,18 +68,39 @@ class AgenticConfig {
     required List<String> flavors,
     required String toolVersion,
     CiProvider ciProvider = defaultCiProvider,
+    Map<String, MetadataProvenance> provenance =
+        const <String, MetadataProvenance>{},
+    List<String> modules = const <String>[],
   }) {
-    AgenticConfig(projectPath: projectPath).write({
-      'tool_version': toolVersion,
-      'project_name': projectName,
-      'org': org,
-      'ci_provider': ciProvider.name,
-      'state_management': stateManagement,
-      'platforms': platforms,
-      'flavors': flavors,
-      'modules': <String>[],
-      'created_at': DateTime.now().toIso8601String(),
-    });
+    final metadata = ProjectMetadata(
+      toolVersion: toolVersion,
+      projectName: projectName,
+      org: org,
+      ciProvider: ciProvider,
+      stateManagement: stateManagement,
+      platforms: List<String>.from(platforms),
+      flavors: List<String>.from(flavors),
+      modules: List<String>.from(modules),
+      createdAt: DateTime.now().toIso8601String(),
+      provenance: {
+        'schema_version': MetadataProvenance.defaulted,
+        'project_kind': MetadataProvenance.defaulted,
+        'tool_version':
+            provenance['tool_version'] ?? MetadataProvenance.explicit,
+        'project_name':
+            provenance['project_name'] ?? MetadataProvenance.explicit,
+        'org': provenance['org'] ?? MetadataProvenance.explicit,
+        'ci_provider': provenance['ci_provider'] ?? MetadataProvenance.explicit,
+        'state_management':
+            provenance['state_management'] ?? MetadataProvenance.explicit,
+        'platforms': provenance['platforms'] ?? MetadataProvenance.explicit,
+        'flavors': provenance['flavors'] ?? MetadataProvenance.explicit,
+        'modules': provenance['modules'] ?? MetadataProvenance.explicit,
+        'created_at': MetadataProvenance.defaulted,
+      },
+    );
+    AgenticConfig(projectPath: projectPath).writeMetadata(metadata);
+    return metadata;
   }
 
   static Map<String, dynamic> _yamlMapToMap(YamlMap yaml) {

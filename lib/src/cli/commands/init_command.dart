@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/init_project_metadata_resolver.dart';
+import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
-import 'package:yaml/yaml.dart';
 
 /// Adds agentic_base scaffolding to an EXISTING Flutter project.
 ///
@@ -48,46 +48,27 @@ class InitCommand extends Command<int> {
       return 1;
     }
 
-    // Guard: already initialised.
     final config = AgenticConfig(projectPath: projectPath);
-    if (config.exists) {
-      _logger.warn(
-        '.info/agentic.yaml already exists. '
-        'Project is already initialised.',
-      );
-      return 0;
-    }
-
-    _logger.header('Initialising agentic_base...');
-
-    // Detect existing state management from pubspec.
     final pubspecContent = pubspecFile.readAsStringSync();
-    final detectedState = _detectStateManagement(pubspecContent);
-    final projectName = _readProjectName(pubspecContent, projectPath);
-    final ciProvider = _resolveCiProvider(
-      projectPath,
-      argResults!['ci-provider'] as String?,
+    final resolver = InitProjectMetadataResolver();
+    final metadata = resolver.resolve(
+      projectPath: projectPath,
+      pubspecContent: pubspecContent,
+      projectNameFallback: p.basename(projectPath),
+      explicitCiProvider: argResults!['ci-provider'] as String?,
     );
+    final projectName = metadata.projectName;
+    final modeLabel = config.exists ? 'Repairing' : 'Initialising';
 
-    _logger.info(
-      'Detected state management: '
-      '${detectedState ?? 'none (defaulting to cubit)'}',
-    );
-
-    final stateManagement = detectedState ?? 'cubit';
+    _logger
+      ..header('$modeLabel agentic_base...')
+      ..info(
+        'Resolved state management: ${metadata.stateManagement} '
+        '(${metadata.provenance['state_management']!.wireName})',
+      );
     final added = <String>[];
 
-    // Write .info/agentic.yaml (non-destructive — guarded above).
-    AgenticConfig.createInitial(
-      projectPath: projectPath,
-      projectName: projectName,
-      org: 'com.example',
-      ciProvider: ciProvider,
-      stateManagement: stateManagement,
-      platforms: const ['android', 'ios'],
-      flavors: const ['dev', 'staging', 'prod'],
-      toolVersion: AgenticBaseCliRunner.version,
-    );
+    config.writeMetadata(metadata);
     added.add('.info/agentic.yaml');
 
     // Write optional scaffolding files — skip if already present.
@@ -111,7 +92,7 @@ class InitCommand extends Command<int> {
 
     _writeIfAbsent(
       path: p.join(projectPath, 'analysis_options.yaml'),
-      content: _analysisOptionsContent,
+      content: _safeAnalysisOptionsContent,
       added: added,
     );
 
@@ -138,7 +119,7 @@ class InitCommand extends Command<int> {
       ..info('')
       ..success('Initialisation complete.')
       ..info('')
-      ..info('Files added:');
+      ..info('Files created or updated:');
     for (final f in added) {
       _logger.info('  + $f');
     }
@@ -149,68 +130,6 @@ class InitCommand extends Command<int> {
       ..info('  agentic_base doctor');
 
     return 0;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Detection helpers
-  // ---------------------------------------------------------------------------
-
-  /// Scan pubspec.yaml content for known state management packages.
-  ///
-  /// Returns `'cubit'`, `'riverpod'`, `'mobx'`, or `null` if none found.
-  String? _detectStateManagement(String pubspecContent) {
-    if (pubspecContent.contains('flutter_bloc') ||
-        pubspecContent.contains('bloc:')) {
-      return 'cubit';
-    }
-    if (pubspecContent.contains('flutter_riverpod') ||
-        pubspecContent.contains('riverpod')) {
-      return 'riverpod';
-    }
-    if (pubspecContent.contains('flutter_mobx') ||
-        pubspecContent.contains('mobx:')) {
-      return 'mobx';
-    }
-    if (pubspecContent.contains('get:') || pubspecContent.contains('get_x')) {
-      // GetX is not natively supported — warn and default to cubit.
-      _logger.warn(
-        'GetX detected. agentic_base does not support GetX natively. '
-        'Defaulting to cubit config.',
-      );
-    }
-    return null;
-  }
-
-  /// Extract `name:` field from pubspec content; fallback to directory name.
-  String _readProjectName(String pubspecContent, String projectPath) {
-    try {
-      final yaml = loadYaml(pubspecContent);
-      if (yaml is YamlMap) {
-        final name = yaml['name'];
-        if (name is String && name.isNotEmpty) return name;
-      }
-    } on Exception {
-      // Ignore parse errors — fall through to fallback.
-    }
-    return p.basename(projectPath);
-  }
-
-  CiProvider _resolveCiProvider(String projectPath, String? explicitValue) {
-    if (explicitValue != null) {
-      return parseCiProvider(explicitValue);
-    }
-
-    final inferredProvider = inferCiProviderFromProjectFiles(projectPath);
-    if (inferredProvider != null) {
-      _logger.info('Detected CI provider: ${inferredProvider.name}');
-      return inferredProvider;
-    }
-
-    _logger.warn(
-      'Could not infer a single CI provider from existing files. '
-      'Defaulting to ${defaultCiProvider.name}.',
-    );
-    return defaultCiProvider;
   }
 
   // ---------------------------------------------------------------------------
@@ -296,9 +215,7 @@ build:
 \tflutter build apk
 ''';
 
-const _analysisOptionsContent = '''
-include: package:very_good_analysis/analysis_options.yaml
-
+const _safeAnalysisOptionsContent = '''
 analyzer:
   exclude:
     - "**/*.g.dart"

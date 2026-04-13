@@ -342,5 +342,71 @@ void main() {
         isTrue,
       );
     });
+
+    test('generates riverpod presentation files without cubit output', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'feature-generator-riverpod-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await FeatureGenerator(logger: AgenticLogger()).generate(
+        featureName: 'user_profile',
+        projectPath: tempDir.path,
+        projectName: 'demo_app',
+        stateManagement: 'riverpod',
+      );
+
+      expect(
+        File(
+          p.join(
+            tempDir.path,
+            'lib/features/user_profile/presentation/controller/user_profile_controller.dart',
+          ),
+        ).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(
+          p.join(
+            tempDir.path,
+            'lib/features/user_profile/presentation/cubit/user_profile_cubit.dart',
+          ),
+        ).existsSync(),
+        isFalse,
+      );
+    });
+
+    test('generates mobx presentation files without cubit output', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'feature-generator-mobx-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await FeatureGenerator(logger: AgenticLogger()).generate(
+        featureName: 'user_profile',
+        projectPath: tempDir.path,
+        projectName: 'demo_app',
+        stateManagement: 'mobx',
+      );
+
+      expect(
+        File(
+          p.join(
+            tempDir.path,
+            'lib/features/user_profile/presentation/store/user_profile_store.dart',
+          ),
+        ).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(
+          p.join(
+            tempDir.path,
+            'lib/features/user_profile/presentation/cubit/user_profile_cubit.dart',
+          ),
+        ).existsSync(),
+        isFalse,
+      );
+    });
   });
 }

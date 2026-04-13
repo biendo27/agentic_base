@@ -1,10 +1,14 @@
+{{^is_riverpod}}
 import 'package:injectable/injectable.dart';
+{{/is_riverpod}}
 import 'package:{{project_name.snakeCase()}}/core/error/failures.dart';
 import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/domain/entities/{{feature_name.snakeCase()}}_entity.dart';
 import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/domain/repositories/{{feature_name.snakeCase()}}_repository.dart';
 
 /// Fetches all {{feature_name.titleCase()}} items from the repository.
+{{^is_riverpod}}
 @injectable
+{{/is_riverpod}}
 class Get{{feature_name.pascalCase()}} {
   const Get{{feature_name.pascalCase()}}(this._repository);
 

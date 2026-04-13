@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:agentic_base/src/config/scaffold_state_profile.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:mason/mason.dart';
 import 'package:path/path.dart' as p;
@@ -29,6 +30,7 @@ class FeatureGenerator {
     );
 
     try {
+      final stateProfile = ScaffoldStateProfile.fromState(stateManagement);
       final bricksRoot = await _resolveBricksRoot();
       final brick = Brick.path(p.join(bricksRoot, 'agentic_feature'));
       final generator = await MasonGenerator.fromBrick(brick);
@@ -36,8 +38,8 @@ class FeatureGenerator {
       final vars = <String, dynamic>{
         'feature_name': featureName,
         'simple': simple,
-        'state_management': stateManagement,
         'project_name': projectName,
+        ...stateProfile.masonVars,
       };
 
       final target = DirectoryGeneratorTarget(Directory(projectPath));

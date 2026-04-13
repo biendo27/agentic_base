@@ -2,12 +2,24 @@ import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+{{#is_cubit}}
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:{{project_name.snakeCase()}}/core/di/injection.dart';
 import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/{{feature_name.snakeCase()}}_cubit.dart';
+{{/is_cubit}}
+{{#is_riverpod}}
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/{{feature_name.snakeCase()}}_controller.dart';
+{{/is_riverpod}}
+{{#is_mobx}}
+import 'package:flutter_mobx/flutter_mobx.dart';
+import 'package:{{project_name.snakeCase()}}/core/di/injection.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/{{feature_name.snakeCase()}}_store.dart';
+{{/is_mobx}}
 import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/{{feature_name.snakeCase()}}_state.dart';
 
 @RoutePage()
+{{#is_cubit}}
 class {{feature_name.pascalCase()}}Page extends StatelessWidget {
   const {{feature_name.pascalCase()}}Page({super.key});
 
@@ -19,36 +31,118 @@ class {{feature_name.pascalCase()}}Page extends StatelessWidget {
         unawaited(cubit.load());
         return cubit;
       },
-      child: Scaffold(
-        appBar: AppBar(title: const Text('{{feature_name.titleCase()}}')),
-        body: BlocBuilder<{{feature_name.pascalCase()}}Cubit, {{feature_name.pascalCase()}}State>(
-          builder: (context, state) => switch (state) {
-            {{feature_name.pascalCase()}}Initial() => const SizedBox.shrink(),
-            {{feature_name.pascalCase()}}Loading() =>
-              const Center(child: CircularProgressIndicator()),
-            {{feature_name.pascalCase()}}Loaded(:final items) => ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: items.length,
-                itemBuilder: (context, index) =>
-                    ListTile(title: Text(items[index])),
-              ),
-            {{feature_name.pascalCase()}}Error(:final message) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(message),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () =>
-                          context.read<{{feature_name.pascalCase()}}Cubit>().load(),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-          },
+      child: BlocBuilder<{{feature_name.pascalCase()}}Cubit, {{feature_name.pascalCase()}}State>(
+        builder: (context, state) => _{{feature_name.pascalCase()}}View(
+          state: state,
+          onRetry: () => context.read<{{feature_name.pascalCase()}}Cubit>().load(),
         ),
       ),
+    );
+  }
+}
+{{/is_cubit}}
+{{#is_riverpod}}
+class {{feature_name.pascalCase()}}Page extends ConsumerStatefulWidget {
+  const {{feature_name.pascalCase()}}Page({super.key});
+
+  @override
+  ConsumerState<{{feature_name.pascalCase()}}Page> createState() =>
+      _{{feature_name.pascalCase()}}PageState();
+}
+
+class _{{feature_name.pascalCase()}}PageState
+    extends ConsumerState<{{feature_name.pascalCase()}}Page> {
+  @override
+  void initState() {
+    super.initState();
+    unawaited(
+      Future<void>.microtask(
+        () =>
+            ref.read({{feature_name.camelCase()}}ControllerProvider.notifier).load(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch({{feature_name.camelCase()}}ControllerProvider);
+    return _{{feature_name.pascalCase()}}View(
+      state: state,
+      onRetry: () =>
+          ref.read({{feature_name.camelCase()}}ControllerProvider.notifier).load(),
+    );
+  }
+}
+{{/is_riverpod}}
+{{#is_mobx}}
+class {{feature_name.pascalCase()}}Page extends StatefulWidget {
+  const {{feature_name.pascalCase()}}Page({super.key});
+
+  @override
+  State<{{feature_name.pascalCase()}}Page> createState() =>
+      _{{feature_name.pascalCase()}}PageState();
+}
+
+class _{{feature_name.pascalCase()}}PageState
+    extends State<{{feature_name.pascalCase()}}Page> {
+  late final {{feature_name.pascalCase()}}Store _store;
+
+  @override
+  void initState() {
+    super.initState();
+    _store = getIt<{{feature_name.pascalCase()}}Store>();
+    unawaited(_store.load());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Observer(
+      builder:
+          (_) => _{{feature_name.pascalCase()}}View(
+            state: _store.state.value,
+            onRetry: _store.load,
+          ),
+    );
+  }
+}
+{{/is_mobx}}
+
+class _{{feature_name.pascalCase()}}View extends StatelessWidget {
+  const _{{feature_name.pascalCase()}}View({
+    required this.state,
+    required this.onRetry,
+  });
+
+  final {{feature_name.pascalCase()}}State state;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('{{feature_name.titleCase()}}')),
+      body: switch (state) {
+        {{feature_name.pascalCase()}}Initial() => const SizedBox.shrink(),
+        {{feature_name.pascalCase()}}Loading() =>
+          const Center(child: CircularProgressIndicator()),
+        {{feature_name.pascalCase()}}Loaded(:final items) => ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: items.length,
+          itemBuilder: (context, index) => ListTile(title: Text(items[index])),
+        ),
+        {{feature_name.pascalCase()}}Error(:final message) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(message),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: onRetry,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      },
     );
   }
 }

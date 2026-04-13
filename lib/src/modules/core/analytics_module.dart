@@ -82,9 +82,11 @@ abstract class AnalyticsService {
 
   String _firebaseAnalyticsImpl(String pkg) => '''
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:injectable/injectable.dart';
 import 'package:$pkg/core/analytics/analytics_service.dart';
 
 /// Firebase implementation of [AnalyticsService].
+@LazySingleton(as: AnalyticsService)
 class FirebaseAnalyticsService implements AnalyticsService {
   FirebaseAnalyticsService({FirebaseAnalytics? analytics})
       : _analytics = analytics ?? FirebaseAnalytics.instance;

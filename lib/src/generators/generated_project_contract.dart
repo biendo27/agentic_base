@@ -149,7 +149,11 @@ final class GeneratedProjectContract {
     }
   }
 
-  static void validate(String projectDir, {CiProvider? ciProvider}) {
+  static void validate(
+    String projectDir, {
+    CiProvider? ciProvider,
+    String? stateManagement,
+  }) {
     for (final relativePath in requiredPaths) {
       final type = FileSystemEntity.typeSync(
         _resolveProjectPath(projectDir, relativePath),
@@ -184,6 +188,89 @@ final class GeneratedProjectContract {
     validateNativeFlavorOutputs(projectDir);
     if (ciProvider != null) {
       validateCiProviderOutputs(projectDir, ciProvider: ciProvider);
+    }
+    if (stateManagement != null) {
+      validateStateOutput(projectDir, stateManagement: stateManagement);
+    }
+  }
+
+  static void validateStateOutput(
+    String projectDir, {
+    required String stateManagement,
+  }) {
+    final pubspec =
+        File(
+          _resolveProjectPath(projectDir, 'pubspec.yaml'),
+        ).readAsStringSync();
+    final bootstrap =
+        File(
+          _resolveProjectPath(projectDir, 'lib/app/bootstrap.dart'),
+        ).readAsStringSync();
+    final injection =
+        File(
+          _resolveProjectPath(projectDir, 'lib/core/di/injection.dart'),
+        ).readAsStringSync();
+
+    switch (stateManagement) {
+      case 'cubit':
+        _requireContent(pubspec, 'flutter_bloc');
+        _requireContent(pubspec, 'get_it');
+        _requireContent(pubspec, 'injectable');
+        _requireContent(bootstrap, 'Bloc.observer');
+        _requirePath(
+          projectDir,
+          'lib/features/home/presentation/cubit/home_cubit.dart',
+        );
+        _forbidPath(
+          projectDir,
+          'lib/features/home/presentation/controller/home_controller.dart',
+        );
+        _forbidPath(
+          projectDir,
+          'lib/features/home/presentation/store/home_store.dart',
+        );
+      case 'riverpod':
+        _requireContent(pubspec, 'flutter_riverpod');
+        _forbidContent(pubspec, 'flutter_bloc');
+        _forbidContent(pubspec, 'get_it');
+        _forbidContent(pubspec, 'injectable');
+        _requireContent(bootstrap, 'UncontrolledProviderScope');
+        _forbidContent(bootstrap, 'Bloc.observer');
+        _forbidContent(injection, 'GetIt');
+        _requirePath(
+          projectDir,
+          'lib/features/home/presentation/controller/home_controller.dart',
+        );
+        _forbidPath(
+          projectDir,
+          'lib/features/home/presentation/cubit/home_cubit.dart',
+        );
+        _forbidPath(
+          projectDir,
+          'lib/features/home/presentation/store/home_store.dart',
+        );
+      case 'mobx':
+        _requireContent(pubspec, 'flutter_mobx');
+        _requireContent(pubspec, 'mobx');
+        _requireContent(pubspec, 'get_it');
+        _requireContent(pubspec, 'injectable');
+        _forbidContent(bootstrap, 'Bloc.observer');
+        _requirePath(
+          projectDir,
+          'lib/features/home/presentation/store/home_store.dart',
+        );
+        _forbidPath(
+          projectDir,
+          'lib/features/home/presentation/cubit/home_cubit.dart',
+        );
+        _forbidPath(
+          projectDir,
+          'lib/features/home/presentation/controller/home_controller.dart',
+        );
+      default:
+        throw ProjectGenerationException(
+          'Unsupported state management for contract validation: $stateManagement',
+        );
     }
   }
 
@@ -435,6 +522,33 @@ final class GeneratedProjectContract {
     if (type == FileSystemEntityType.notFound) {
       throw ProjectGenerationException(
         'Missing native flavor output: $relativePath',
+      );
+    }
+  }
+
+  static void _forbidPath(String projectDir, String relativePath) {
+    final type = FileSystemEntity.typeSync(
+      _resolveProjectPath(projectDir, relativePath),
+    );
+    if (type != FileSystemEntityType.notFound) {
+      throw ProjectGenerationException(
+        'Forbidden generated path still exists: $relativePath',
+      );
+    }
+  }
+
+  static void _requireContent(String contents, String expected) {
+    if (!contents.contains(expected)) {
+      throw ProjectGenerationException(
+        'Missing expected generated content: $expected',
+      );
+    }
+  }
+
+  static void _forbidContent(String contents, String expected) {
+    if (contents.contains(expected)) {
+      throw ProjectGenerationException(
+        'Forbidden generated content still exists: $expected',
       );
     }
   }

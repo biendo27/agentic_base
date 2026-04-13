@@ -1,0 +1,20 @@
+{{#uses_get_it}}
+import 'package:get_it/get_it.dart';
+
+Future<void> registerModuleServices(GetIt getIt) async {
+  // Module installs overwrite this placeholder when integrations are present.
+}
+
+Future<void> initializeModuleServices(GetIt getIt) async {
+  // Module installs overwrite this placeholder when startup hooks are present.
+}
+
+{{/uses_get_it}}
+{{#is_riverpod}}
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+Future<void> initializeModuleProviders(ProviderContainer container) async {
+  // Module installs overwrite this placeholder when providers are present.
+}
+
+{{/is_riverpod}}

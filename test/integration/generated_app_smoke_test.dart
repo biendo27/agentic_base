@@ -13,11 +13,13 @@ bool _isFlutterAvailable() {
   }
 }
 
+String get _dartExecutable => Platform.resolvedExecutable;
+
 void main() {
   final flutterAvailable = _isFlutterAvailable();
   for (final ciProvider in ['github', 'gitlab']) {
     test(
-      'create command generates a $ciProvider starter app that matches the ownership contract',
+      'create command generates a cubit $ciProvider starter app that matches the ownership contract',
       () async {
         final tempDir = await Directory.systemTemp.createTemp(
           'agentic-base-smoke-$ciProvider-',
@@ -25,21 +27,19 @@ void main() {
         addTearDown(() => tempDir.delete(recursive: true));
 
         final appName = 'smoke_${ciProvider}_app';
-        final result = await Process.run(
-          'dart',
-          [
-            'run',
-            'bin/agentic_base.dart',
-            'create',
-            appName,
-            '--no-interactive',
-            '--output-dir',
-            tempDir.path,
-            '--ci-provider',
-            ciProvider,
-          ],
-          workingDirectory: Directory.current.path,
-        );
+        final result = await Process.run(_dartExecutable, [
+          'run',
+          'bin/agentic_base.dart',
+          'create',
+          appName,
+          '--no-interactive',
+          '--output-dir',
+          tempDir.path,
+          '--ci-provider',
+          ciProvider,
+          '--state',
+          'cubit',
+        ], workingDirectory: Directory.current.path);
 
         expect(
           result.exitCode,
@@ -53,6 +53,7 @@ void main() {
           () => GeneratedProjectContract.validate(
             appDir,
             ciProvider: parseCiProvider(ciProvider),
+            stateManagement: 'cubit',
           ),
           returnsNormally,
         );
@@ -64,4 +65,103 @@ void main() {
       timeout: const Timeout(Duration(minutes: 4)),
     );
   }
+
+  for (final stateManagement in ['cubit', 'riverpod', 'mobx']) {
+    test(
+      'create command generates a $stateManagement starter app with no foreign runtime leftovers',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'agentic-base-smoke-state-$stateManagement-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        final appName = 'smoke_${stateManagement}_app';
+        final result = await Process.run(_dartExecutable, [
+          'run',
+          'bin/agentic_base.dart',
+          'create',
+          appName,
+          '--no-interactive',
+          '--output-dir',
+          tempDir.path,
+          '--ci-provider',
+          'github',
+          '--state',
+          stateManagement,
+        ], workingDirectory: Directory.current.path);
+
+        expect(
+          result.exitCode,
+          equals(0),
+          reason: '${result.stdout}\n${result.stderr}',
+        );
+
+        final appDir = p.join(tempDir.path, appName);
+        expect(
+          () => GeneratedProjectContract.validate(
+            appDir,
+            ciProvider: CiProvider.github,
+            stateManagement: stateManagement,
+          ),
+          returnsNormally,
+        );
+      },
+      skip:
+          flutterAvailable
+              ? false
+              : 'Flutter SDK is required for smoke generation.',
+      timeout: const Timeout(Duration(minutes: 4)),
+    );
+  }
+
+  test(
+    'create command wires analytics module into the generated DI graph',
+    () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'agentic-base-smoke-analytics-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      const appName = 'smoke_analytics_app';
+      final result = await Process.run(_dartExecutable, [
+        'run',
+        'bin/agentic_base.dart',
+        'create',
+        appName,
+        '--no-interactive',
+        '--output-dir',
+        tempDir.path,
+        '--modules',
+        'analytics',
+      ], workingDirectory: Directory.current.path);
+
+      expect(
+        result.exitCode,
+        equals(0),
+        reason: '${result.stdout}\n${result.stderr}',
+      );
+
+      final appDir = p.join(tempDir.path, appName);
+      final analyticsImpl =
+          File(
+            p.join(
+              appDir,
+              'lib/core/analytics/firebase_analytics_service.dart',
+            ),
+          ).readAsStringSync();
+      final injectionConfig =
+          File(
+            p.join(appDir, 'lib/core/di/injection.config.dart'),
+          ).readAsStringSync();
+
+      expect(analyticsImpl, contains('@LazySingleton(as: AnalyticsService)'));
+      expect(injectionConfig, contains('FirebaseAnalyticsService'));
+      expect(injectionConfig, contains('AnalyticsService'));
+    },
+    skip:
+        flutterAvailable
+            ? false
+            : 'Flutter SDK is required for smoke generation.',
+    timeout: const Timeout(Duration(minutes: 4)),
+  );
 }
