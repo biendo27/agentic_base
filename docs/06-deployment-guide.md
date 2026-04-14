@@ -85,6 +85,7 @@ Supported environments in source:
   - `./tools/build.sh <env> [artifact]`
   - `./tools/release-preflight.sh <env> <target>`
   - `./tools/release.sh <env> <target>`
+- generated workflows upload `artifacts/evidence/**` so verify and release-preflight runs stay inspectable outside the runner
 - final production store publish remains a human approval boundary even when upload plumbing is automated
 
 ### GitLab generated projects
@@ -95,6 +96,7 @@ Supported environments in source:
   - the project must provide a macOS runner with shell executor and Xcode
   - Linux runners may handle Dart-only work, but they do not satisfy native validation
 - deploy jobs route through the same shared project scripts and stay manual
+- generated verification and deploy pipelines preserve `artifacts/evidence/**` as job artifacts
 - logical environment mapping fans out to the real generated jobs:
   - `dev` → `deploy_dev`
   - `staging` → `deploy_staging_android_internal` + `deploy_staging_testflight`
@@ -109,17 +111,18 @@ Generated-project GitLab support does not mean this package repo itself runs on 
 
 GitLab production protection is still configured in GitLab project settings via protected environments. The scaffold keeps production deploy jobs manual, but GitLab UI policy must still be applied by the downstream repo owner.
 
-## Harness Contract V1 Direction
+## Harness Contract V1 Status
 
-The current generated release scripts already enforce the most important release boundary: production publish is not unattended.
-
-The planned harness model extends this with:
+The generated deployment and release surfaces now implement the Harness Contract V1 deployment-facing guarantees:
 
 - named release-preflight and evidence outputs
 - explicit approval states shared across local and CI runs
-- tier-aware gate packs instead of one implicit verify story
+- tier-aware gate packs derived from the declared profile/support tier
+- declared Flutter toolchain checks before release-preflight and release flows
 
-Until generator code changes land, these are design commitments documented in:
+The human boundary remains unchanged: final production publish is still not automated away.
+
+The contract details are documented in:
 
 - [`docs/11-eval-and-evidence-model.md`](./11-eval-and-evidence-model.md)
 - [`docs/12-approval-state-machine.md`](./12-approval-state-machine.md)

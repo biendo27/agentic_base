@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/config/agentic_config.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
 
@@ -21,9 +23,47 @@ class DoctorCommand extends Command<int> {
 
     var allGood = true;
 
-    allGood &= await _check('Flutter SDK', 'flutter', ['--version']);
+    final config = AgenticConfig(projectPath: Directory.current.path);
+    if (config.exists) {
+      final metadata = config.readMetadata();
+      final declared = metadata.harness.sdk;
+      final detected = detectFlutterToolchain(
+        manager: declared.manager,
+        projectPath: Directory.current.path,
+      );
+      _logger.info(
+        '  Declared Flutter contract: '
+        '${declared.manager.wireName} ${declared.version} (${declared.channel})',
+      );
+      if (!detected.available) {
+        _logger.err(
+          '  Local Flutter toolchain: unavailable via ${detected.command}'
+          '${detected.problem == null ? '' : ' (${detected.problem})'}',
+        );
+        allGood = false;
+      } else {
+        _logger.info(
+          '  Local Flutter toolchain: '
+          '${detected.version ?? 'unknown'} (${detected.channel ?? 'unknown'})',
+        );
+        if (!detected.matches(declared)) {
+          _logger.err(
+            '  Flutter contract mismatch: expected '
+            '${declared.version}/${declared.channel}, found '
+            '${detected.version ?? 'unknown'}/${detected.channel ?? 'unknown'}',
+          );
+          allGood = false;
+        } else {
+          _logger.success('  Flutter contract matches the manifest.');
+        }
+      }
+    } else {
+      allGood &= await _check('Flutter SDK', 'flutter', ['--version']);
+    }
+
     allGood &= await _check('Dart SDK', 'dart', ['--version']);
     allGood &= await _checkOptional('FVM', 'fvm', ['--version']);
+    allGood &= await _checkOptional('Puro', 'puro', ['--version']);
     allGood &= await _checkDartPackage('build_runner');
     allGood &= await _checkDartPackage('mason');
 

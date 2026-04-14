@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/harness_metadata.dart';
+import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:agentic_base/src/config/state_config.dart';
 import 'package:path/path.dart' as p;
@@ -30,6 +33,7 @@ final class InitProjectMetadataResolver {
     final inferredOrg = _detectOrg(projectPath);
     final inferredPlatforms = _detectPlatforms(projectPath);
     final inferredFlavors = _detectFlavors(projectPath);
+    final inferredSdkManager = inferFlutterSdkManager(projectPath);
 
     MetadataResolution<String> resolveString({
       required String? explicitValue,
@@ -144,6 +148,25 @@ final class InitProjectMetadataResolver {
               <String>[],
               MetadataProvenance.defaulted,
             );
+    final resolvedSdkContract = resolveFlutterSdkContract(
+      projectPath: projectPath,
+      manager: existingMetadata?.harness.sdk.manager ?? inferredSdkManager,
+      version: existingMetadata?.harness.sdk.version,
+      channel: existingMetadata?.harness.sdk.channel ?? defaultFlutterChannel,
+      policy:
+          existingMetadata?.harness.sdk.policy ??
+          FlutterVersionPolicy.newestTested,
+    );
+    final harness =
+        existingMetadata?.harness.copyWith(
+          capabilities: modules.value,
+          providers: buildHarnessProviderMap(modules.value),
+          sdk: resolvedSdkContract,
+        ) ??
+        HarnessMetadata.defaultFor(
+          capabilities: modules.value,
+          sdk: resolvedSdkContract,
+        );
 
     return ProjectMetadata(
       toolVersion: AgenticBaseCliRunner.version,
@@ -154,6 +177,7 @@ final class InitProjectMetadataResolver {
       platforms: platforms.value,
       flavors: flavors.value,
       modules: modules.value,
+      harness: harness,
       createdAt:
           existingMetadata?.createdAt ?? DateTime.now().toIso8601String(),
       provenance: {
@@ -167,6 +191,39 @@ final class InitProjectMetadataResolver {
         'platforms': platforms.provenance,
         'flavors': flavors.provenance,
         'modules': modules.provenance,
+        'harness.contract_version':
+            existingMetadata?.harness.contractVersion == 1
+                ? MetadataProvenance.migrated
+                : MetadataProvenance.defaulted,
+        'harness.app_profile.primary_profile':
+            existingMetadata != null
+                ? MetadataProvenance.migrated
+                : MetadataProvenance.defaulted,
+        'harness.app_profile.secondary_traits':
+            existingMetadata != null
+                ? MetadataProvenance.migrated
+                : MetadataProvenance.defaulted,
+        'harness.capabilities.enabled': modules.provenance,
+        'harness.providers': MetadataProvenance.defaulted,
+        'harness.eval.evidence_dir': MetadataProvenance.defaulted,
+        'harness.eval.quality_dimensions': MetadataProvenance.defaulted,
+        'harness.approvals.pause_on': MetadataProvenance.defaulted,
+        'harness.sdk.manager':
+            existingMetadata != null
+                ? MetadataProvenance.migrated
+                : MetadataProvenance.inferred,
+        'harness.sdk.channel':
+            existingMetadata != null
+                ? MetadataProvenance.migrated
+                : MetadataProvenance.defaulted,
+        'harness.sdk.version':
+            existingMetadata?.harness.sdk.version != null
+                ? MetadataProvenance.migrated
+                : MetadataProvenance.inferred,
+        'harness.sdk.policy':
+            existingMetadata != null
+                ? MetadataProvenance.migrated
+                : MetadataProvenance.defaulted,
         'created_at':
             existingMetadata?.createdAt != null
                 ? MetadataProvenance.migrated

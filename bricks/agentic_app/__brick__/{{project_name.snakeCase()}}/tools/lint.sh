@@ -5,6 +5,6 @@ source "$(dirname "$0")/_common.sh"
 check_flutter
 
 info "Running static analysis..."
-dart analyze
+run_dart analyze
 
 info "Lint complete."

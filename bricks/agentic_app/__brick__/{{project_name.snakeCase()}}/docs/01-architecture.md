@@ -3,6 +3,10 @@
 ## Canonical Context
 
 - Machine source of truth: `.info/agentic.yaml`
+- Harness Contract: `v1`
+- Primary profile: `{{app_profile}}` ({{app_profile_label}})
+- Support tier: `{{support_tier_label}}`
+- Evidence directory: `{{{evidence_dir}}}`
 - Human-readable context: `README.md` plus `docs/01-06`
 - Thin adapters: `AGENTS.md`, `CLAUDE.md`
 - If adapters drift, follow `README.md` and `docs/`
@@ -50,6 +54,8 @@ presentation -> domain <- data
 - build: `./tools/build.sh <flavor> [artifact]`
 - release preflight: `./tools/release-preflight.sh <flavor> <target>`
 - release upload: `./tools/release.sh <flavor> <target>`
+
+Meaningful verify and release-preflight runs emit named gate outputs under `{{{evidence_dir}}}`.
 
 ## Human Checkpoints
 

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:agentic_base/src/deploy/process_runner.dart';
 import 'package:agentic_base/src/generators/agentic_app_surface_synchronizer.dart';
@@ -76,6 +77,36 @@ class UpgradeCommand extends Command<int> {
       fallbackProjectName: p.basename(projectPath),
       fallbackToolVersion: AgenticBaseCliRunner.version,
     );
+    final hasPinnedFlutterContract =
+        metadata.provenance['harness.sdk.version'] !=
+            MetadataProvenance.defaulted ||
+        metadata.provenance['harness.sdk.manager'] !=
+            MetadataProvenance.defaulted;
+    final effectiveMetadata =
+        hasPinnedFlutterContract
+            ? metadata
+            : metadata.copyWith(
+              harness: metadata.harness.copyWith(
+                sdk: resolveFlutterSdkContract(
+                  projectPath: projectPath,
+                  manager: metadata.harness.sdk.manager,
+                ),
+              ),
+            );
+
+    if (hasPinnedFlutterContract) {
+      final toolchainStatus = _validateFlutterContract(
+        projectPath,
+        metadata: effectiveMetadata,
+      );
+      if (toolchainStatus != 0) {
+        return toolchainStatus;
+      }
+    } else {
+      _logger.info(
+        'No pinned Flutter contract found; adopting the currently detected toolchain for this upgrade.',
+      );
+    }
 
     // Run flutter pub upgrade.
     final upgradeResult = await _runFlutterPubUpgrade(projectPath);
@@ -98,10 +129,10 @@ class UpgradeCommand extends Command<int> {
             return const AgenticAppSurfaceSynchronizer()
                 .syncUpgradeOwnedSurfaces(
                   projectPath: projectPath,
-                  metadata: metadata,
+                  metadata: effectiveMetadata,
                 );
           };
-      await sync(projectPath: projectPath, metadata: metadata);
+      await sync(projectPath: projectPath, metadata: effectiveMetadata);
       syncProgress.complete('Generator-owned repo assets synced');
     } on Exception catch (error) {
       syncProgress.fail('Generator-owned repo asset sync failed');
@@ -110,7 +141,7 @@ class UpgradeCommand extends Command<int> {
     }
 
     // Stamp current tool version into agentic.yaml.
-    _stampToolVersion(config, metadata: metadata);
+    _stampToolVersion(config, metadata: effectiveMetadata);
 
     _logger
       ..info('')
@@ -123,6 +154,38 @@ class UpgradeCommand extends Command<int> {
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
+
+  int _validateFlutterContract(
+    String projectPath, {
+    required ProjectMetadata metadata,
+  }) {
+    final declared = metadata.harness.sdk;
+    final detected = detectFlutterToolchain(
+      manager: declared.manager,
+      projectPath: projectPath,
+    );
+    if (!detected.available) {
+      _logger.err(
+        'Declared Flutter manager "${declared.manager.wireName}" is unavailable: '
+        '${detected.problem ?? detected.command}',
+      );
+      return 1;
+    }
+
+    if (!detected.matches(declared)) {
+      _logger.err(
+        'Flutter toolchain mismatch. Declared '
+        '${declared.version}/${declared.channel}, found '
+        '${detected.version ?? 'unknown'}/${detected.channel ?? 'unknown'}.',
+      );
+      return 1;
+    }
+
+    _logger.info(
+      'Flutter contract OK: ${declared.manager.wireName} ${declared.version}',
+    );
+    return 0;
+  }
 
   /// Run `flutter pub upgrade` and stream output to the user.
   Future<int> _runFlutterPubUpgrade(String projectPath) async {

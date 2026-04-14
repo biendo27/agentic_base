@@ -43,6 +43,7 @@ class NotificationsModule implements AgenticModule {
         'lib/core/notifications/awesome_notifications_service.dart',
         _implContent(ctx.projectName),
       )
+      ..mutateTextFile('ios/Podfile', _patchIosPodfile)
       ..markInstalled(name);
   }
 
@@ -173,4 +174,57 @@ class AwesomeNotificationsService implements NotificationsService {
       awesome.AwesomeNotifications().cancelAll();
 }
 ''';
+}
+
+String _patchIosPodfile(String current) {
+  var next = current;
+
+  next = next.replaceFirst(
+    "# platform :ios, '13.0'",
+    "platform :ios, '15.0'",
+  );
+  next = next.replaceFirst(
+    "platform :ios, '13.0'",
+    "platform :ios, '15.0'",
+  );
+
+  if (!next.contains('use_modular_headers!')) {
+    next = next.replaceFirst(
+      '  use_frameworks!\n',
+      '  use_frameworks!\n  use_modular_headers!\n',
+    );
+  }
+
+  const postInstallPatch = '''
+  ################  Awesome Notifications pod modification 1  ###################
+  awesome_pod_file = File.expand_path(File.join('plugins', 'awesome_notifications', 'ios', 'Scripts', 'AwesomePodFile'), '.symlinks')
+  require awesome_pod_file
+  update_awesome_pod_build_settings(installer)
+  ################  Awesome Notifications pod modification 1  ###################
+''';
+
+  if (!next.contains('update_awesome_pod_build_settings(installer)')) {
+    next = next.replaceFirst(
+      '  installer.pods_project.targets.each do |target|\n'
+          '    flutter_additional_ios_build_settings(target)\n'
+          '  end\n',
+      '  installer.pods_project.targets.each do |target|\n'
+          '    flutter_additional_ios_build_settings(target)\n'
+          '  end\n\n$postInstallPatch',
+    );
+  }
+
+  const mainTargetPatch = '''
+################  Awesome Notifications pod modification 2  ###################
+awesome_pod_file = File.expand_path(File.join('plugins', 'awesome_notifications', 'ios', 'Scripts', 'AwesomePodFile'), '.symlinks')
+require awesome_pod_file
+update_awesome_main_target_settings('Runner', File.dirname(File.realpath(__FILE__)), flutter_root)
+################  Awesome Notifications pod modification 2  ###################
+''';
+
+  if (!next.contains("update_awesome_main_target_settings('Runner'")) {
+    next = '${next.trimRight()}\n\n$mainTargetPatch';
+  }
+
+  return next;
 }

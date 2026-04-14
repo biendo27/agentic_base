@@ -4,17 +4,21 @@
 
 The primary verification surface is `./tools/verify.sh`. It runs the same local contract that CI wrappers call:
 
-1. regenerate typed outputs
-2. run static analysis
-3. run tests
-4. run native readiness checks where the host can support them
+1. validate the contract surface
+2. validate the declared Flutter toolchain
+3. regenerate typed outputs and run static analysis
+4. run unit and widget tests
+5. run the starter app-shell smoke test
+6. run native readiness checks where the host can support them
 
 Use `./tools/release-preflight.sh` before any upload-oriented release command.
+Inspect evidence under `{{{evidence_dir}}}` for `summary.json`, gate check files, and logs.
 
 ## Test Structure
 
 ```
 test/
+├── app_smoke_test.dart       # Starter app-shell smoke path
 ├── features/
 │   └── <name>/
 │       ├── <name>_state_runtime_test.dart

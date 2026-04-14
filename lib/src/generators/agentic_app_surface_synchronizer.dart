@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:agentic_base/src/config/scaffold_state_profile.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
@@ -40,19 +41,16 @@ final class AgenticAppSurfaceSynchronizer {
   ];
 
   Future<void> overlay({
-    required String projectName,
     required String outputDirectory,
-    required String org,
-    required List<String> platforms,
-    required String stateManagement,
-    required List<String> flavors,
+    required ProjectMetadata metadata,
     required String primaryColor,
-    required CiProvider ciProvider,
   }) async {
-    final stateProfile = ScaffoldStateProfile.fromState(stateManagement);
+    final stateProfile = ScaffoldStateProfile.fromState(
+      metadata.stateManagement,
+    );
     final appIdBase = GeneratedProjectContract.buildAppIdBase(
-      org: org,
-      projectName: projectName,
+      org: metadata.org,
+      projectName: metadata.projectName,
     );
     final generator = await _loadGenerator();
     final parentDir = p.dirname(outputDirectory);
@@ -60,19 +58,34 @@ final class AgenticAppSurfaceSynchronizer {
     await generator.generate(
       target,
       vars: <String, dynamic>{
-        'project_name': projectName,
-        'org': org,
-        'platforms': platforms,
-        'flavors': flavors,
+        'project_name': metadata.projectName,
+        'org': metadata.org,
+        'platforms': metadata.platforms,
+        'flavors': metadata.flavors,
         'primary_color': primaryColor,
-        'ci_provider': ciProvider.name,
+        'ci_provider': metadata.ciProvider.name,
         'app_id_base': appIdBase,
-        'has_native_flavors': platforms.any(
+        'has_native_flavors': metadata.platforms.any(
           (platform) => const {'android', 'ios', 'macos'}.contains(platform),
         ),
-        'has_android': platforms.contains('android'),
-        'has_ios': platforms.contains('ios'),
-        'has_macos': platforms.contains('macos'),
+        'has_android': metadata.platforms.contains('android'),
+        'has_ios': metadata.platforms.contains('ios'),
+        'has_macos': metadata.platforms.contains('macos'),
+        'app_profile': metadata.harness.appProfile.wireName,
+        'app_profile_label': metadata.harness.appProfile.label,
+        'app_profile_summary': metadata.harness.appProfile.profileSummary,
+        'support_tier_label': metadata.harness.supportTier.label,
+        'support_tier_summary': metadata.harness.supportTier.contractSummary,
+        'required_gate_pack': metadata.harness.supportTier.requiredGatePack,
+        'secondary_traits_csv':
+            metadata.harness.secondaryTraits.isEmpty
+                ? 'none'
+                : metadata.harness.secondaryTraits.join(', '),
+        'evidence_dir': metadata.harness.eval.evidenceDir,
+        'flutter_sdk_manager': metadata.harness.sdk.manager.wireName,
+        'flutter_sdk_channel': metadata.harness.sdk.channel,
+        'flutter_sdk_version': metadata.harness.sdk.version,
+        'flutter_sdk_policy': metadata.harness.sdk.policy.wireName,
         ...stateProfile.masonVars,
       },
       fileConflictResolution: FileConflictResolution.overwrite,
@@ -92,14 +105,9 @@ final class AgenticAppSurfaceSynchronizer {
 
     try {
       await overlay(
-        projectName: metadata.projectName,
         outputDirectory: renderedProjectPath,
-        org: metadata.org,
-        platforms: metadata.platforms,
-        stateManagement: metadata.stateManagement,
-        flavors: metadata.flavors,
+        metadata: metadata,
         primaryColor: primaryColor,
-        ciProvider: metadata.ciProvider,
       );
       GeneratedProjectContract.enforceCiProviderOutputs(
         renderedProjectPath,
@@ -138,14 +146,9 @@ final class AgenticAppSurfaceSynchronizer {
 
     try {
       await overlay(
-        projectName: metadata.projectName,
         outputDirectory: renderedProjectPath,
-        org: metadata.org,
-        platforms: metadata.platforms,
-        stateManagement: metadata.stateManagement,
-        flavors: metadata.flavors,
+        metadata: metadata,
         primaryColor: primaryColor,
-        ciProvider: metadata.ciProvider,
       );
       GeneratedProjectContract.enforceCiProviderOutputs(
         renderedProjectPath,

@@ -2,28 +2,94 @@
 set -euo pipefail
 source "$(dirname "$0")/_common.sh"
 
-check_flutter
 cd "$PROJECT_ROOT"
+check_flutter
+start_evidence_run "verify" "{{required_gate_pack}}"
+set_approval_state "EvalRunning"
 
-info "[1/4] Refreshing generated sources..."
-"$PROJECT_ROOT/tools/gen.sh"
+RUN_EXIT_CODE=0
+trap 'finalize_evidence_run "$RUN_EXIT_CODE"' EXIT
 
-info "[2/4] Static analysis..."
-dart analyze
+verify_static_contract() {
+  "$PROJECT_ROOT/tools/gen.sh"
+  run_dart analyze
+}
 
-info "[3/4] Running tests..."
-flutter test
+verify_app_shell_smoke() {
+  run_flutter test test/app_smoke_test.dart
+}
 
-if [[ "$(uname -s)" == "Darwin" && -d ios ]]; then
-  info "[4/4] Checking iOS dev simulator build..."
-  flutter build ios \
+verify_native_readiness() {
+  local native_log
+  native_log="$(mktemp)"
+  set +e
+  run_flutter build ios \
     --flavor dev \
     --simulator \
     --debug \
     --target lib/main_dev.dart \
-    --dart-define-from-file=env/dev.env.example
-else
-  info "[4/4] Skipping iOS simulator readiness on this host."
+    --dart-define-from-file=env/dev.env.example >"$native_log" 2>&1
+  local exit_code=$?
+  set -e
+  cat "$native_log"
+
+  if [[ $exit_code -eq 0 ]]; then
+    rm -f "$native_log"
+    return 0
+  fi
+
+  if grep -q "CocoaPods's specs repository is too out-of-date" "$native_log"; then
+    override_gate_state \
+      "blocked" \
+      "Native readiness blocked by stale CocoaPods specs on this host. Run \`pod repo update\` and rerun verify."
+    set_next_required_human_action "refresh-host-ios-tooling"
+    rm -f "$native_log"
+    return 0
+  fi
+
+  rm -f "$native_log"
+  return $exit_code
+}
+
+if ! run_gate "contract-surface" "correctness" "[1/6] Validating the harness contract surface..." verify_contract_surface; then
+  RUN_EXIT_CODE=1
+  exit 1
 fi
 
-info "Verify complete."
+if ! run_gate "toolchain-contract" "correctness" "[2/6] Validating the declared Flutter toolchain..." validate_flutter_contract; then
+  RUN_EXIT_CODE=1
+  exit 1
+fi
+
+if ! run_gate "static" "correctness" "[3/6] Refreshing generated outputs and running static analysis..." verify_static_contract; then
+  RUN_EXIT_CODE=1
+  exit 1
+fi
+
+if ! run_gate "unit-widget" "correctness" "[4/6] Running unit and widget tests..." run_flutter test; then
+  RUN_EXIT_CODE=1
+  exit 1
+fi
+
+if [[ -f "$PROJECT_ROOT/test/app_smoke_test.dart" ]]; then
+  if ! run_gate "app-shell-smoke" "ux_confidence" "[5/6] Running the starter app-shell smoke path..." verify_app_shell_smoke; then
+    RUN_EXIT_CODE=1
+    exit 1
+  fi
+else
+  skip_gate "app-shell-smoke" "ux_confidence" "Starter app-shell smoke test is not present."
+fi
+
+if [[ "$(uname -s)" == "Darwin" && -d ios ]]; then
+  if ! run_gate "native-readiness" "release_readiness" "[6/6] Checking iOS simulator readiness..." verify_native_readiness; then
+    RUN_EXIT_CODE=1
+    exit 1
+  fi
+else
+  skip_gate "native-readiness" "release_readiness" "iOS simulator readiness only runs on Darwin hosts with ios/."
+fi
+
+if [[ "$(overall_run_state)" == "pass" ]]; then
+  set_approval_state "ReadyForReview"
+fi
+info "Verify complete. Evidence written to $RUN_DIR"

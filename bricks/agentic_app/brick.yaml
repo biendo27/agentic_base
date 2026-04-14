@@ -83,3 +83,63 @@ vars:
     description: CI provider choice
     default: github
     prompt: "CI provider:"
+  app_profile:
+    type: string
+    description: Harness app profile
+    default: consumer-app
+    prompt: "Harness app profile:"
+  app_profile_label:
+    type: string
+    description: Human-readable harness app profile
+    default: Consumer App
+    prompt: "Harness app profile label:"
+  app_profile_summary:
+    type: string
+    description: Harness profile summary
+    default: User-facing app shell with first-class app-shell and navigation confidence.
+    prompt: "Harness app profile summary:"
+  support_tier_label:
+    type: string
+    description: Support tier label
+    default: Tier 1
+    prompt: "Support tier label:"
+  support_tier_summary:
+    type: string
+    description: Support tier summary
+    default: Core gates plus profile-specific required checks.
+    prompt: "Support tier summary:"
+  required_gate_pack:
+    type: string
+    description: Required gate pack description
+    default: core + profile pack
+    prompt: "Required gate pack:"
+  secondary_traits_csv:
+    type: string
+    description: Secondary harness traits rendered as text
+    default: none
+    prompt: "Secondary traits:"
+  evidence_dir:
+    type: string
+    description: Evidence output directory
+    default: artifacts/evidence
+    prompt: "Evidence directory:"
+  flutter_sdk_manager:
+    type: string
+    description: Declared Flutter SDK manager
+    default: system
+    prompt: "Flutter SDK manager:"
+  flutter_sdk_channel:
+    type: string
+    description: Declared Flutter SDK channel
+    default: stable
+    prompt: "Flutter SDK channel:"
+  flutter_sdk_version:
+    type: string
+    description: Declared Flutter SDK version
+    default: 3.41.6
+    prompt: "Flutter SDK version:"
+  flutter_sdk_policy:
+    type: string
+    description: Declared Flutter SDK policy
+    default: newest_tested
+    prompt: "Flutter SDK policy:"

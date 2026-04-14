@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:agentic_base/src/config/agent_ready_repo_contract.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -78,6 +80,7 @@ final class GeneratedProjectContract {
     'tools/setup.sh',
     'tools/test.sh',
     'tools/verify.sh',
+    'test/app_smoke_test.dart',
   ];
 
   static const forbiddenFiles = <String>[
@@ -513,9 +516,11 @@ final class GeneratedProjectContract {
     );
     if (!ciContents.contains('./tools/verify.sh') ||
         !ciContents.contains(r'${{ github.workflow }}-${{ github.ref }}') ||
-        ciContents.contains(r'\${{ github.workflow }}-\${{ github.ref }}')) {
+        ciContents.contains(r'\${{ github.workflow }}-\${{ github.ref }}') ||
+        !ciContents.contains('actions/upload-artifact@v4') ||
+        !ciContents.contains('flutter-version:')) {
       throw const ProjectGenerationException(
-        'GitHub CI workflow must preserve GitHub expressions and call ./tools/verify.sh.',
+        'GitHub CI workflow must preserve expressions, call ./tools/verify.sh, and upload evidence artifacts.',
       );
     }
 
@@ -576,9 +581,10 @@ final class GeneratedProjectContract {
     if (!verifyContents.contains('native_validate:') ||
         !verifyContents.contains('./tools/verify.sh') ||
         !verifyContents.contains('tags: [macos]') ||
-        verifyContents.contains('allow_failure: true')) {
+        verifyContents.contains('allow_failure: true') ||
+        !verifyContents.contains('artifacts:')) {
       throw const ProjectGenerationException(
-        'GitLab verify contract must include a blocking macOS native validation job.',
+        'GitLab verify contract must include a blocking macOS native validation job and preserve evidence artifacts.',
       );
     }
 
@@ -612,9 +618,16 @@ final class GeneratedProjectContract {
     CiProvider? ciProvider,
   }) {
     final config = _readRequiredYamlMap(projectDir, '.info/agentic.yaml');
+    final schemaVersion = config['schema_version'];
+    if (schemaVersion is! int || schemaVersion < 3) {
+      throw const ProjectGenerationException(
+        'Generated YAML contract must use schema_version 3 or later.',
+      );
+    }
     final context = _requireYamlMap(config, 'context');
     final execution = _requireYamlMap(config, 'execution');
     final checkpoints = _requireYamlMap(config, 'checkpoints');
+    final harness = _requireYamlMap(config, 'harness');
 
     _requireYamlListValue(context, 'canonical_docs', 'docs/01-architecture.md');
     _requireYamlListValue(context, 'thin_adapters', 'AGENTS.md');
@@ -671,6 +684,102 @@ final class GeneratedProjectContract {
         'Release human boundary must stay explicit in .info/agentic.yaml.',
       );
     }
+
+    final contractVersion = harness['contract_version'];
+    if (contractVersion != 1) {
+      throw const ProjectGenerationException(
+        'Harness Contract V1 requires harness.contract_version: 1.',
+      );
+    }
+
+    final appProfile = _requireYamlMap(harness, 'app_profile');
+    final primaryProfile = appProfile['primary_profile'];
+    if (primaryProfile is! String ||
+        !supportedHarnessAppProfiles.contains(primaryProfile)) {
+      throw const ProjectGenerationException(
+        'Generated YAML contract has an unsupported harness app profile.',
+      );
+    }
+
+    final secondaryTraits = appProfile['secondary_traits'];
+    if (secondaryTraits is! YamlList) {
+      throw const ProjectGenerationException(
+        'Generated YAML contract must expose harness.app_profile.secondary_traits.',
+      );
+    }
+    for (final trait in secondaryTraits) {
+      if (!isSupportedHarnessSecondaryTrait(trait.toString())) {
+        throw ProjectGenerationException(
+          'Unsupported harness secondary trait: $trait',
+        );
+      }
+    }
+
+    final capabilities = _requireYamlMap(harness, 'capabilities');
+    final enabledCapabilities = capabilities['enabled'];
+    if (enabledCapabilities is! YamlList) {
+      throw const ProjectGenerationException(
+        'Generated YAML contract must expose harness.capabilities.enabled.',
+      );
+    }
+
+    final providers = harness['providers'];
+    if (providers is YamlMap) {
+      for (final entry in providers.entries) {
+        final capability = entry.key.toString();
+        final provider = entry.value?.toString() ?? '';
+        if (!enabledCapabilities.contains(capability)) {
+          throw ProjectGenerationException(
+            'Generated YAML contract declares a provider for a disabled capability: $capability',
+          );
+        }
+        if (_looksLikeSecret(provider)) {
+          throw ProjectGenerationException(
+            'Harness providers must stay declarative and secret-free: $capability',
+          );
+        }
+      }
+    }
+
+    final eval = _requireYamlMap(harness, 'eval');
+    if (eval['evidence_dir'] != defaultHarnessEvidenceDir) {
+      throw const ProjectGenerationException(
+        'Harness eval contract must use the canonical evidence directory.',
+      );
+    }
+    final qualityDimensions = eval['quality_dimensions'];
+    if (qualityDimensions is! YamlList ||
+        qualityDimensions.length != defaultHarnessQualityDimensions.length) {
+      throw const ProjectGenerationException(
+        'Harness eval quality dimensions are missing or incomplete.',
+      );
+    }
+
+    final approvals = _requireYamlMap(harness, 'approvals');
+    for (final pause in requiredHumanApprovalPauses) {
+      _requireYamlListValue(approvals, 'pause_on', pause);
+    }
+
+    final sdk = _requireYamlMap(harness, 'sdk');
+    final manager = sdk['manager']?.toString();
+    if (!FlutterSdkManager.values
+        .map((value) => value.wireName)
+        .contains(manager)) {
+      throw const ProjectGenerationException(
+        'Harness SDK manager must be one of system, fvm, or puro.',
+      );
+    }
+    final version = sdk['version']?.toString() ?? '';
+    if (!RegExp(r'^[0-9]+\.[0-9]+\.[0-9]+$').hasMatch(version)) {
+      throw const ProjectGenerationException(
+        'Harness SDK version must be a semantic version.',
+      );
+    }
+    if (sdk['policy'] != FlutterVersionPolicy.newestTested.wireName) {
+      throw const ProjectGenerationException(
+        'Harness SDK policy must stay on newest_tested.',
+      );
+    }
   }
 
   static void _validateThinAdapters(String projectDir) {
@@ -679,16 +788,23 @@ final class GeneratedProjectContract {
 
     _requireContent(agents, 'Thin adapter');
     _requireContent(agents, './tools/verify.sh');
+    _requireContent(agents, 'Harness Contract: `v1`');
+    _requireContent(agents, 'Evidence directory: `artifacts/evidence`');
     _forbidContent(agents, 'Feature Workflow');
 
     _requireContent(claude, 'Thin Claude adapter');
     _requireContent(claude, 'Machine contract: `.info/agentic.yaml`');
+    _requireContent(claude, 'Harness Contract: `v1`');
+    _requireContent(claude, 'Support tier:');
   }
 
   static void _validateGeneratedReadme(String projectDir) {
     final readme = _readRequiredFile(projectDir, 'README.md');
 
     _requireContent(readme, 'An agent-ready Flutter repository');
+    _requireContent(readme, 'Primary profile: `');
+    _requireContent(readme, 'Support tier: `');
+    _requireContent(readme, 'Evidence directory: `artifacts/evidence`');
     _requireContent(readme, './tools/run-dev.sh');
     _requireContent(
       readme,
@@ -738,7 +854,23 @@ final class GeneratedProjectContract {
     );
     _requireContent(
       _readRequiredFile(projectDir, 'tools/release-preflight.sh'),
-      'human approval step',
+      'credential-setup',
+    );
+    _requireContent(
+      _readRequiredFile(projectDir, 'tools/release-preflight.sh'),
+      'UploadReady',
+    );
+    _requireContent(
+      _readRequiredFile(projectDir, 'tools/release.sh'),
+      'AwaitingFinalPublishApproval',
+    );
+    _requireContent(
+      _readRequiredFile(projectDir, 'tools/verify.sh'),
+      'app-shell-smoke',
+    );
+    _requireContent(
+      _readRequiredFile(projectDir, 'tools/_common.sh'),
+      'summary.json',
     );
   }
 
@@ -875,6 +1007,13 @@ final class GeneratedProjectContract {
     if (directory.existsSync() && directory.listSync().isEmpty) {
       directory.deleteSync();
     }
+  }
+
+  static bool _looksLikeSecret(String value) {
+    return RegExp(
+      '(secret|token|apikey|api_key|-----BEGIN|AIza|AKIA|sk_live|sk_test)',
+      caseSensitive: false,
+    ).hasMatch(value);
   }
 
   static String _resolveProjectPath(String projectDir, String relativePath) {

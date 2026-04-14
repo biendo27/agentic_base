@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:agentic_base/src/config/agent_ready_repo_contract.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/harness_metadata.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
@@ -63,8 +64,7 @@ class AgenticConfig {
   }
 
   /// Create initial config for a new project.
-  static ProjectMetadata createInitial({
-    required String projectPath,
+  static ProjectMetadata buildInitialMetadata({
     required String projectName,
     required String org,
     required String stateManagement,
@@ -75,8 +75,9 @@ class AgenticConfig {
     Map<String, MetadataProvenance> provenance =
         const <String, MetadataProvenance>{},
     List<String> modules = const <String>[],
+    HarnessMetadata? harness,
   }) {
-    final metadata = ProjectMetadata(
+    return ProjectMetadata(
       toolVersion: toolVersion,
       projectName: projectName,
       org: org,
@@ -85,6 +86,9 @@ class AgenticConfig {
       platforms: List<String>.from(platforms),
       flavors: List<String>.from(flavors),
       modules: List<String>.from(modules),
+      harness:
+          harness ??
+          HarnessMetadata.defaultFor(capabilities: List<String>.from(modules)),
       createdAt: DateTime.now().toIso8601String(),
       provenance: {
         'schema_version': MetadataProvenance.defaulted,
@@ -100,8 +104,68 @@ class AgenticConfig {
         'platforms': provenance['platforms'] ?? MetadataProvenance.explicit,
         'flavors': provenance['flavors'] ?? MetadataProvenance.explicit,
         'modules': provenance['modules'] ?? MetadataProvenance.explicit,
+        'harness.contract_version':
+            provenance['harness.contract_version'] ??
+            MetadataProvenance.defaulted,
+        'harness.app_profile.primary_profile':
+            provenance['harness.app_profile.primary_profile'] ??
+            MetadataProvenance.defaulted,
+        'harness.app_profile.secondary_traits':
+            provenance['harness.app_profile.secondary_traits'] ??
+            MetadataProvenance.defaulted,
+        'harness.capabilities.enabled':
+            provenance['harness.capabilities.enabled'] ??
+            MetadataProvenance.defaulted,
+        'harness.providers':
+            provenance['harness.providers'] ?? MetadataProvenance.defaulted,
+        'harness.eval.evidence_dir':
+            provenance['harness.eval.evidence_dir'] ??
+            MetadataProvenance.defaulted,
+        'harness.eval.quality_dimensions':
+            provenance['harness.eval.quality_dimensions'] ??
+            MetadataProvenance.defaulted,
+        'harness.approvals.pause_on':
+            provenance['harness.approvals.pause_on'] ??
+            MetadataProvenance.defaulted,
+        'harness.sdk.manager':
+            provenance['harness.sdk.manager'] ?? MetadataProvenance.defaulted,
+        'harness.sdk.channel':
+            provenance['harness.sdk.channel'] ?? MetadataProvenance.defaulted,
+        'harness.sdk.version':
+            provenance['harness.sdk.version'] ?? MetadataProvenance.defaulted,
+        'harness.sdk.policy':
+            provenance['harness.sdk.policy'] ?? MetadataProvenance.defaulted,
         'created_at': MetadataProvenance.defaulted,
       },
+    );
+  }
+
+  /// Create initial config for a new project.
+  static ProjectMetadata createInitial({
+    required String projectPath,
+    required String projectName,
+    required String org,
+    required String stateManagement,
+    required List<String> platforms,
+    required List<String> flavors,
+    required String toolVersion,
+    CiProvider ciProvider = defaultCiProvider,
+    Map<String, MetadataProvenance> provenance =
+        const <String, MetadataProvenance>{},
+    List<String> modules = const <String>[],
+    HarnessMetadata? harness,
+  }) {
+    final metadata = buildInitialMetadata(
+      projectName: projectName,
+      org: org,
+      ciProvider: ciProvider,
+      stateManagement: stateManagement,
+      platforms: platforms,
+      flavors: flavors,
+      toolVersion: toolVersion,
+      provenance: provenance,
+      modules: modules,
+      harness: harness,
     );
     AgenticConfig(projectPath: projectPath).writeMetadata(metadata);
     return metadata;

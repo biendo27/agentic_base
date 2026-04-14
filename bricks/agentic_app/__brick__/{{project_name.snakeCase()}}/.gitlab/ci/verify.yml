@@ -5,3 +5,7 @@ native_validate:
   script:
     - chmod +x tools/*.sh
     - ./tools/verify.sh
+  artifacts:
+    when: always
+    paths:
+      - {{evidence_dir}}
