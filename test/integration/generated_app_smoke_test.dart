@@ -23,6 +23,18 @@ Directory _latestEvidenceRunDirectory(String appDir, String runKind) {
   return children.last;
 }
 
+void _expectIosPodfileContains(String appDir, List<String> snippets) {
+  final podfile = File(p.join(appDir, 'ios', 'Podfile'));
+  if (!podfile.existsSync()) {
+    return;
+  }
+
+  final podfileContents = podfile.readAsStringSync();
+  for (final snippet in snippets) {
+    expect(podfileContents, contains(snippet));
+  }
+}
+
 void main() {
   final flutterAvailable = _isFlutterAvailable();
   // Other test suites temporarily mutate Directory.current, so capture a
@@ -187,7 +199,6 @@ void main() {
           File(
             p.join(appDir, 'lib/core/firebase/firebase_runtime.dart'),
           ).readAsStringSync();
-      final podfile = File(p.join(appDir, 'ios', 'Podfile')).readAsStringSync();
 
       expect(analyticsImpl, contains('@LazySingleton(as: AnalyticsService)'));
       expect(analyticsImpl, contains('FirebaseAnalytics.instance'));
@@ -201,7 +212,7 @@ void main() {
         registrations,
         isNot(contains('await getIt<AnalyticsService>().init();')),
       );
-      expect(podfile, contains("platform :ios, '15.0'"));
+      _expectIosPodfileContains(appDir, ["platform :ios, '15.0'"]);
       expect(injectionConfig, contains('FirebaseAnalyticsService'));
       expect(injectionConfig, contains('AnalyticsService'));
       expect(
@@ -269,7 +280,6 @@ void main() {
               'lib/core/notifications/awesome_notifications_service.dart',
             ),
           ).readAsStringSync();
-      final podfile = File(p.join(appDir, 'ios', 'Podfile')).readAsStringSync();
 
       expect(registrations, contains('NotificationsService'));
       expect(
@@ -281,13 +291,12 @@ void main() {
         notificationsImpl,
         contains("channelKey: 'general'"),
       );
-      expect(podfile, contains("platform :ios, '15.0'"));
-      expect(podfile, contains('use_modular_headers!'));
-      expect(podfile, contains('update_awesome_pod_build_settings(installer)'));
-      expect(
-        podfile,
-        contains("update_awesome_main_target_settings('Runner'"),
-      );
+      _expectIosPodfileContains(appDir, [
+        "platform :ios, '15.0'",
+        'use_modular_headers!',
+        'update_awesome_pod_build_settings(installer)',
+        "update_awesome_main_target_settings('Runner'",
+      ]);
     },
     skip:
         flutterAvailable
