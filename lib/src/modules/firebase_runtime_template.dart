@@ -34,19 +34,11 @@ Future<void> ensureFirebaseInitialized() async {
 }
 
 Future<void> _initializeFirebaseApp() async {
-  try {
+  if (kIsWeb) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
     return;
-  } on StateError {
-    if (kIsWeb) {
-      rethrow;
-    }
-  } on UnsupportedError {
-    if (kIsWeb) {
-      rethrow;
-    }
   }
 
   await Firebase.initializeApp();
