@@ -214,21 +214,35 @@ final class GeneratedProjectContract {
     final resolvedCiProvider =
         ciProvider ?? _resolveConfiguredCiProvider(projectDir);
 
+    validateAgentReadyRepository(
+      projectDir,
+      ciProvider: resolvedCiProvider,
+    );
+    _validateGeneratedReadme(projectDir);
+    validateNativeFlavorOutputs(projectDir);
+    if (stateManagement != null) {
+      validateStateOutput(projectDir, stateManagement: stateManagement);
+    }
+  }
+
+  static void validateAgentReadyRepository(
+    String projectDir, {
+    CiProvider? ciProvider,
+  }) {
+    final resolvedCiProvider =
+        ciProvider ?? _resolveConfiguredCiProvider(projectDir);
+
     _validateAgentReadyConfig(
       projectDir,
       ciProvider: resolvedCiProvider,
     );
-    _validateDocumentationAdapters(projectDir);
+    _validateThinAdapters(projectDir);
     _validateReleaseSurfaces(
       projectDir,
       ciProvider: resolvedCiProvider,
     );
-    validateNativeFlavorOutputs(projectDir);
     if (resolvedCiProvider != null) {
       validateCiProviderOutputs(projectDir, ciProvider: resolvedCiProvider);
-    }
-    if (stateManagement != null) {
-      validateStateOutput(projectDir, stateManagement: stateManagement);
     }
   }
 
@@ -628,7 +642,23 @@ final class GeneratedProjectContract {
           'Generated execution contract is missing ${entry.key}: ${entry.value}',
         );
       }
+      _requireDeclaredPath(
+        projectDir,
+        value.toString(),
+        contractSection: 'execution',
+      );
     }
+
+    _requireDeclaredPathList(
+      projectDir,
+      context['canonical_docs'],
+      contractSection: 'context.canonical_docs',
+    );
+    _requireDeclaredPathList(
+      projectDir,
+      context['thin_adapters'],
+      contractSection: 'context.thin_adapters',
+    );
 
     _requireYamlListValue(
       checkpoints,
@@ -643,10 +673,9 @@ final class GeneratedProjectContract {
     }
   }
 
-  static void _validateDocumentationAdapters(String projectDir) {
+  static void _validateThinAdapters(String projectDir) {
     final agents = _readRequiredFile(projectDir, 'AGENTS.md');
     final claude = _readRequiredFile(projectDir, 'CLAUDE.md');
-    final readme = _readRequiredFile(projectDir, 'README.md');
 
     _requireContent(agents, 'Thin adapter');
     _requireContent(agents, './tools/verify.sh');
@@ -654,6 +683,10 @@ final class GeneratedProjectContract {
 
     _requireContent(claude, 'Thin Claude adapter');
     _requireContent(claude, 'Machine contract: `.info/agentic.yaml`');
+  }
+
+  static void _validateGeneratedReadme(String projectDir) {
+    final readme = _readRequiredFile(projectDir, 'README.md');
 
     _requireContent(readme, 'An agent-ready Flutter repository');
     _requireContent(readme, './tools/run-dev.sh');
@@ -732,6 +765,41 @@ final class GeneratedProjectContract {
     if (type == FileSystemEntityType.notFound) {
       throw ProjectGenerationException(
         'Missing native flavor output: $relativePath',
+      );
+    }
+  }
+
+  static void _requireDeclaredPathList(
+    String projectDir,
+    dynamic raw, {
+    required String contractSection,
+  }) {
+    if (raw is! YamlList) {
+      throw ProjectGenerationException(
+        'Generated YAML contract is missing a path list for $contractSection.',
+      );
+    }
+    for (final entry in raw) {
+      _requireDeclaredPath(
+        projectDir,
+        entry?.toString() ?? '',
+        contractSection: contractSection,
+      );
+    }
+  }
+
+  static void _requireDeclaredPath(
+    String projectDir,
+    String declaredPath, {
+    required String contractSection,
+  }) {
+    final relativePath = declaredPath.replaceFirst('./', '');
+    final type = FileSystemEntity.typeSync(
+      _resolveProjectPath(projectDir, relativePath),
+    );
+    if (relativePath.isEmpty || type == FileSystemEntityType.notFound) {
+      throw ProjectGenerationException(
+        'Generated YAML contract declares a missing path in $contractSection: $declaredPath',
       );
     }
   }

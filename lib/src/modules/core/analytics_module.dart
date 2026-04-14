@@ -28,16 +28,20 @@ class AnalyticsModule implements AgenticModule {
   @override
   List<String> get platformSteps => [
     'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
-    'Ensure Firebase is initialised in bootstrap.dart before runApp().',
+    'Run `flutterfire configure` to generate lib/firebase_options.dart before using Firebase-backed modules.',
   ];
 
   @override
   Future<void> install(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
+      ..writeFileIfAbsent(
+        'lib/firebase_options.dart',
+        firebaseOptionsStubFileContent(),
+      )
       ..writeFile(
         'lib/core/firebase/firebase_runtime.dart',
-        firebaseRuntimeFileContent(),
+        firebaseRuntimeFileContent(packageName: ctx.projectName),
       )
       ..writeFile(
         'lib/core/analytics/analytics_service.dart',

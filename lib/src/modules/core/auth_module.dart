@@ -29,15 +29,20 @@ class AuthModule implements AgenticModule {
   List<String> get platformSteps => [
     'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
     'Enable desired sign-in providers in the Firebase console.',
+    'Run `flutterfire configure` to generate lib/firebase_options.dart before using Firebase-backed modules.',
   ];
 
   @override
   Future<void> install(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
+      ..writeFileIfAbsent(
+        'lib/firebase_options.dart',
+        firebaseOptionsStubFileContent(),
+      )
       ..writeFile(
         'lib/core/firebase/firebase_runtime.dart',
-        firebaseRuntimeFileContent(),
+        firebaseRuntimeFileContent(packageName: ctx.projectName),
       )
       ..writeFile(
         'lib/core/auth/auth_service.dart',

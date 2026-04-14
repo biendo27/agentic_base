@@ -29,7 +29,6 @@ class NotificationsModule implements AgenticModule {
   List<String> get platformSteps => [
     'iOS: enable Push Notifications capability in Xcode.',
     'Android: add notification icons to res/drawable.',
-    'Initialise AwesomeNotifications in bootstrap.dart before runApp().',
   ];
 
   @override
@@ -93,6 +92,9 @@ class AppNotificationPayload {
 
 /// Notifications service contract.
 abstract class NotificationsService {
+  /// Initialise default notification channels at app startup.
+  Future<void> init();
+
   /// Initialise notification channels.
   Future<void> initialize(List<AppNotificationChannel> channels);
 
@@ -115,8 +117,19 @@ import 'package:awesome_notifications/awesome_notifications.dart'
     as awesome;
 import 'package:$pkg/core/notifications/notifications_service.dart';
 
+const _defaultNotificationChannels = <AppNotificationChannel>[
+  AppNotificationChannel(
+    channelKey: 'general',
+    channelName: 'General',
+    channelDescription: 'Default app notifications',
+  ),
+];
+
 /// awesome_notifications implementation of [NotificationsService].
 class AwesomeNotificationsService implements NotificationsService {
+  @override
+  Future<void> init() => initialize(_defaultNotificationChannels);
+
   @override
   Future<void> initialize(List<AppNotificationChannel> channels) async {
     await awesome.AwesomeNotifications().initialize(

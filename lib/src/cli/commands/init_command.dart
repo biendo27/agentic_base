@@ -4,9 +4,14 @@ import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/config/init_project_metadata_resolver.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
+import 'package:agentic_base/src/generators/agentic_app_surface_synchronizer.dart';
+import 'package:agentic_base/src/generators/generated_project_contract.dart';
+import 'package:agentic_base/src/modules/project_mutation_journal.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 /// Adds agentic_base scaffolding to an EXISTING Flutter project.
 ///
@@ -67,57 +72,64 @@ class InitCommand extends Command<int> {
         '(${metadata.provenance['state_management']!.wireName})',
       );
     final added = <String>[];
-
-    config.writeMetadata(metadata);
-    added.add('.info/agentic.yaml');
-
-    // Write optional scaffolding files — skip if already present.
-    _writeIfAbsent(
-      path: p.join(projectPath, 'AGENTS.md'),
-      content: _agentsMdContent(projectName),
-      added: added,
+    final journal = ProjectMutationJournal();
+    const synchronizer = AgenticAppSurfaceSynchronizer();
+    final syncResult = await synchronizer.syncInitOwnedSurfaces(
+      projectPath: projectPath,
+      metadata: metadata,
+      journal: journal,
     );
-
-    _writeIfAbsent(
-      path: p.join(projectPath, 'CLAUDE.md'),
-      content: _claudeMdContent(projectName),
+    added.addAll(syncResult.createdPaths);
+    _repairGitLabRootCiIfNeeded(
+      projectPath: projectPath,
+      ciProvider: metadata.ciProvider.name,
       added: added,
+      journal: journal,
     );
 
     _writeIfAbsent(
       path: p.join(projectPath, 'Makefile'),
       content: _makefileContent,
       added: added,
+      journal: journal,
     );
 
     _writeIfAbsent(
       path: p.join(projectPath, 'analysis_options.yaml'),
       content: _safeAnalysisOptionsContent,
       added: added,
+      journal: journal,
     );
 
-    // tools/ scripts
-    final toolsDir = Directory(p.join(projectPath, 'tools'));
-    if (!toolsDir.existsSync()) {
-      toolsDir.createSync(recursive: true);
+    final configFile = File(p.join(projectPath, '.info', 'agentic.yaml'));
+    final previousConfig =
+        configFile.existsSync() ? configFile.readAsStringSync() : null;
+
+    try {
+      config.writeMetadata(metadata);
+      added.add('.info/agentic.yaml');
+      GeneratedProjectContract.validateAgentReadyRepository(
+        projectPath,
+        ciProvider: metadata.ciProvider,
+      );
+    } on Exception catch (error) {
+      journal.rollback();
+      if (previousConfig != null) {
+        configFile.parent.createSync(recursive: true);
+        configFile.writeAsStringSync(previousConfig);
+      } else if (configFile.existsSync()) {
+        configFile.deleteSync();
+      }
+      _logger.err(
+        'Init could not produce an honest agent-ready contract: $error',
+      );
+      return 1;
     }
-
-    _writeIfAbsent(
-      path: p.join(projectPath, 'tools', 'format.sh'),
-      content: _formatShContent,
-      added: added,
-    );
-
-    _writeIfAbsent(
-      path: p.join(projectPath, 'tools', 'analyze.sh'),
-      content: _analyzeShContent,
-      added: added,
-    );
 
     // Report summary.
     _logger
       ..info('')
-      ..success('Initialisation complete.')
+      ..success('$projectName is now synced to the agent-ready scaffold.')
       ..info('')
       ..info('Files created or updated:');
     for (final f in added) {
@@ -132,72 +144,105 @@ class InitCommand extends Command<int> {
     return 0;
   }
 
-  // ---------------------------------------------------------------------------
-  // File writing helper
-  // ---------------------------------------------------------------------------
-
   /// Write [content] to [path] only if the file does not already exist.
   void _writeIfAbsent({
     required String path,
     required String content,
     required List<String> added,
+    ProjectMutationJournal? journal,
   }) {
     final file = File(path);
     if (file.existsSync()) return;
-    file.parent.createSync(recursive: true);
-    file.writeAsStringSync(content);
+    if (journal != null) {
+      journal.writeFile(path, content);
+    } else {
+      file.parent.createSync(recursive: true);
+      file.writeAsStringSync(content);
+    }
     added.add(p.relative(path, from: Directory.current.path));
   }
+
+  void _repairGitLabRootCiIfNeeded({
+    required String projectPath,
+    required String ciProvider,
+    required List<String> added,
+    ProjectMutationJournal? journal,
+  }) {
+    if (ciProvider != 'gitlab') {
+      return;
+    }
+
+    final file = File(p.join(projectPath, '.gitlab-ci.yml'));
+    if (!file.existsSync()) {
+      return;
+    }
+
+    final content = file.readAsStringSync();
+    final parsed = loadYaml(content);
+    if (parsed is! YamlMap) {
+      return;
+    }
+
+    final mergedIncludes = _mergeGitLabIncludes(parsed['include']);
+    if (_sameGitLabIncludes(parsed['include'], mergedIncludes)) {
+      return;
+    }
+
+    final editor = YamlEditor(content)..update(['include'], mergedIncludes);
+    if (journal != null) {
+      journal.writeFile(file.path, editor.toString());
+    } else {
+      file.writeAsStringSync(editor.toString());
+    }
+    if (!added.contains('.gitlab-ci.yml')) {
+      added.add('.gitlab-ci.yml');
+    }
+  }
+
+  List<Object> _mergeGitLabIncludes(dynamic rawInclude) {
+    final merged = <Object>[];
+    if (rawInclude is YamlList) {
+      merged.addAll(rawInclude.map(_normalizeGitLabInclude));
+    } else if (rawInclude != null) {
+      merged.add(_normalizeGitLabInclude(rawInclude));
+    }
+
+    for (final requiredInclude in const [
+      {'local': '.gitlab/ci/verify.yml'},
+      {'local': '.gitlab/ci/deploy.yml'},
+    ]) {
+      final exists = merged.any(
+        (entry) => entry is Map && entry['local'] == requiredInclude['local'],
+      );
+      if (!exists) {
+        merged.add(requiredInclude);
+      }
+    }
+    return merged;
+  }
+
+  Object _normalizeGitLabInclude(dynamic entry) {
+    if (entry is YamlMap) {
+      return entry.map((key, value) => MapEntry('$key', value));
+    }
+    return entry?.toString() ?? '';
+  }
+
+  bool _sameGitLabIncludes(dynamic rawInclude, List<Object> mergedIncludes) {
+    if (rawInclude is! YamlList || rawInclude.length != mergedIncludes.length) {
+      return false;
+    }
+
+    for (var index = 0; index < rawInclude.length; index++) {
+      final left = _normalizeGitLabInclude(rawInclude[index]);
+      final right = mergedIncludes[index];
+      if ('$left' != '$right') {
+        return false;
+      }
+    }
+    return true;
+  }
 }
-
-// ---------------------------------------------------------------------------
-// Scaffold content templates
-// ---------------------------------------------------------------------------
-
-String _agentsMdContent(String projectName) => '''
-# AGENTS.md — $projectName
-
-This file provides guidance to AI coding agents (GPT, Claude, Gemini, etc.)
-working in this repository.
-
-## Project Overview
-Flutter application managed with agentic_base.
-
-## Code Conventions
-- State management: see `.info/agentic.yaml`
-- Linting: `dart analyze`
-- Formatting: `dart format .`
-
-## Key Commands
-```
-make analyze   # lint
-make format    # format
-make test      # run tests
-```
-
-## Architecture
-See the repo `docs/` directory for architecture details when that doc set is present.
-''';
-
-String _claudeMdContent(String projectName) => '''
-# CLAUDE.md — $projectName
-
-Instructions for Claude Code when working in this repository.
-
-## Project
-Flutter application. Run `agentic_base doctor` to verify tooling.
-
-## Workflows
-- Implement → Test → Review
-- Keep files under 200 lines
-- Follow existing module patterns
-
-## Commands
-- `flutter pub get` — install dependencies
-- `dart analyze` — lint
-- `dart format .` — format
-- `flutter test` — run tests
-''';
 
 const _makefileContent = '''
 .PHONY: analyze format test build
@@ -224,16 +269,4 @@ analyzer:
 linter:
   rules:
     public_member_api_docs: false
-''';
-
-const _formatShContent = '''
-#!/bin/bash
-set -e
-dart format .
-''';
-
-const _analyzeShContent = '''
-#!/bin/bash
-set -e
-dart analyze --fatal-infos
 ''';

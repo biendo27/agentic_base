@@ -153,10 +153,94 @@ void main() {
           File(
             p.join(appDir, 'lib/core/di/injection.config.dart'),
           ).readAsStringSync();
+      final firebaseOptions =
+          File(
+            p.join(appDir, 'lib/firebase_options.dart'),
+          ).readAsStringSync();
+      final firebaseRuntime =
+          File(
+            p.join(appDir, 'lib/core/firebase/firebase_runtime.dart'),
+          ).readAsStringSync();
 
       expect(analyticsImpl, contains('@LazySingleton(as: AnalyticsService)'));
       expect(injectionConfig, contains('FirebaseAnalyticsService'));
       expect(injectionConfig, contains('AnalyticsService'));
+      expect(
+        firebaseOptions,
+        contains(
+          'Run `flutterfire configure` to generate lib/firebase_options.dart.',
+        ),
+      );
+      expect(
+        firebaseRuntime,
+        contains("import 'package:$appName/firebase_options.dart';"),
+      );
+      expect(
+        firebaseRuntime,
+        contains('DefaultFirebaseOptions.currentPlatform'),
+      );
+      expect(
+        firebaseRuntime,
+        contains('await Firebase.initializeApp();'),
+      );
+    },
+    skip:
+        flutterAvailable
+            ? false
+            : 'Flutter SDK is required for smoke generation.',
+    timeout: const Timeout(Duration(minutes: 4)),
+  );
+
+  test(
+    'create command wires notifications into the generated startup seam',
+    () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'agentic-base-smoke-notifications-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      const appName = 'smoke_notifications_app';
+      final result = await Process.run(_dartExecutable, [
+        'run',
+        'bin/agentic_base.dart',
+        'create',
+        appName,
+        '--no-interactive',
+        '--output-dir',
+        tempDir.path,
+        '--modules',
+        'notifications',
+      ], workingDirectory: Directory.current.path);
+
+      expect(
+        result.exitCode,
+        equals(0),
+        reason: '${result.stdout}\n${result.stderr}',
+      );
+
+      final appDir = p.join(tempDir.path, appName);
+      final registrations =
+          File(
+            p.join(appDir, 'lib/app/modules/module_registrations.dart'),
+          ).readAsStringSync();
+      final notificationsImpl =
+          File(
+            p.join(
+              appDir,
+              'lib/core/notifications/awesome_notifications_service.dart',
+            ),
+          ).readAsStringSync();
+
+      expect(registrations, contains('NotificationsService'));
+      expect(
+        registrations,
+        contains('await getIt<NotificationsService>().init();'),
+      );
+      expect(notificationsImpl, contains('_defaultNotificationChannels'));
+      expect(
+        notificationsImpl,
+        contains("channelKey: 'general'"),
+      );
     },
     skip:
         flutterAvailable

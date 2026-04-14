@@ -30,16 +30,20 @@ class RemoteConfigModule implements AgenticModule {
   List<String> get platformSteps => [
     'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
     'Define default parameter values in the Firebase console.',
-    'Call RemoteConfigService.fetchAndActivate() on app start.',
+    'Run `flutterfire configure` to generate lib/firebase_options.dart before using Firebase-backed modules.',
   ];
 
   @override
   Future<void> install(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
+      ..writeFileIfAbsent(
+        'lib/firebase_options.dart',
+        firebaseOptionsStubFileContent(),
+      )
       ..writeFile(
         'lib/core/firebase/firebase_runtime.dart',
-        firebaseRuntimeFileContent(),
+        firebaseRuntimeFileContent(packageName: ctx.projectName),
       )
       ..writeFile(
         'lib/core/remote_config/remote_config_service.dart',
@@ -103,6 +107,12 @@ class FirebaseRemoteConfigService implements RemoteConfigService {
   @override
   Future<void> init() async {
     await ensureFirebaseInitialized();
+    await _config.setConfigSettings(
+      RemoteConfigSettings(
+        fetchTimeout: const Duration(seconds: 15),
+        minimumFetchInterval: const Duration(hours: 1),
+      ),
+    );
   }
 
   @override
