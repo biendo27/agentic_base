@@ -44,8 +44,8 @@ agentic_base eval --coverage
 | `deploy <env>` | Trigger CI/CD deployment via the stored GitHub or GitLab provider |
 | `doctor` | Check environment health |
 | `brick <add|remove|list>` | Manage community Mason bricks |
-| `init` | Add agentic_base to existing project |
-| `upgrade` | Upgrade Flutter dependencies |
+| `init` | Add or repair the agent-ready scaffold in an existing Flutter project |
+| `upgrade` | Upgrade dependencies and resync generator-owned repo surfaces |
 
 ## State Management Options
 
@@ -64,6 +64,13 @@ Every generated repo ships:
 - thin vendor adapters in `AGENTS.md` and `CLAUDE.md`
 - deterministic local entrypoints in `tools/` for setup, run, verify, build, and release preflight
 - explicit human checkpoints for credentials and final store publish
+
+`init` now uses the same brick-owned scaffold source as `create` and `upgrade`, but sync is additive:
+
+- missing generator-owned docs, adapters, scripts, CI wrappers, and Fastlane files are copied in
+- existing thin adapters or provider surfaces that conflict with the contract cause `init` to fail and roll back copied scaffold changes instead of leaving a false `.info/agentic.yaml`
+- module-added package constraints come from a repo-owned version catalog; installs no longer fall back to `any`
+- Firebase-backed modules now ship a compilable `lib/firebase_options.dart` stub until `flutterfire configure` replaces it, and startup-bound modules register against the owned bootstrap seam so generated startup wiring is executable
 
 ## Available Modules (27)
 
@@ -116,7 +123,7 @@ lib/
 Generated and initialized projects persist one CI provider in `.info/agentic.yaml`:
 
 - `github`: emits `.github/workflows/*.yml` and `agentic_base deploy <env>` uses `gh`
-- `gitlab`: emits root `.gitlab-ci.yml` plus `.gitlab/ci/*.yml` and `agentic_base deploy <env>` uses `glab`
+- `gitlab`: emits root `.gitlab-ci.yml` plus `.gitlab/ci/*.yml`; `agentic_base deploy <env>` maps to the real generated manual jobs for that environment via `glab`
 
 GitLab native validation is macOS-only by contract. Generated GitLab projects require a macOS runner with a shell executor, Xcode, and `tags: [macos]`; Linux runners do not replace the native gate.
 
@@ -129,6 +136,7 @@ GitLab native validation is macOS-only by contract. Generated GitLab projects re
 5. [`05-project-roadmap.md`](./docs/05-project-roadmap.md)
 6. [`06-deployment-guide.md`](./docs/06-deployment-guide.md)
 7. [`07-design-guidelines.md`](./docs/07-design-guidelines.md)
+8. [`08-agent-ready-repo-architecture-and-review-prompt.md`](./docs/08-agent-ready-repo-architecture-and-review-prompt.md)
 
 ## Local Development
 

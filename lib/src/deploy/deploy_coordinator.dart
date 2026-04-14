@@ -17,6 +17,21 @@ class DeployCoordinator {
        _processRunner = processRunner ?? runProcess,
        _delay = delay ?? Future<void>.delayed;
 
+  static const _githubWorkflowByEnvironment = <String, String>{
+    'dev': 'cd-dev.yml',
+    'staging': 'cd-staging.yml',
+    'prod': 'cd-prod.yml',
+  };
+
+  static const _gitlabJobsByEnvironment = <String, List<String>>{
+    'dev': ['deploy_dev'],
+    'staging': [
+      'deploy_staging_android_internal',
+      'deploy_staging_testflight',
+    ],
+    'prod': ['deploy_prod_play', 'deploy_prod_app_store'],
+  };
+
   final AgenticLogger _logger;
   final String _projectPath;
   final ProcessRunner _processRunner;
@@ -123,7 +138,11 @@ class DeployCoordinator {
       return cliCheck;
     }
 
-    final workflowFile = 'cd-$environment.yml';
+    final workflowFile = _githubWorkflowByEnvironment[environment];
+    if (workflowFile == null) {
+      _logger.err('Unsupported GitHub deploy environment: $environment');
+      return 1;
+    }
     final progress = _logger.progress('Triggering $workflowFile');
     final result = await _processRunner(
       'gh',
@@ -205,38 +224,46 @@ class DeployCoordinator {
       return 1;
     }
 
-    final deployJob = 'deploy_$environment';
-    final triggerProgress = _logger.progress('Triggering $deployJob');
-    final triggerResult = await _processRunner(
-      'glab',
-      [
-        'ci',
-        'trigger',
-        deployJob,
-        '--branch',
-        branch,
-        '--pipeline-id',
-        pipeline.id.toString(),
-      ],
-      workingDirectory: _projectPath,
-    );
-
-    if (triggerResult.exitCode != 0) {
-      triggerProgress.fail('Failed to trigger $deployJob');
-      _logProcessFailure(
-        triggerResult,
-        fallbackMessage:
-            'The pipeline exists, but the manual deploy job could not be triggered.',
-      );
-      _printUrl(
-        pipeline.webUrl,
-        successMessage: 'Pipeline URL:',
-        fallbackMessage: 'View pipelines: glab ci get --branch $branch',
-      );
+    final deployJobs = _gitlabJobsByEnvironment[environment];
+    if (deployJobs == null || deployJobs.isEmpty) {
+      _logger.err('Unsupported GitLab deploy environment: $environment');
       return 1;
     }
 
-    triggerProgress.complete('Manual deploy job triggered');
+    for (final deployJob in deployJobs) {
+      final triggerProgress = _logger.progress('Triggering $deployJob');
+      final triggerResult = await _processRunner(
+        'glab',
+        [
+          'ci',
+          'trigger',
+          deployJob,
+          '--branch',
+          branch,
+          '--pipeline-id',
+          pipeline.id.toString(),
+        ],
+        workingDirectory: _projectPath,
+      );
+
+      if (triggerResult.exitCode != 0) {
+        triggerProgress.fail('Failed to trigger $deployJob');
+        _logProcessFailure(
+          triggerResult,
+          fallbackMessage:
+              'The pipeline exists, but the manual deploy job could not be triggered.',
+        );
+        _printUrl(
+          pipeline.webUrl,
+          successMessage: 'Pipeline URL:',
+          fallbackMessage: 'View pipelines: glab ci get --branch $branch',
+        );
+        return 1;
+      }
+
+      triggerProgress.complete('Manual deploy job triggered');
+    }
+
     _printUrl(
       pipeline.webUrl,
       successMessage: 'Pipeline URL:',

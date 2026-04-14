@@ -29,16 +29,20 @@ class CrashlyticsModule implements AgenticModule {
   List<String> get platformSteps => [
     'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
     'Enable Crashlytics in the Firebase console.',
-    'Call CrashReportingService.init() in bootstrap.dart.',
+    'Run `flutterfire configure` to generate lib/firebase_options.dart before using Firebase-backed modules.',
   ];
 
   @override
   Future<void> install(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
+      ..writeFileIfAbsent(
+        'lib/firebase_options.dart',
+        firebaseOptionsStubFileContent(),
+      )
       ..writeFile(
         'lib/core/firebase/firebase_runtime.dart',
-        firebaseRuntimeFileContent(),
+        firebaseRuntimeFileContent(packageName: ctx.projectName),
       )
       ..writeFile(
         'lib/core/crash_reporting/crash_reporting_service.dart',

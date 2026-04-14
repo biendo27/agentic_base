@@ -50,7 +50,7 @@ void main() {
       );
       expect(
         File(p.join(tempDir.path, 'pubspec.yaml')).readAsStringSync(),
-        contains('firebase_analytics: any'),
+        contains('firebase_analytics: ^12.2.0'),
       );
       expect(
         processCalls,
@@ -59,6 +59,55 @@ void main() {
           'dart run build_runner build --delete-conflicting-outputs @ ${tempDir.path}',
           'dart format lib test @ ${tempDir.path}',
         ]),
+      );
+    });
+
+    test(
+      'preserves an existing firebase_options file and generates runtime import',
+      () async {
+        File(p.join(tempDir.path, 'lib', 'firebase_options.dart'))
+          ..createSync(recursive: true)
+          ..writeAsStringSync('// existing firebase options\n');
+
+        final exitCode = await runner.run(['add', 'analytics']);
+
+        expect(exitCode, equals(0));
+        expect(
+          File(
+            p.join(tempDir.path, 'lib', 'firebase_options.dart'),
+          ).readAsStringSync(),
+          equals('// existing firebase options\n'),
+        );
+        expect(
+          File(
+            p.join(tempDir.path, 'lib/core/firebase/firebase_runtime.dart'),
+          ).readAsStringSync(),
+          contains('DefaultFirebaseOptions.currentPlatform'),
+        );
+      },
+    );
+
+    test('installs remote_config without fetching during init', () async {
+      final exitCode = await runner.run(['add', 'remote_config']);
+
+      expect(exitCode, equals(0));
+      final implementation =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/core/remote_config/firebase_remote_config_service.dart',
+            ),
+          ).readAsStringSync();
+
+      final initBlock = implementation.substring(
+        implementation.indexOf('Future<void> init() async {'),
+        implementation.indexOf('@override\n  Future<bool> fetchAndActivate()'),
+      );
+
+      expect(initBlock, isNot(contains('_config.fetchAndActivate()')));
+      expect(
+        implementation,
+        contains('return _config.fetchAndActivate();'),
       );
     });
   });

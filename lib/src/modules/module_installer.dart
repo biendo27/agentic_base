@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/modules/module_dependency_catalog.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
@@ -20,15 +21,21 @@ class ModuleInstaller {
 
   /// Add [packages] to pubspec.yaml `dependencies` block.
   ///
-  /// Each entry in [packages] is a package name; version is set to `any`
-  /// unless [versions] provides an override keyed by package name.
+  /// Each entry in [packages] resolves through the repo-owned dependency
+  /// catalog unless [versions] provides an explicit override keyed by package
+  /// name.
   void addDependencies(
     List<String> packages, {
     Map<String, String>? versions,
   }) {
     _editPubspec((editor) {
       for (final pkg in packages) {
-        final version = versions?[pkg] ?? 'any';
+        final version =
+            versions?[pkg] ??
+            resolveModuleDependencyConstraint(
+              pkg,
+              devDependency: false,
+            );
         editor.update(['dependencies', pkg], version);
       }
     });
@@ -41,7 +48,12 @@ class ModuleInstaller {
   }) {
     _editPubspec((editor) {
       for (final pkg in packages) {
-        final version = versions?[pkg] ?? 'any';
+        final version =
+            versions?[pkg] ??
+            resolveModuleDependencyConstraint(
+              pkg,
+              devDependency: true,
+            );
         editor.update(['dev_dependencies', pkg], version);
       }
     });
@@ -143,6 +155,16 @@ class ModuleInstaller {
     final file = File(path);
     file.parent.createSync(recursive: true);
     file.writeAsStringSync(content);
+  }
+
+  /// Write [content] to [relPath] only when the file does not already exist.
+  void writeFileIfAbsent(String relPath, String content) {
+    final path = p.join(ctx.projectPath, relPath);
+    final file = File(path);
+    if (file.existsSync()) {
+      return;
+    }
+    writeFile(relPath, content);
   }
 
   /// Delete the file at [relPath] if it exists.

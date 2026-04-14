@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:agentic_base/src/cli/commands/init_command.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
+import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/generators/generated_project_contract.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
@@ -44,6 +46,12 @@ void main() {
       expect(exitCode, equals(0));
       final config = AgenticConfig(projectPath: tempDir.path).read();
       expect(config['ci_provider'], equals('gitlab'));
+      final gitlabRoot =
+          File(
+            p.join(tempDir.path, '.gitlab-ci.yml'),
+          ).readAsStringSync();
+      expect(gitlabRoot, contains('.gitlab/ci/verify.yml'));
+      expect(gitlabRoot, contains('.gitlab/ci/deploy.yml'));
     });
 
     test('accepts an explicit ci-provider override', () async {
@@ -52,6 +60,19 @@ void main() {
       expect(exitCode, equals(0));
       final config = AgenticConfig(projectPath: tempDir.path).read();
       expect(config['ci_provider'], equals('github'));
+    });
+
+    test('materializes an honest agent-ready scaffold for init', () async {
+      final exitCode = await runner.run(['init', '--ci-provider', 'github']);
+
+      expect(exitCode, equals(0));
+      expect(
+        () => GeneratedProjectContract.validateAgentReadyRepository(
+          tempDir.path,
+          ciProvider: CiProvider.github,
+        ),
+        returnsNormally,
+      );
     });
 
     test(
@@ -148,6 +169,44 @@ void main() {
         expect(metadata.stateManagement, equals('riverpod'));
         expect(metadata.platforms, equals(['android', 'web']));
         expect(metadata.flavors, equals(['prod']));
+      },
+    );
+
+    test(
+      'fails rather than claiming thin adapters it did not create',
+      () async {
+        File(
+          p.join(tempDir.path, 'AGENTS.md'),
+        ).writeAsStringSync('custom repo instructions');
+        File(
+          p.join(tempDir.path, '.gitlab-ci.yml'),
+        ).writeAsStringSync('include: []\n');
+
+        final exitCode = await runner.run(['init']);
+
+        expect(exitCode, equals(1));
+        expect(
+          File(
+            p.join(tempDir.path, 'AGENTS.md'),
+          ).readAsStringSync(),
+          equals('custom repo instructions'),
+        );
+        expect(
+          File(
+            p.join(tempDir.path, '.info', 'agentic.yaml'),
+          ).existsSync(),
+          isFalse,
+        );
+        expect(File(p.join(tempDir.path, 'CLAUDE.md')).existsSync(), isFalse);
+        expect(File(p.join(tempDir.path, 'README.md')).existsSync(), isFalse);
+        expect(File(p.join(tempDir.path, 'Makefile')).existsSync(), isFalse);
+        expect(
+          File(
+            p.join(tempDir.path, '.gitlab-ci.yml'),
+          ).readAsStringSync(),
+          equals('include: []\n'),
+        );
+        expect(Directory(p.join(tempDir.path, 'docs')).existsSync(), isFalse);
       },
     );
   });
