@@ -29,11 +29,13 @@ Manual setup is slow, inconsistent, and hard for coding agents to navigate.
 ## Product Goals
 
 - generate an agent-ready Flutter repo from one CLI command
+- formalize the generated repo as a harness-first product, not only a scaffold
 - support multiple state-management choices: `cubit`, `riverpod`, `mobx` with scaffold parity
 - scaffold features from a standard brick with matching runtime seams
 - add and remove installable modules as live integrations, not inert file drops
 - preserve project state in `.info/agentic.yaml` with provenance-backed repair
 - keep generated repos analyzable, testable, and script-driven after generation
+- define truthful support tiers, evidence expectations, and human approval boundaries before expanding product claims
 
 ## Non-Goals
 
@@ -75,9 +77,24 @@ Manual setup is slow, inconsistent, and hard for coding agents to navigate.
 - package CI is present; release automation is not
 - docs and README must stay aligned as the module catalog and generator contract evolve
 
+## Harness Contract V1 Direction
+
+The next product milestone is now defined in docs rather than implied by scattered generator behavior.
+
+The intended V1 contract is:
+
+- harness-first and Flutter-first
+- one machine-readable source of truth in `.info/agentic.yaml`
+- support tiers for mainstream Flutter product profiles
+- named eval gates plus evidence bundles
+- explicit human pause states for product direction, credential setup, and final production publish
+
+The repo should stay honest about what is still design-only versus already enforced in code.
+
 ## Success Criteria
 
 - a new maintainer can find the repo contract, architecture, and workflow from `docs/`
+- the product boundary is stated in finite contract docs instead of vague "agent-ready" language
 - command, generator, brick, module, metadata, and test responsibilities are easy to locate
 - deployment docs do not imply automation that is not actually present
 - roadmap reflects completed generator hardening and remaining delivery work
@@ -85,8 +102,12 @@ Manual setup is slow, inconsistent, and hard for coding agents to navigate.
 ## References
 
 - [`README.md`](../README.md)
-- [`docs/codebase-summary.md`](./codebase-summary.md)
+- [`docs/02-codebase-summary.md`](./02-codebase-summary.md)
+- [`docs/08-harness-contract-v1.md`](./08-harness-contract-v1.md)
+- [`docs/09-support-tier-matrix.md`](./09-support-tier-matrix.md)
+- [`docs/10-manifest-schema.md`](./10-manifest-schema.md)
 - [`pubspec.yaml`](../pubspec.yaml)
 - [`plans/260409-1140-agentic-base-implementation/plan.md`](../plans/260409-1140-agentic-base-implementation/plan.md)
 - [`plans/260410-1755-generator-contract-hardening-and-parity/plan.md`](../plans/260410-1755-generator-contract-hardening-and-parity/plan.md)
+- [`plans/260414-1126-harness-contract-v1-and-flutter-support-tiers/plan.md`](../plans/260414-1126-harness-contract-v1-and-flutter-support-tiers/plan.md)
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)

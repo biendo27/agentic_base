@@ -2,6 +2,8 @@
 
 A Dart CLI tool that generates agent-ready Flutter repositories with canonical context, deterministic harness scripts, and honest verify/release contracts.
 
+The active product direction is now explicit: `agentic_base` is evolving from a scaffold-strong generator into a harness-first Flutter generator with a defined contract, support tiers, evidence model, and human approval boundaries.
+
 The package now lives at the repository root. Root-level [`docs/`](./docs/) stores evergreen project documentation, and [`plans/`](./plans/) stores implementation plans and reports.
 
 ## Installation
@@ -136,7 +138,13 @@ GitLab native validation is macOS-only by contract. Generated GitLab projects re
 5. [`05-project-roadmap.md`](./docs/05-project-roadmap.md)
 6. [`06-deployment-guide.md`](./docs/06-deployment-guide.md)
 7. [`07-design-guidelines.md`](./docs/07-design-guidelines.md)
-8. [`08-agent-ready-repo-architecture-and-review-prompt.md`](./docs/08-agent-ready-repo-architecture-and-review-prompt.md)
+8. [`08-harness-contract-v1.md`](./docs/08-harness-contract-v1.md)
+9. [`09-support-tier-matrix.md`](./docs/09-support-tier-matrix.md)
+10. [`10-manifest-schema.md`](./docs/10-manifest-schema.md)
+11. [`11-eval-and-evidence-model.md`](./docs/11-eval-and-evidence-model.md)
+12. [`12-approval-state-machine.md`](./docs/12-approval-state-machine.md)
+13. [`13-flutter-adapter-boundaries.md`](./docs/13-flutter-adapter-boundaries.md)
+14. [`14-sdk-and-version-policy.md`](./docs/14-sdk-and-version-policy.md)
 
 ## Local Development
 

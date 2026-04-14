@@ -138,6 +138,40 @@ That workflow verifies the package, runs generated-app smoke coverage for both C
 - module startup behavior now depends on generated service contracts exposing deterministic init seams
 - upgrade now needs to sync generator-owned surfaces without rewriting app-layer code
 
+## Harness Contract V1 Target Split
+
+The next architecture milestone clarifies a split that was previously implied:
+
+### Harness Core
+
+Should own:
+
+- manifest semantics
+- canonical docs and thin adapter expectations
+- ownership boundaries
+- support tier vocabulary
+- eval ladder and evidence bundle shape
+- approval state vocabulary
+
+### Flutter Adapter
+
+Should own:
+
+- Flutter SDK and version-manager resolution
+- create, run, build, and native-readiness semantics
+- flavors, codegen, and platform-specific wrappers
+- Fastlane-facing release mechanics
+
+### Capability Packs
+
+Should own:
+
+- optional modules and provider selections
+- startup hooks and manual platform steps
+- capability-specific checks that extend the declared gate pack
+
+The important rule is that Flutter-specific details must not redefine the harness contract, and the harness contract must not pretend to be cross-stack generic before it is proven.
+
 ## References
 
 - [`lib/src/cli/cli_runner.dart`](../lib/src/cli/cli_runner.dart)
@@ -146,3 +180,6 @@ That workflow verifies the package, runs generated-app smoke coverage for both C
 - [`lib/src/generators/feature_generator.dart`](../lib/src/generators/feature_generator.dart)
 - [`lib/src/modules/module_registry.dart`](../lib/src/modules/module_registry.dart)
 - [`bricks/agentic_app/brick.yaml`](../bricks/agentic_app/brick.yaml)
+- [`docs/08-harness-contract-v1.md`](./08-harness-contract-v1.md)
+- [`docs/13-flutter-adapter-boundaries.md`](./13-flutter-adapter-boundaries.md)
+- [`docs/14-sdk-and-version-policy.md`](./14-sdk-and-version-policy.md)

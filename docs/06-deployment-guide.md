@@ -31,7 +31,7 @@ Run from the repo root:
 
 ```bash
 dart pub get
-dart format --set-exit-if-changed lib bin
+dart format --set-exit-if-changed lib bin test
 dart analyze --fatal-infos
 dart test
 dart pub publish --dry-run
@@ -108,6 +108,22 @@ Generated-project GitLab support does not mean this package repo itself runs on 
 - generated project automation: GitHub or GitLab, selected by one persisted provider contract
 
 GitLab production protection is still configured in GitLab project settings via protected environments. The scaffold keeps production deploy jobs manual, but GitLab UI policy must still be applied by the downstream repo owner.
+
+## Harness Contract V1 Direction
+
+The current generated release scripts already enforce the most important release boundary: production publish is not unattended.
+
+The planned harness model extends this with:
+
+- named release-preflight and evidence outputs
+- explicit approval states shared across local and CI runs
+- tier-aware gate packs instead of one implicit verify story
+
+Until generator code changes land, these are design commitments documented in:
+
+- [`docs/11-eval-and-evidence-model.md`](./11-eval-and-evidence-model.md)
+- [`docs/12-approval-state-machine.md`](./12-approval-state-machine.md)
+- [`docs/14-sdk-and-version-policy.md`](./14-sdk-and-version-policy.md)
 
 ## References
 
