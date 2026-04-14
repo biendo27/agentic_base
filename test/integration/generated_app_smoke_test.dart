@@ -17,6 +17,10 @@ String get _dartExecutable => Platform.resolvedExecutable;
 
 void main() {
   final flutterAvailable = _isFlutterAvailable();
+  // Other test suites temporarily mutate Directory.current, so capture a
+  // stable repo root once for all smoke subprocesses.
+  final repoRoot = Directory.current.path;
+  const smokeTimeout = Timeout(Duration(minutes: 6));
   for (final ciProvider in ['github', 'gitlab']) {
     test(
       'create command generates a cubit $ciProvider starter app that matches the ownership contract',
@@ -39,7 +43,7 @@ void main() {
           ciProvider,
           '--state',
           'cubit',
-        ], workingDirectory: Directory.current.path);
+        ], workingDirectory: repoRoot);
 
         expect(
           result.exitCode,
@@ -62,7 +66,7 @@ void main() {
           flutterAvailable
               ? false
               : 'Flutter SDK is required for smoke generation.',
-      timeout: const Timeout(Duration(minutes: 4)),
+      timeout: smokeTimeout,
     );
   }
 
@@ -88,7 +92,7 @@ void main() {
           'github',
           '--state',
           stateManagement,
-        ], workingDirectory: Directory.current.path);
+        ], workingDirectory: repoRoot);
 
         expect(
           result.exitCode,
@@ -110,7 +114,7 @@ void main() {
           flutterAvailable
               ? false
               : 'Flutter SDK is required for smoke generation.',
-      timeout: const Timeout(Duration(minutes: 4)),
+      timeout: smokeTimeout,
     );
   }
 
@@ -133,7 +137,7 @@ void main() {
         tempDir.path,
         '--modules',
         'analytics',
-      ], workingDirectory: Directory.current.path);
+      ], workingDirectory: repoRoot);
 
       expect(
         result.exitCode,
@@ -188,7 +192,7 @@ void main() {
         flutterAvailable
             ? false
             : 'Flutter SDK is required for smoke generation.',
-    timeout: const Timeout(Duration(minutes: 4)),
+    timeout: smokeTimeout,
   );
 
   test(
@@ -210,7 +214,7 @@ void main() {
         tempDir.path,
         '--modules',
         'notifications',
-      ], workingDirectory: Directory.current.path);
+      ], workingDirectory: repoRoot);
 
       expect(
         result.exitCode,
@@ -246,6 +250,6 @@ void main() {
         flutterAvailable
             ? false
             : 'Flutter SDK is required for smoke generation.',
-    timeout: const Timeout(Duration(minutes: 4)),
+    timeout: smokeTimeout,
   );
 }

@@ -2,7 +2,9 @@
 
 ## Current Status
 
-The original generator foundation is complete. The active hardening lane is now the trust-repair follow-up in [`plans/260413-1616-agent-ready-repo-generator-trust-repair/plan.md`](../plans/260413-1616-agent-ready-repo-generator-trust-repair/plan.md), which closes the remaining gaps between repo claims and executable reality for `init`, GitLab deploy, deterministic module installs, and startup-bound runtime seams.
+The original generator foundation is complete.
+
+The harness-contract design milestone is now defined in repo docs and plan artifacts. The next milestone is implementation sequencing, not re-litigating product direction.
 
 ## Completed Phases
 
@@ -18,15 +20,40 @@ The original generator foundation is complete. The active hardening lane is now 
 
 ## Active Milestone
 
-### Milestone: Agent-Ready Repo Generator Trust Repair
+### Milestone: Harness Contract V1 And Flutter Support Tiers
 
-Target outcome:
+Status:
 
-- `init` syncs the same generator-owned scaffold source as `create` and `upgrade`, or fails instead of fabricating a contract
-- GitLab deploy resolves real generated manual job names for each environment
-- installable module dependencies come from a repo-owned version catalog with no `any` fallback
-- Firebase-backed and startup-bound modules wire through the owned bootstrap seam, including a generated `firebase_options.dart` stub and non-fetching remote-config init
-- README, architecture, deployment docs, and roadmap only claim behavior backed by code or tests
+- Architecture definition complete
+- Generator implementation not started
+
+Defined outputs:
+
+- define the harness-first repo contract precisely enough to implement without re-litigating product direction
+- define truthful support tiers for mainstream Flutter product app profiles
+- keep `.info/agentic.yaml` as the single machine-readable source of truth for the next manifest evolution
+- define eval, evidence, and approval models before extending generator behavior
+- define Flutter adapter and versioning boundaries before any future cross-stack extraction work
+
+Key docs:
+
+- [`docs/08-harness-contract-v1.md`](./08-harness-contract-v1.md)
+- [`docs/09-support-tier-matrix.md`](./09-support-tier-matrix.md)
+- [`docs/10-manifest-schema.md`](./10-manifest-schema.md)
+- [`docs/11-eval-and-evidence-model.md`](./11-eval-and-evidence-model.md)
+- [`docs/12-approval-state-machine.md`](./12-approval-state-machine.md)
+- [`docs/13-flutter-adapter-boundaries.md`](./13-flutter-adapter-boundaries.md)
+- [`docs/14-sdk-and-version-policy.md`](./14-sdk-and-version-policy.md)
+
+## Next Implementation Waves
+
+| Wave | Goal | Entry Gate | Exit Gate |
+| --- | --- | --- | --- |
+| 1 | Lock terminology, docs, and current-vs-target contract boundaries | Architecture docs approved | doc set reviewed and current scaffold-contract checks stay green |
+| 2 | Add manifest schema and support-profile encoding to `.info/agentic.yaml` | Wave 1 merged | create/init/upgrade keep honest manifest state and package tests cover new manifest semantics |
+| 3 | Add eval gate expectations, approval metadata, and evidence bundle outputs | manifest fields available | local verify and generated CI emit canonical evidence and package tests cover the new gate vocabulary |
+| 4 | Add Flutter SDK manager and version-policy enforcement | evidence model stable | doctor, create, and upgrade can validate tested toolchains |
+| 5 | Update public product claims and rollout docs | waves 1-4 shipped | README and generated docs match actual guarantees |
 
 ## Release Gates
 
@@ -41,9 +68,13 @@ Target outcome:
 
 - Should module inventory be generated from `ModuleRegistry` to avoid README drift?
 - Will repo-level GitLab automation for `agentic_base` itself be needed later, or should support stay limited to generated projects?
+- Should evidence bundles stay as local artifacts only, or should generated CI publish them consistently as downloadable artifacts?
 
 ## References
 
 - [`plans/260409-1140-agentic-base-implementation/plan.md`](../plans/260409-1140-agentic-base-implementation/plan.md)
 - [`plans/260409-1140-agentic-base-implementation/reports/red-team-review.md`](../plans/260409-1140-agentic-base-implementation/reports/red-team-review.md)
+- [`plans/260414-1126-harness-contract-v1-and-flutter-support-tiers/plan.md`](../plans/260414-1126-harness-contract-v1-and-flutter-support-tiers/plan.md)
+- [`docs/08-harness-contract-v1.md`](./08-harness-contract-v1.md)
+- [`docs/11-eval-and-evidence-model.md`](./11-eval-and-evidence-model.md)
 - [`lib/src/modules/module_registry.dart`](../lib/src/modules/module_registry.dart)
