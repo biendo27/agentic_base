@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/harness_metadata.dart';
+import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:agentic_base/src/generators/agentic_app_surface_synchronizer.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
@@ -27,36 +30,23 @@ class ProjectGenerator {
     required List<String> flavors,
     required String primaryColor,
     required CiProvider ciProvider,
+    required HarnessAppProfile appProfile,
+    required FlutterSdkManager flutterSdkManager,
+    String? flutterSdkVersion,
+    List<String> secondaryTraits = const [],
     List<String> modules = const [],
   }) async {
-    // Step 1: flutter create for native platform scaffolding
-    await _flutterCreate(
-      projectName: projectName,
-      outputDirectory: outputDirectory,
-      org: org,
-      platforms: platforms,
+    final harness = HarnessMetadata.defaultFor(
+      appProfile: appProfile,
+      secondaryTraits: secondaryTraits,
+      capabilities: modules,
+      sdk: resolveFlutterSdkContract(
+        projectPath: Directory.current.path,
+        manager: flutterSdkManager,
+        version: flutterSdkVersion,
+      ),
     );
-
-    // Step 2: Overlay Mason brick templates
-    await const AgenticAppSurfaceSynchronizer().overlay(
-      projectName: projectName,
-      outputDirectory: outputDirectory,
-      org: org,
-      platforms: platforms,
-      stateManagement: stateManagement,
-      flavors: flavors,
-      primaryColor: primaryColor,
-      ciProvider: ciProvider,
-    );
-
-    GeneratedProjectContract.enforceCiProviderOutputs(
-      outputDirectory,
-      ciProvider: ciProvider,
-    );
-
-    // Step 3: Write agentic.yaml config
-    AgenticConfig.createInitial(
-      projectPath: outputDirectory,
+    final metadata = AgenticConfig.buildInitialMetadata(
       projectName: projectName,
       org: org,
       ciProvider: ciProvider,
@@ -73,8 +63,45 @@ class ProjectGenerator {
         'platforms': MetadataProvenance.explicit,
         'flavors': MetadataProvenance.explicit,
         'modules': MetadataProvenance.defaulted,
+        'harness.contract_version': MetadataProvenance.defaulted,
+        'harness.app_profile.primary_profile': MetadataProvenance.explicit,
+        'harness.app_profile.secondary_traits': MetadataProvenance.explicit,
+        'harness.capabilities.enabled': MetadataProvenance.explicit,
+        'harness.providers': MetadataProvenance.defaulted,
+        'harness.eval.evidence_dir': MetadataProvenance.defaulted,
+        'harness.eval.quality_dimensions': MetadataProvenance.defaulted,
+        'harness.approvals.pause_on': MetadataProvenance.defaulted,
+        'harness.sdk.manager': MetadataProvenance.explicit,
+        'harness.sdk.channel': MetadataProvenance.defaulted,
+        'harness.sdk.version': MetadataProvenance.inferred,
+        'harness.sdk.policy': MetadataProvenance.defaulted,
       },
+      modules: modules,
+      harness: harness,
     );
+
+    // Step 1: flutter create for native platform scaffolding
+    await _flutterCreate(
+      projectName: projectName,
+      outputDirectory: outputDirectory,
+      org: org,
+      platforms: platforms,
+    );
+
+    // Step 2: Overlay Mason brick templates
+    await const AgenticAppSurfaceSynchronizer().overlay(
+      outputDirectory: outputDirectory,
+      metadata: metadata,
+      primaryColor: primaryColor,
+    );
+
+    GeneratedProjectContract.enforceCiProviderOutputs(
+      outputDirectory,
+      ciProvider: ciProvider,
+    );
+
+    // Step 3: Write agentic.yaml config
+    AgenticConfig(projectPath: outputDirectory).writeMetadata(metadata);
 
     // Step 4: Install dependencies
     await _runInProject(outputDirectory, 'Installing dependencies', 'flutter', [
@@ -234,15 +261,9 @@ class ProjectGenerator {
   Future<void> _verify(String projectDir) async {
     await _runInProject(
       projectDir,
-      'Verifying generated app with flutter analyze',
-      'flutter',
-      ['analyze'],
-    );
-    await _runInProject(
-      projectDir,
-      'Verifying generated app with flutter test',
-      'flutter',
-      ['test'],
+      'Verifying generated app with harness contract',
+      'bash',
+      ['tools/verify.sh'],
     );
   }
 

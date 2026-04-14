@@ -1,4 +1,6 @@
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/harness_metadata.dart';
 
 const defaultProjectFlavors = <String>['dev', 'staging', 'prod'];
 const defaultProjectPlatforms = <String>['android', 'ios', 'web'];
@@ -32,8 +34,9 @@ final class ProjectMetadata {
     required this.platforms,
     required this.flavors,
     required this.modules,
+    required this.harness,
     required this.provenance,
-    this.schemaVersion = 2,
+    this.schemaVersion = 3,
     this.projectKind = 'agent_ready_flutter_repo',
     this.createdAt,
   });
@@ -44,8 +47,15 @@ final class ProjectMetadata {
     String fallbackToolVersion = 'unknown',
   }) {
     final provenance = _parseProvenanceMap(data['metadata_provenance']);
+    final capabilities = _readStringList(data['modules']) ?? const <String>[];
+    const fallbackSdk = FlutterSdkContract(
+      manager: FlutterSdkManager.system,
+      channel: defaultFlutterChannel,
+      version: newestTestedFlutterVersion,
+      policy: FlutterVersionPolicy.newestTested,
+    );
     return ProjectMetadata(
-      schemaVersion: _readInt(data['schema_version']) ?? 2,
+      schemaVersion: _readInt(data['schema_version']) ?? 3,
       projectKind:
           _readString(data['project_kind']) ?? 'agent_ready_flutter_repo',
       toolVersion: _readString(data['tool_version']) ?? fallbackToolVersion,
@@ -55,7 +65,12 @@ final class ProjectMetadata {
       stateManagement: _readString(data['state_management']) ?? 'cubit',
       platforms: _readStringList(data['platforms']) ?? defaultProjectPlatforms,
       flavors: _readStringList(data['flavors']) ?? defaultProjectFlavors,
-      modules: _readStringList(data['modules']) ?? const <String>[],
+      modules: capabilities,
+      harness: HarnessMetadata.fromConfigMap(
+        data,
+        fallbackCapabilities: capabilities,
+        fallbackSdk: fallbackSdk,
+      ),
       provenance: _resolveFieldProvenance(
         data,
         provenance,
@@ -76,6 +91,7 @@ final class ProjectMetadata {
   final List<String> platforms;
   final List<String> flavors;
   final List<String> modules;
+  final HarnessMetadata harness;
   final Map<String, MetadataProvenance> provenance;
   final String? createdAt;
 
@@ -90,6 +106,7 @@ final class ProjectMetadata {
     List<String>? platforms,
     List<String>? flavors,
     List<String>? modules,
+    HarnessMetadata? harness,
     Map<String, MetadataProvenance>? provenance,
     String? createdAt,
   }) {
@@ -104,6 +121,7 @@ final class ProjectMetadata {
       platforms: platforms ?? this.platforms,
       flavors: flavors ?? this.flavors,
       modules: modules ?? this.modules,
+      harness: harness ?? this.harness,
       provenance: provenance ?? this.provenance,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -121,6 +139,7 @@ final class ProjectMetadata {
       'platforms': platforms,
       'flavors': flavors,
       'modules': modules,
+      'harness': harness.toConfigMap(),
       'metadata_provenance': provenance.map(
         (key, value) => MapEntry(key, value.wireName),
       ),
@@ -162,6 +181,51 @@ final class ProjectMetadata {
       'platforms': resolve('platforms', hasDefault: true),
       'flavors': resolve('flavors', hasDefault: true),
       'modules': resolve('modules', hasDefault: true),
+      'harness.contract_version': resolve(
+        'harness.contract_version',
+        hasDefault: true,
+      ),
+      'harness.app_profile.primary_profile': resolve(
+        'harness.app_profile.primary_profile',
+        hasDefault: true,
+      ),
+      'harness.app_profile.secondary_traits': resolve(
+        'harness.app_profile.secondary_traits',
+        hasDefault: true,
+      ),
+      'harness.capabilities.enabled': resolve(
+        'harness.capabilities.enabled',
+        hasDefault: true,
+      ),
+      'harness.providers': resolve('harness.providers', hasDefault: true),
+      'harness.eval.evidence_dir': resolve(
+        'harness.eval.evidence_dir',
+        hasDefault: true,
+      ),
+      'harness.eval.quality_dimensions': resolve(
+        'harness.eval.quality_dimensions',
+        hasDefault: true,
+      ),
+      'harness.approvals.pause_on': resolve(
+        'harness.approvals.pause_on',
+        hasDefault: true,
+      ),
+      'harness.sdk.manager': resolve(
+        'harness.sdk.manager',
+        hasDefault: true,
+      ),
+      'harness.sdk.channel': resolve(
+        'harness.sdk.channel',
+        hasDefault: true,
+      ),
+      'harness.sdk.version': resolve(
+        'harness.sdk.version',
+        hasDefault: true,
+      ),
+      'harness.sdk.policy': resolve(
+        'harness.sdk.policy',
+        hasDefault: true,
+      ),
       'created_at': resolve('created_at', hasDefault: true),
     };
   }

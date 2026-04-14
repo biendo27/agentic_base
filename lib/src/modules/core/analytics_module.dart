@@ -51,6 +51,7 @@ class AnalyticsModule implements AgenticModule {
         'lib/core/analytics/firebase_analytics_service.dart',
         _firebaseAnalyticsImpl(ctx.projectName),
       )
+      ..mutateTextFile('ios/Podfile', _ensureIos15PodfilePlatform)
       ..markInstalled(name);
   }
 
@@ -72,9 +73,6 @@ class AnalyticsModule implements AgenticModule {
 ///
 /// Swap the implementation in the DI module to use any analytics provider.
 abstract class AnalyticsService {
-  /// Ensure the Firebase runtime is ready before the first call.
-  Future<void> init();
-
   /// Log a named event with optional string parameters.
   Future<void> logEvent(String name, {Map<String, String>? parameters});
 
@@ -101,20 +99,11 @@ import 'package:$pkg/core/firebase/firebase_runtime.dart';
 /// Firebase implementation of [AnalyticsService].
 @LazySingleton(as: AnalyticsService)
 class FirebaseAnalyticsService implements AnalyticsService {
-  FirebaseAnalyticsService({FirebaseAnalytics? analytics})
-      : _overrideAnalytics = analytics;
-
-  final FirebaseAnalytics? _overrideAnalytics;
-
-  FirebaseAnalytics get _analytics =>
-      _overrideAnalytics ?? FirebaseAnalytics.instance;
-
-  @override
-  Future<void> init() => ensureFirebaseInitialized();
+  FirebaseAnalytics get _analytics => FirebaseAnalytics.instance;
 
   @override
   Future<void> logEvent(String name, {Map<String, String>? parameters}) async {
-    await init();
+    await _ensureReady();
     await _analytics.logEvent(name: name, parameters: parameters);
   }
 
@@ -123,13 +112,13 @@ class FirebaseAnalyticsService implements AnalyticsService {
     required String name,
     required String value,
   }) async {
-    await init();
+    await _ensureReady();
     await _analytics.setUserProperty(name: name, value: value);
   }
 
   @override
   Future<void> setUserId(String? id) async {
-    await init();
+    await _ensureReady();
     await _analytics.setUserId(id: id);
   }
 
@@ -138,12 +127,27 @@ class FirebaseAnalyticsService implements AnalyticsService {
     required String screenName,
     String? screenClass,
   }) async {
-    await init();
+    await _ensureReady();
     await _analytics.logScreenView(
       screenName: screenName,
       screenClass: screenClass,
     );
   }
+
+  Future<void> _ensureReady() => ensureFirebaseInitialized();
 }
 ''';
+}
+
+String _ensureIos15PodfilePlatform(String current) {
+  var next = current;
+  next = next.replaceFirst(
+    "# platform :ios, '13.0'",
+    "platform :ios, '15.0'",
+  );
+  next = next.replaceFirst(
+    "platform :ios, '13.0'",
+    "platform :ios, '15.0'",
+  );
+  return next;
 }

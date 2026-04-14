@@ -6,6 +6,10 @@
   when: manual
   before_script:
     - chmod +x tools/*.sh
+  artifacts:
+    when: always
+    paths:
+      - {{evidence_dir}}
 
 deploy_dev:
   extends: .deploy_template

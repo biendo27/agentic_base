@@ -5,6 +5,11 @@ Thin adapter for coding agents working in `{{project_name.titleCase()}}`.
 ## Start Here
 
 - Machine contract: `.info/agentic.yaml`
+- Harness Contract: `v1`
+- Primary profile: `{{app_profile}}` ({{app_profile_label}})
+- Support tier: `{{support_tier_label}}`
+- Evidence directory: `{{{evidence_dir}}}`
+- Declared Flutter toolchain: `{{flutter_sdk_manager}}` / `{{flutter_sdk_channel}}` / `{{flutter_sdk_version}}`
 - Canonical context:
   - `README.md`
   - `docs/01-architecture.md`
@@ -30,4 +35,5 @@ Thin adapter for coding agents working in `{{project_name.titleCase()}}`.
 
 - Generator-owned surfaces: `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/`, `tools/`, CI files, Fastlane files
 - Human-owned surfaces: feature code, secrets, non-example env files, store credentials
+- `./tools/verify.sh` and `./tools/release-preflight.sh` write inspectable evidence to `{{{evidence_dir}}}`
 - Human approval is required before any final production store publish

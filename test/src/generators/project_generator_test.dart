@@ -12,7 +12,7 @@ Future<void> seedRequiredContractFiles(String projectDir) async {
   const appId = 'com.example.demoapp';
   final seededContent = <String, String>{
     '.info/agentic.yaml': '''
-schema_version: 2
+schema_version: 3
 project_kind: agent_ready_flutter_repo
 tool_version: 0.1.0
 project_name: demo_app
@@ -54,16 +54,44 @@ ownership:
     - AGENTS.md
   human_owned:
     - lib/features/
+harness:
+  contract_version: 1
+  app_profile:
+    primary_profile: consumer-app
+    secondary_traits: []
+  capabilities:
+    enabled: []
+  providers: {}
+  eval:
+    evidence_dir: artifacts/evidence
+    quality_dimensions:
+      - correctness
+      - release_readiness
+      - observability
+      - ux_confidence
+  approvals:
+    pause_on:
+      - product-decisions
+      - credential-setup
+      - final-store-publish-approval
+  sdk:
+    manager: system
+    channel: stable
+    version: 3.29.0
+    policy: newest_tested
 ''',
-    'AGENTS.md': 'Thin adapter\n./tools/verify.sh\n',
+    'AGENTS.md':
+        'Thin adapter\n./tools/verify.sh\nHarness Contract: `v1`\nEvidence directory: `artifacts/evidence`\n',
     'CLAUDE.md':
-        'Thin Claude adapter\nMachine contract: `.info/agentic.yaml`\n',
+        'Thin Claude adapter\nMachine contract: `.info/agentic.yaml`\nHarness Contract: `v1`\nSupport tier:\n',
     'README.md':
-        'An agent-ready Flutter repository\n./tools/run-dev.sh\nfinal production store publish remains a human approval step\n',
-    'tools/release-preflight.sh': 'human approval step\n',
-    'tools/release.sh': '#!/bin/bash\necho release\n',
+        'An agent-ready Flutter repository\nPrimary profile: `consumer-app`\nSupport tier: `Tier 1`\nEvidence directory: `artifacts/evidence`\n./tools/run-dev.sh\nfinal production store publish remains a human approval step\n',
+    'tools/_common.sh': 'summary.json\n',
+    'tools/release-preflight.sh': 'credential-setup\nUploadReady\n',
+    'tools/release.sh': 'AwaitingFinalPublishApproval\n',
+    'tools/verify.sh': 'app-shell-smoke\n',
     '.github/workflows/ci.yml':
-        r'./tools/verify.sh ${{ github.workflow }}-${{ github.ref }} ./tools/build.sh ${{ matrix.flavor }}',
+        r'./tools/verify.sh ${{ github.workflow }}-${{ github.ref }} ./tools/build.sh ${{ matrix.flavor }} actions/upload-artifact@v4 flutter-version:',
     '.github/workflows/cd-dev.yml': './tools/release.sh dev firebase\n',
     '.github/workflows/cd-staging.yml':
         './tools/release.sh staging play-internal\n./tools/release.sh staging testflight\n',
@@ -364,16 +392,17 @@ void main() {
       await File(
         p.join(tempDir.path, '.gitlab/ci/verify.yml'),
       ).writeAsString(
-        'native_validate:\n  tags: [macos]\n  script:\n    - ./tools/verify.sh\n',
+        'native_validate:\n  tags: [macos]\n  script:\n    - ./tools/verify.sh\n  artifacts:\n    when: always\n    paths:\n      - artifacts/evidence\n',
       );
       await File(
         p.join(tempDir.path, '.gitlab/ci/deploy.yml'),
       ).writeAsString(
-        'deploy_dev:\n  when: manual\n  script:\n    - ./tools/release.sh dev firebase\n'
-        'deploy_staging_android_internal:\n  when: manual\n  script:\n    - ./tools/release.sh staging play-internal\n'
-        'deploy_staging_testflight:\n  when: manual\n  script:\n    - ./tools/release.sh staging testflight\n'
-        'deploy_prod_play:\n  when: manual\n  script:\n    - ./tools/release.sh prod play-production\n'
-        'deploy_prod_app_store:\n  when: manual\n  script:\n    - ./tools/release.sh prod app-store\n',
+        '.deploy_template:\n  when: manual\n  artifacts:\n    when: always\n    paths:\n      - artifacts/evidence\n'
+        'deploy_dev:\n  script:\n    - ./tools/release.sh dev firebase\n'
+        'deploy_staging_android_internal:\n  script:\n    - ./tools/release.sh staging play-internal\n'
+        'deploy_staging_testflight:\n  script:\n    - ./tools/release.sh staging testflight\n'
+        'deploy_prod_play:\n  script:\n    - ./tools/release.sh prod play-production\n'
+        'deploy_prod_app_store:\n  script:\n    - ./tools/release.sh prod app-store\n',
       );
       await Directory(p.join(tempDir.path, '.github')).delete(recursive: true);
 

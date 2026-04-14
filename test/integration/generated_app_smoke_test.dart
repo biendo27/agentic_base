@@ -15,6 +15,14 @@ bool _isFlutterAvailable() {
 
 String get _dartExecutable => Platform.resolvedExecutable;
 
+Directory _latestEvidenceRunDirectory(String appDir, String runKind) {
+  final runRoot = Directory(p.join(appDir, 'artifacts', 'evidence', runKind));
+  final children =
+      runRoot.listSync().whereType<Directory>().toList()
+        ..sort((left, right) => left.path.compareTo(right.path));
+  return children.last;
+}
+
 void main() {
   final flutterAvailable = _isFlutterAvailable();
   // Other test suites temporarily mutate Directory.current, so capture a
@@ -61,6 +69,16 @@ void main() {
           ),
           returnsNormally,
         );
+        final verifySummary =
+            File(
+              p.join(
+                _latestEvidenceRunDirectory(appDir, 'verify').path,
+                'summary.json',
+              ),
+            ).readAsStringSync();
+        expect(verifySummary, contains('"run_kind": "verify"'));
+        expect(verifySummary, contains('"derived_gate_expectation_id"'));
+        expect(verifySummary, contains('"app-shell-smoke"'));
       },
       skip:
           flutterAvailable
@@ -153,6 +171,10 @@ void main() {
               'lib/core/analytics/firebase_analytics_service.dart',
             ),
           ).readAsStringSync();
+      final registrations =
+          File(
+            p.join(appDir, 'lib/app/modules/module_registrations.dart'),
+          ).readAsStringSync();
       final injectionConfig =
           File(
             p.join(appDir, 'lib/core/di/injection.config.dart'),
@@ -165,8 +187,21 @@ void main() {
           File(
             p.join(appDir, 'lib/core/firebase/firebase_runtime.dart'),
           ).readAsStringSync();
+      final podfile = File(p.join(appDir, 'ios', 'Podfile')).readAsStringSync();
 
       expect(analyticsImpl, contains('@LazySingleton(as: AnalyticsService)'));
+      expect(analyticsImpl, contains('FirebaseAnalytics.instance'));
+      expect(
+        analyticsImpl,
+        isNot(
+          contains('FirebaseAnalyticsService({FirebaseAnalytics? analytics})'),
+        ),
+      );
+      expect(
+        registrations,
+        isNot(contains('await getIt<AnalyticsService>().init();')),
+      );
+      expect(podfile, contains("platform :ios, '15.0'"));
       expect(injectionConfig, contains('FirebaseAnalyticsService'));
       expect(injectionConfig, contains('AnalyticsService'));
       expect(
@@ -234,6 +269,7 @@ void main() {
               'lib/core/notifications/awesome_notifications_service.dart',
             ),
           ).readAsStringSync();
+      final podfile = File(p.join(appDir, 'ios', 'Podfile')).readAsStringSync();
 
       expect(registrations, contains('NotificationsService'));
       expect(
@@ -245,6 +281,79 @@ void main() {
         notificationsImpl,
         contains("channelKey: 'general'"),
       );
+      expect(podfile, contains("platform :ios, '15.0'"));
+      expect(podfile, contains('use_modular_headers!'));
+      expect(podfile, contains('update_awesome_pod_build_settings(installer)'));
+      expect(
+        podfile,
+        contains("update_awesome_main_target_settings('Runner'"),
+      );
+    },
+    skip:
+        flutterAvailable
+            ? false
+            : 'Flutter SDK is required for smoke generation.',
+    timeout: smokeTimeout,
+  );
+
+  test(
+    'release-preflight emits approval evidence for production uploads',
+    () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'agentic-base-smoke-release-preflight-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      const appName = 'smoke_release_contract_app';
+      final createResult = await Process.run(_dartExecutable, [
+        'run',
+        'bin/agentic_base.dart',
+        'create',
+        appName,
+        '--no-interactive',
+        '--output-dir',
+        tempDir.path,
+      ], workingDirectory: repoRoot);
+
+      expect(
+        createResult.exitCode,
+        equals(0),
+        reason: '${createResult.stdout}\n${createResult.stderr}',
+      );
+
+      final appDir = p.join(tempDir.path, appName);
+      final fakeBinDir = Directory(p.join(tempDir.path, 'fake-bin'))
+        ..createSync(recursive: true);
+      final bundleScript = File(p.join(fakeBinDir.path, 'bundle'))
+        ..writeAsStringSync('#!/bin/sh\nexit 0\n');
+      await Process.run('chmod', ['755', bundleScript.path]);
+
+      final preflightResult = await Process.run(
+        'bash',
+        ['./tools/release-preflight.sh', 'prod', 'play-production'],
+        workingDirectory: appDir,
+        environment: {
+          'PATH':
+              '${fakeBinDir.path}${Platform.isWindows ? ';' : ':'}${Platform.environment['PATH'] ?? ''}',
+          'PLAY_STORE_JSON_KEY': 'fake-key',
+        },
+      );
+
+      expect(
+        preflightResult.exitCode,
+        equals(0),
+        reason: '${preflightResult.stdout}\n${preflightResult.stderr}',
+      );
+
+      final summary =
+          File(
+            p.join(
+              _latestEvidenceRunDirectory(appDir, 'release-preflight').path,
+              'summary.json',
+            ),
+          ).readAsStringSync();
+      expect(summary, contains('"run_kind": "release-preflight"'));
+      expect(summary, contains('"approval_state": "UploadReady"'));
     },
     skip:
         flutterAvailable

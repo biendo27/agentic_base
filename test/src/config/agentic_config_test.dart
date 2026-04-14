@@ -2,6 +2,9 @@ import 'dart:io';
 
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/harness_metadata.dart';
+import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -102,11 +105,12 @@ void main() {
 
       final data = AgenticConfig(projectPath: tempDir.path).read();
       expect(data['ci_provider'], equals('gitlab'));
-      expect(data['schema_version'], equals(2));
+      expect(data['schema_version'], equals(3));
       expect(data['project_kind'], equals('agent_ready_flutter_repo'));
       expect(data['context'], isA<Map<String, dynamic>>());
       expect(data['execution'], isA<Map<String, dynamic>>());
       expect(data['checkpoints'], isA<Map<String, dynamic>>());
+      expect(data['harness'], isA<Map<String, dynamic>>());
       expect(
         (data['execution'] as Map<String, dynamic>)['verify'],
         equals('./tools/verify.sh'),
@@ -123,6 +127,17 @@ void main() {
         platforms: const ['android', 'web'],
         flavors: const ['dev', 'prod'],
         modules: const ['analytics'],
+        harness: HarnessMetadata.defaultFor(
+          appProfile: HarnessAppProfile.internalBusinessApp,
+          secondaryTraits: const ['enterprise-auth'],
+          capabilities: const ['analytics'],
+          sdk: const FlutterSdkContract(
+            manager: FlutterSdkManager.system,
+            channel: 'stable',
+            version: '3.29.0',
+            policy: FlutterVersionPolicy.newestTested,
+          ),
+        ),
         provenance: const {
           'schema_version': MetadataProvenance.defaulted,
           'project_kind': MetadataProvenance.defaulted,
@@ -150,6 +165,11 @@ void main() {
       expect(restored.stateManagement, equals('riverpod'));
       expect(restored.modules, equals(['analytics']));
       expect(
+        restored.harness.appProfile,
+        equals(HarnessAppProfile.internalBusinessApp),
+      );
+      expect(restored.harness.secondaryTraits, equals(['enterprise-auth']));
+      expect(
         restored.provenance['state_management'],
         equals(MetadataProvenance.inferred),
       );
@@ -162,6 +182,11 @@ void main() {
       expect(
         (raw['checkpoints'] as Map<String, dynamic>)['requires_human'],
         contains('final-store-publish-approval'),
+      );
+      expect(
+        ((raw['harness'] as Map<String, dynamic>)['sdk']
+            as Map<String, dynamic>)['version'],
+        equals('3.29.0'),
       );
     });
 
@@ -191,6 +216,7 @@ void main() {
         metadata.provenance['platforms'],
         equals(MetadataProvenance.defaulted),
       );
+      expect(metadata.harness.contractVersion, equals(1));
     });
 
     test(

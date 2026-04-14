@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:agentic_base/src/cli/commands/create_command.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:agentic_base/src/generators/project_generator.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
@@ -21,6 +23,10 @@ class RecordingProjectGenerator extends ProjectGenerator {
   List<String>? flavors;
   String? primaryColor;
   CiProvider? ciProvider;
+  HarnessAppProfile? appProfile;
+  FlutterSdkManager? flutterSdkManager;
+  String? flutterSdkVersion;
+  List<String>? secondaryTraits;
   List<String>? modules;
 
   @override
@@ -33,6 +39,10 @@ class RecordingProjectGenerator extends ProjectGenerator {
     required List<String> flavors,
     required String primaryColor,
     required CiProvider ciProvider,
+    required HarnessAppProfile appProfile,
+    required FlutterSdkManager flutterSdkManager,
+    String? flutterSdkVersion,
+    List<String> secondaryTraits = const [],
     List<String> modules = const [],
   }) async {
     this.projectName = projectName;
@@ -43,6 +53,10 @@ class RecordingProjectGenerator extends ProjectGenerator {
     this.flavors = List.of(flavors);
     this.primaryColor = primaryColor;
     this.ciProvider = ciProvider;
+    this.appProfile = appProfile;
+    this.flutterSdkManager = flutterSdkManager;
+    this.flutterSdkVersion = flutterSdkVersion;
+    this.secondaryTraits = List.of(secondaryTraits);
     this.modules = List.of(modules);
   }
 }
@@ -78,6 +92,10 @@ void main() {
       expect(command.argParser.options.keys, contains('flavors'));
       expect(command.argParser.options.keys, contains('primary-color'));
       expect(command.argParser.options.keys, contains('ci-provider'));
+      expect(command.argParser.options.keys, contains('app-profile'));
+      expect(command.argParser.options.keys, contains('traits'));
+      expect(command.argParser.options.keys, contains('flutter-sdk-manager'));
+      expect(command.argParser.options.keys, contains('flutter-version'));
       expect(command.argParser.options.keys, contains('no-interactive'));
     });
 
@@ -210,6 +228,44 @@ void main() {
         expect(recordingGenerator.modules, equals(['analytics', 'logging']));
       },
     );
+
+    test('passes harness profile, traits, and SDK manager through', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'create-command-harness-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      final exitCode = await runner.run([
+        'create',
+        'demo_app',
+        '--no-interactive',
+        '--output-dir',
+        tempDir.path,
+        '--app-profile',
+        'offline-first-field-app',
+        '--traits',
+        'offline-first,geo-aware',
+        '--flutter-sdk-manager',
+        'fvm',
+        '--flutter-version',
+        '3.29.0',
+      ]);
+
+      expect(exitCode, equals(0));
+      expect(
+        recordingGenerator.appProfile,
+        equals(HarnessAppProfile.offlineFirstFieldApp),
+      );
+      expect(
+        recordingGenerator.secondaryTraits,
+        equals(['offline-first', 'geo-aware']),
+      );
+      expect(
+        recordingGenerator.flutterSdkManager,
+        equals(FlutterSdkManager.fvm),
+      );
+      expect(recordingGenerator.flutterSdkVersion, equals('3.29.0'));
+    });
 
     test(
       'normalizes default flavors back to the stable contract order',

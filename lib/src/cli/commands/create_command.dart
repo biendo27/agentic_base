@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:agentic_base/src/generators/project_generator.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:agentic_base/src/tui/prompts.dart';
@@ -54,6 +56,27 @@ class CreateCommand extends Command<int> {
         help: 'CI provider: github or gitlab',
         allowed: supportedCiProviders,
         defaultsTo: defaultCiProvider.name,
+      )
+      ..addOption(
+        'app-profile',
+        help: 'Harness app profile',
+        allowed: supportedHarnessAppProfiles,
+        defaultsTo: HarnessAppProfile.consumerApp.wireName,
+      )
+      ..addOption(
+        'traits',
+        help: 'Secondary harness traits (comma-separated)',
+      )
+      ..addOption(
+        'flutter-sdk-manager',
+        help: 'Flutter SDK manager: system, fvm, puro',
+        allowed: FlutterSdkManager.values.map((value) => value.wireName),
+        defaultsTo: FlutterSdkManager.system.wireName,
+      )
+      ..addOption(
+        'flutter-version',
+        help:
+            'Explicit tested Flutter version to persist in the harness contract',
       )
       ..addFlag(
         'no-interactive',
@@ -127,9 +150,29 @@ class CreateCommand extends Command<int> {
       args['flavors'] as String?,
     );
     final requestedModules = _normalizeCsvOption(args['modules'] as String?);
+    final requestedTraits = _normalizeCsvOption(args['traits'] as String?);
     final ciProvider = parseCiProvider(
       args['ci-provider'] as String? ?? defaultCiProvider.name,
     );
+    final appProfile = HarnessAppProfileX.fromWireName(
+      args['app-profile'] as String?,
+    );
+    final flutterSdkManager = FlutterSdkManagerX.fromWireName(
+      args['flutter-sdk-manager'] as String?,
+    );
+    final flutterVersion = args['flutter-version'] as String?;
+
+    if (requestedTraits != null) {
+      for (final trait in requestedTraits) {
+        if (!isSupportedHarnessSecondaryTrait(trait)) {
+          _logger.err(
+            'Invalid harness trait: "$trait". Allowed: '
+            '${supportedHarnessSecondaryTraits.join(', ')}',
+          );
+          return 1;
+        }
+      }
+    }
 
     final org =
         noInteractive
@@ -209,6 +252,10 @@ class CreateCommand extends Command<int> {
         flavors: flavors,
         primaryColor: primaryColor,
         ciProvider: ciProvider,
+        appProfile: appProfile,
+        flutterSdkManager: flutterSdkManager,
+        flutterSdkVersion: flutterVersion,
+        secondaryTraits: requestedTraits ?? const <String>[],
         modules: modules,
       );
 

@@ -68,5 +68,6 @@ Map<String, dynamic> buildAgentReadyConfigMap(ProjectMetadata metadata) {
       'generator_owned': generatorOwnedPaths,
       'human_owned': humanOwnedPaths,
     },
+    'harness': metadata.harness.toConfigMap(),
   };
 }

@@ -185,6 +185,24 @@ class ModuleInstaller {
     if (dir.existsSync()) dir.deleteSync(recursive: true);
   }
 
+  /// Mutate a text file at [relPath] in place.
+  ///
+  /// If the file does not exist, this is a no-op. Mutations are journal-aware
+  /// so init/create rollback can still restore the prior state.
+  void mutateTextFile(String relPath, String Function(String current) mutate) {
+    final path = p.join(ctx.projectPath, relPath);
+    final file = File(path);
+    if (!file.existsSync()) {
+      return;
+    }
+    final journal = ctx.mutationJournal;
+    if (journal != null) {
+      journal.mutateTextFile(path, mutate);
+      return;
+    }
+    file.writeAsStringSync(mutate(file.readAsStringSync()));
+  }
+
   // ---------------------------------------------------------------------------
   // agentic.yaml tracking
   // ---------------------------------------------------------------------------

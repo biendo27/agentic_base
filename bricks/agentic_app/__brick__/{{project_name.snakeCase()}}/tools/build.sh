@@ -17,7 +17,7 @@ esac
 
 build_apk() {
   info "Building APK with flavor: $FLAVOR"
-  flutter build apk \
+  run_flutter build apk \
     --flavor "$FLAVOR" \
     --target "lib/main_${FLAVOR}.dart" \
     --dart-define-from-file="env/${FLAVOR}.env.example"
@@ -25,7 +25,7 @@ build_apk() {
 
 build_appbundle() {
   info "Building App Bundle with flavor: $FLAVOR"
-  flutter build appbundle \
+  run_flutter build appbundle \
     --flavor "$FLAVOR" \
     --target "lib/main_${FLAVOR}.dart" \
     --dart-define-from-file="env/${FLAVOR}.env.example"
@@ -35,7 +35,7 @@ build_ipa() {
   [[ "$(uname -s)" == "Darwin" ]] || die "IPA builds require macOS."
   require_dir ios
   info "Building IPA with flavor: $FLAVOR"
-  flutter build ipa \
+  run_flutter build ipa \
     --flavor "$FLAVOR" \
     --target "lib/main_${FLAVOR}.dart" \
     --dart-define-from-file="env/${FLAVOR}.env.example"

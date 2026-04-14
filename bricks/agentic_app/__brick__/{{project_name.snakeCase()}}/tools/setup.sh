@@ -6,7 +6,7 @@ check_flutter
 cd "$PROJECT_ROOT"
 
 info "Installing dependencies..."
-flutter pub get
+run_flutter pub get
 
 "$PROJECT_ROOT/tools/gen.sh"
 
