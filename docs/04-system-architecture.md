@@ -53,13 +53,15 @@ Files under `lib/src/generators/` own scaffold workflows:
 - `FeatureGenerator` applies feature bricks
 - `TestGenerator` turns a feature spec into test stubs
 
-`ProjectGenerator` is the central create-flow orchestrator. `AgenticAppSurfaceSynchronizer` is the shared surface materializer for `create`, `init`, and `upgrade`. Together they call native tooling, overlay templates, sync generator-owned surfaces, install modules, apply ownership cleanup, materialize typed translations, then verify the generated project contract.
+`ProjectGenerator` is the central create-flow orchestrator. `AgenticAppSurfaceSynchronizer` is the shared surface materializer for `create`, `init`, and `upgrade`. Together they call native tooling, overlay templates, sync generator-owned surfaces, install modules, apply ownership cleanup, materialize typed translations, then verify the generated project contract through the generated harness scripts.
 
 ### 3. Project State Layer
 
 Files under `lib/src/config/` define repo-managed state:
 
 - `AgenticConfig` reads and writes `.info/agentic.yaml`
+- `ProjectMetadata`, `HarnessMetadata`, and `FlutterSdkContract` define the typed machine contract
+- `InitProjectMetadataResolver` infers repair-time metadata from an existing Flutter repo
 - `SpecParser` parses `feature.spec.yaml`
 - `StateConfig` maps supported state-management choices to dependencies
 
@@ -90,15 +92,15 @@ The app brick also carries generated-project documentation, thin agent adapters,
 ### Create Flow
 
 1. user runs `agentic_base create <project>`
-2. CLI validates name, org, platforms, and color input
+2. CLI validates name, org, platforms, profile, traits, and toolchain input
 3. `ProjectGenerator` runs `flutter create`
 4. app brick overlays opinionated project files
-5. `.info/agentic.yaml` is written with one persisted machine-readable repo contract
+5. `.info/agentic.yaml` is written with one persisted machine-readable repo contract plus Harness Contract V1 metadata
 6. selected modules are installed
 7. `build_runner` runs for DI/router/model codegen
 8. duplicate root shell files and forbidden IDE artifacts are removed
 9. `dart run slang` materializes typed localization output from `build.yaml`
-10. analyze and tests run on the generated app
+10. generated `./tools/verify.sh` runs named gates and writes evidence bundles
 11. generated repos ship deterministic `tools/` entrypoints and thin adapters that point back to canonical docs
 
 ### Add Module Flow
@@ -115,10 +117,10 @@ The app brick also carries generated-project documentation, thin agent adapters,
 ### Existing Project Init Flow
 
 1. user runs `agentic_base init` inside a Flutter project
-2. package infers state-management, org, platforms, flavors, and CI provider from project files
+2. package infers state-management, org, platforms, flavors, CI provider, and toolchain defaults from project files
 3. the app brick is rendered to a temp project and generator-owned surfaces are copied into the existing repo additively
 4. helper files such as `Makefile` and `analysis_options.yaml` are added only if absent
-5. `.info/agentic.yaml` is written only after the repaired repo passes the shared agent-ready contract validator
+5. `.info/agentic.yaml` is written only after the repaired repo passes the shared agent-ready contract validator, including the harness manifest rules
 6. if validation fails, copied scaffold surfaces and repaired provider wrappers are rolled back before the command exits
 7. conflicting pre-existing thin adapters or provider surfaces cause `init` to fail instead of claiming a false contract
 
@@ -128,7 +130,7 @@ Repo CI currently lives in one GitHub Actions workflow:
 
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
 
-That workflow verifies the package, runs generated-app smoke coverage for both CI providers, and enforces a separate pinned macOS generated-app native gate. Generated-project CI is scaffolded into downstream repos, not executed from this package repo.
+That workflow verifies the package, runs generated-app smoke coverage for both CI providers, and enforces a separate pinned macOS generated-app native gate. Generated-project CI is scaffolded into downstream repos, where provider-specific workflows now also preserve harness evidence artifacts.
 
 ## Architectural Pressure Points
 
@@ -138,13 +140,13 @@ That workflow verifies the package, runs generated-app smoke coverage for both C
 - module startup behavior now depends on generated service contracts exposing deterministic init seams
 - upgrade now needs to sync generator-owned surfaces without rewriting app-layer code
 
-## Harness Contract V1 Target Split
+## Harness Contract V1 Split
 
-The next architecture milestone clarifies a split that was previously implied:
+The current implementation now follows the split that was previously only documented:
 
 ### Harness Core
 
-Should own:
+Owns:
 
 - manifest semantics
 - canonical docs and thin adapter expectations
@@ -155,7 +157,7 @@ Should own:
 
 ### Flutter Adapter
 
-Should own:
+Owns:
 
 - Flutter SDK and version-manager resolution
 - create, run, build, and native-readiness semantics
@@ -164,7 +166,7 @@ Should own:
 
 ### Capability Packs
 
-Should own:
+Owns:
 
 - optional modules and provider selections
 - startup hooks and manual platform steps

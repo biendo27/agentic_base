@@ -4,7 +4,7 @@
 
 The original generator foundation is complete.
 
-The harness-contract design milestone is now defined in repo docs and plan artifacts. The next milestone is implementation sequencing, not re-litigating product direction.
+Harness Contract V1 implementation is now landed in generator code, generated scripts, CI templates, validators, and regression tests.
 
 ## Completed Phases
 
@@ -17,23 +17,25 @@ The harness-contract design milestone is now defined in repo docs and plan artif
 | 5. Extended Modules | Completed | Extended module catalog added. |
 | 6. Multi-State & Bricks | Completed | State options and brick-based scaffolding in place. |
 | 7. Polish & Publish | Completed | Initial package polish and pubspec metadata present. |
+| 8. Harness Contract V1 | Completed | Typed harness manifest, support tiers, evidence outputs, approval states, and SDK policy enforcement shipped. |
 
 ## Active Milestone
 
-### Milestone: Harness Contract V1 And Flutter Support Tiers
+### Milestone: Contract Rollout Stabilization
 
 Status:
 
-- Architecture definition complete
-- Generator implementation not started
+- Harness Contract V1 implementation complete
+- Docs and release claims aligned with shipped behavior
+- Remaining work is stabilization, release hygiene, and future generator polish
 
 Defined outputs:
 
-- define the harness-first repo contract precisely enough to implement without re-litigating product direction
-- define truthful support tiers for mainstream Flutter product app profiles
-- keep `.info/agentic.yaml` as the single machine-readable source of truth for the next manifest evolution
-- define eval, evidence, and approval models before extending generator behavior
-- define Flutter adapter and versioning boundaries before any future cross-stack extraction work
+- keep `.info/agentic.yaml` as the single machine-readable source of truth
+- prevent drift between generated surfaces, validators, and docs
+- keep evidence and approval outputs stable across local and CI execution
+- preserve honest Flutter SDK contract handling during future upgrades
+- ship publication/release automation only when it matches the real package workflow
 
 Key docs:
 
@@ -45,15 +47,13 @@ Key docs:
 - [`docs/13-flutter-adapter-boundaries.md`](./13-flutter-adapter-boundaries.md)
 - [`docs/14-sdk-and-version-policy.md`](./14-sdk-and-version-policy.md)
 
-## Next Implementation Waves
+## Next Waves
 
 | Wave | Goal | Entry Gate | Exit Gate |
 | --- | --- | --- | --- |
-| 1 | Lock terminology, docs, and current-vs-target contract boundaries | Architecture docs approved | doc set reviewed and current scaffold-contract checks stay green |
-| 2 | Add manifest schema and support-profile encoding to `.info/agentic.yaml` | Wave 1 merged | create/init/upgrade keep honest manifest state and package tests cover new manifest semantics |
-| 3 | Add eval gate expectations, approval metadata, and evidence bundle outputs | manifest fields available | local verify and generated CI emit canonical evidence and package tests cover the new gate vocabulary |
-| 4 | Add Flutter SDK manager and version-policy enforcement | evidence model stable | doctor, create, and upgrade can validate tested toolchains |
-| 5 | Update public product claims and rollout docs | waves 1-4 shipped | README and generated docs match actual guarantees |
+| 1 | Stabilize Harness Contract V1 | current suite green | no contract drift across create/init/upgrade/docs |
+| 2 | Reduce command/orchestration file size | contract stable | large command files split without behavior regressions |
+| 3 | Improve package release hygiene | stabilized docs/tests | publish flow is scripted or explicitly documented end to end |
 
 ## Release Gates
 
@@ -62,13 +62,13 @@ Key docs:
 - the pinned macOS generated-app native gate passes in CI
 - `init` parity, deterministic module versioning, and startup-seam regressions stay covered by package tests
 - command docs, generated docs, adapters, and roadmap agree
+- generated verify/release-preflight evidence remains downloadable in downstream CI
 - `dart pub publish --dry-run` passes before publication
 
 ## Open Questions
 
 - Should module inventory be generated from `ModuleRegistry` to avoid README drift?
 - Will repo-level GitLab automation for `agentic_base` itself be needed later, or should support stay limited to generated projects?
-- Should evidence bundles stay as local artifacts only, or should generated CI publish them consistently as downloadable artifacts?
 
 ## References
 

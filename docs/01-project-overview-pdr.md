@@ -49,13 +49,13 @@ Manual setup is slow, inconsistent, and hard for coding agents to navigate.
 | Area | Verified behavior |
 | --- | --- |
 | CLI runtime | `AgenticBaseCliRunner` registers 11 commands plus top-level `--version`. |
-| Project creation | `create` runs `flutter create`, overlays the `agentic_app` brick, writes `.info/agentic.yaml`, optionally installs modules, then runs codegen, lint fixes, analyze, and tests. |
+| Project creation | `create` runs `flutter create`, overlays the `agentic_app` brick, writes `.info/agentic.yaml` including Harness Contract V1 metadata, optionally installs modules, then runs codegen, lint fixes, and generated-project verification. |
 | Feature scaffolding | `feature` applies the `agentic_feature` brick into an initialized project using the selected state profile. |
 | State parity | `cubit`, `riverpod`, and `mobx` all scaffold matching app and feature output with no foreign runtime leftovers. |
 | Module management | `add` and `remove` use `ModuleRegistry`, `ModuleInstaller`, `ProjectMutationJournal`, and `ModuleIntegrationGenerator` to mutate `pubspec.yaml`, write files, refresh bootstrap/provider registries, and update `.info/agentic.yaml`. |
-| Metadata repair | `init` infers project name, org, CI provider, platforms, flavors, and state management from project files, additively syncs the brick-owned agent scaffold, and rolls back copied or repaired scaffold files if the repo still fails the shared contract. |
+| Metadata repair | `init` infers project name, org, CI provider, platforms, flavors, state management, and harness/toolchain defaults from project files, additively syncs the brick-owned agent scaffold, and rolls back copied or repaired scaffold files if the repo still fails the shared contract. |
 | Module integrations | Firebase-backed and startup-bound modules now route through the owned bootstrap seam: generated apps get a compilable `firebase_options.dart` stub until `flutterfire configure` replaces it, analytics is smoke-tested, notifications auto-register default startup channels, and remote config init stays non-networking. |
-| Project maintenance | `gen`, `doctor`, `eval`, `upgrade`, `init`, and `deploy` wrap common lifecycle tasks plus generator-owned repo upgrades. |
+| Project maintenance | `gen`, `doctor`, `eval`, `upgrade`, `init`, and `deploy` wrap common lifecycle tasks plus generator-owned repo upgrades; `doctor` compares declared vs discovered toolchains and `upgrade` preserves or adopts the harness SDK contract honestly. |
 | Templates | App and feature bricks live under `bricks/`. |
 | Repo CI | Current GitHub Actions CI runs analyze, format check, package tests, generated-app smoke coverage, and a pinned macOS native gate. |
 
@@ -77,19 +77,24 @@ Manual setup is slow, inconsistent, and hard for coding agents to navigate.
 - package CI is present; release automation is not
 - docs and README must stay aligned as the module catalog and generator contract evolve
 
-## Harness Contract V1 Direction
+## Harness Contract V1 Status
 
-The next product milestone is now defined in docs rather than implied by scattered generator behavior.
+Harness Contract V1 is now enforced in generated and repaired repos.
 
-The intended V1 contract is:
+The shipped V1 contract includes:
 
 - harness-first and Flutter-first
 - one machine-readable source of truth in `.info/agentic.yaml`
 - support tiers for mainstream Flutter product profiles
 - named eval gates plus evidence bundles
 - explicit human pause states for product direction, credential setup, and final production publish
+- declared Flutter SDK manager/version policy with `doctor` and `upgrade` enforcement hooks
 
-The repo should stay honest about what is still design-only versus already enforced in code.
+Still explicitly out of scope:
+
+- unattended final production store publish
+- secret material inside manifests or evidence bundles
+- pretending Flutter-specific release mechanics are cross-stack generic
 
 ## Success Criteria
 
@@ -97,7 +102,7 @@ The repo should stay honest about what is still design-only versus already enfor
 - the product boundary is stated in finite contract docs instead of vague "agent-ready" language
 - command, generator, brick, module, metadata, and test responsibilities are easy to locate
 - deployment docs do not imply automation that is not actually present
-- roadmap reflects completed generator hardening and remaining delivery work
+- roadmap reflects completed generator hardening plus shipped Harness Contract V1 behavior
 
 ## References
 
