@@ -53,7 +53,7 @@ Files under `lib/src/generators/` own scaffold workflows:
 - `FeatureGenerator` applies feature bricks
 - `TestGenerator` turns a feature spec into test stubs
 
-`ProjectGenerator` is the central create-flow orchestrator. It calls native tooling, overlays templates, writes config, installs modules, applies ownership cleanup, materializes typed translations, then verifies the generated project.
+`ProjectGenerator` is the central create-flow orchestrator. `AgenticAppSurfaceSynchronizer` is the shared surface materializer for `create`, `init`, and `upgrade`. Together they call native tooling, overlay templates, sync generator-owned surfaces, install modules, apply ownership cleanup, materialize typed translations, then verify the generated project contract.
 
 ### 3. Project State Layer
 
@@ -71,8 +71,8 @@ Files under `lib/src/modules/` define installable capabilities:
 
 - `AgenticModule` is the contract
 - `ModuleRegistry` is the inventory plus dependency/conflict resolver
-- `ModuleInstaller` performs file and YAML mutations
-- concrete modules generate service contracts, runtime wiring, and manual platform instructions
+- `ModuleInstaller` performs file and YAML mutations through a repo-owned dependency catalog
+- concrete modules generate service contracts, runtime wiring, bootstrap init hooks, and manual platform instructions
 
 Current registry count: 27 modules.
 
@@ -106,17 +106,21 @@ The app brick also carries generated-project documentation, thin agent adapters,
 1. user runs `agentic_base add <module>`
 2. command loads `.info/agentic.yaml`
 3. `ModuleRegistry` resolves the module plus transitive prerequisites
-4. concrete module writes files and dependency entries through `ModuleInstaller`
+4. concrete module writes files and dependency entries through `ModuleInstaller`, which resolves every package through the repo-owned version catalog
 5. `flutter pub get` runs
-6. `build_runner` plus `dart format` refresh the generated project graph
-7. manual platform steps are printed when needed
+6. `ModuleIntegrationGenerator` refreshes DI/provider registries and auto-discovers startup `init()` hooks
+7. `build_runner` plus `dart format` refresh the generated project graph
+8. manual platform steps are printed when needed
 
 ### Existing Project Init Flow
 
 1. user runs `agentic_base init` inside a Flutter project
-2. package detects state-management hints from `pubspec.yaml`
-3. `.info/agentic.yaml` is created
-4. helper files such as `AGENTS.md`, `CLAUDE.md`, `Makefile`, and scripts are added only if absent
+2. package infers state-management, org, platforms, flavors, and CI provider from project files
+3. the app brick is rendered to a temp project and generator-owned surfaces are copied into the existing repo additively
+4. helper files such as `Makefile` and `analysis_options.yaml` are added only if absent
+5. `.info/agentic.yaml` is written only after the repaired repo passes the shared agent-ready contract validator
+6. if validation fails, copied scaffold surfaces and repaired provider wrappers are rolled back before the command exits
+7. conflicting pre-existing thin adapters or provider surfaces cause `init` to fail instead of claiming a false contract
 
 ## CI And Operations
 
@@ -131,7 +135,7 @@ That workflow verifies the package, runs generated-app smoke coverage for both C
 - command files are trending large and mix orchestration with reporting
 - deployment behavior now depends on one persisted provider contract and provider-specific downstream CI templates
 - README and registry inventory must stay in sync as modules change
-- generated app provider contracts now exist in two forms and need docs/tests to stay aligned
+- module startup behavior now depends on generated service contracts exposing deterministic init seams
 - upgrade now needs to sync generator-owned surfaces without rewriting app-layer code
 
 ## References

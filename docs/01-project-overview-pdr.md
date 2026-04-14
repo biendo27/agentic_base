@@ -51,8 +51,8 @@ Manual setup is slow, inconsistent, and hard for coding agents to navigate.
 | Feature scaffolding | `feature` applies the `agentic_feature` brick into an initialized project using the selected state profile. |
 | State parity | `cubit`, `riverpod`, and `mobx` all scaffold matching app and feature output with no foreign runtime leftovers. |
 | Module management | `add` and `remove` use `ModuleRegistry`, `ModuleInstaller`, `ProjectMutationJournal`, and `ModuleIntegrationGenerator` to mutate `pubspec.yaml`, write files, refresh bootstrap/provider registries, and update `.info/agentic.yaml`. |
-| Metadata repair | `init` infers project name, org, CI provider, platforms, flavors, and state management from project files when possible, then repairs or seeds `.info/agentic.yaml` with provenance. |
-| Module integrations | `analytics` is a live integration that writes the service contract, Firebase implementation, and generated DI wiring verified by smoke tests. |
+| Metadata repair | `init` infers project name, org, CI provider, platforms, flavors, and state management from project files, additively syncs the brick-owned agent scaffold, and rolls back copied or repaired scaffold files if the repo still fails the shared contract. |
+| Module integrations | Firebase-backed and startup-bound modules now route through the owned bootstrap seam: generated apps get a compilable `firebase_options.dart` stub until `flutterfire configure` replaces it, analytics is smoke-tested, notifications auto-register default startup channels, and remote config init stays non-networking. |
 | Project maintenance | `gen`, `doctor`, `eval`, `upgrade`, `init`, and `deploy` wrap common lifecycle tasks plus generator-owned repo upgrades. |
 | Templates | App and feature bricks live under `bricks/`. |
 | Repo CI | Current GitHub Actions CI runs analyze, format check, package tests, generated-app smoke coverage, and a pinned macOS native gate. |
@@ -61,7 +61,7 @@ Manual setup is slow, inconsistent, and hard for coding agents to navigate.
 
 - generated projects should pass `dart analyze` and `flutter test` after bootstrap
 - commands should fail early on invalid args or missing project state
-- `init` should be non-destructive for existing projects and should not fabricate provenance when evidence is missing
+- `init` should be non-destructive for existing projects, additive for generator-owned surfaces, and should fail rather than fabricate provenance or thin-adapter ownership
 - `create` should clean up partial output on failure
 - YAML edits should preserve formatting via `yaml_edit`
 - module mutations should roll back cleanly if any install/remove step fails
@@ -70,6 +70,7 @@ Manual setup is slow, inconsistent, and hard for coding agents to navigate.
 ## Current Constraints And Gaps
 
 - generated repos now ship shared setup/run/verify/build/release-preflight surfaces, but final production publish stays human-approved
+- module dependency constraints are repo-owned and deterministic rather than pub.dev-time floating
 - several Dart files exceed the repo's 200 LOC target, mostly command and orchestration files
 - package CI is present; release automation is not
 - docs and README must stay aligned as the module catalog and generator contract evolve

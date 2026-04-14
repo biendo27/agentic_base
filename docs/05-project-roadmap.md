@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The original generator foundation is complete, and the active milestone has now been implemented locally. [`plans/260413-1238-agent-ready-repo-generator-v2-hard/plan.md`](../plans/260413-1238-agent-ready-repo-generator-v2-hard/plan.md) repositioned `agentic_base` as a generator for agent-ready repos with one canonical context source, deterministic harness scripts, honest release boundaries, and bounded upgrade sync for generator-owned surfaces.
+The original generator foundation is complete. The active hardening lane is now the trust-repair follow-up in [`plans/260413-1616-agent-ready-repo-generator-trust-repair/plan.md`](../plans/260413-1616-agent-ready-repo-generator-trust-repair/plan.md), which closes the remaining gaps between repo claims and executable reality for `init`, GitLab deploy, deterministic module installs, and startup-bound runtime seams.
 
 ## Completed Phases
 
@@ -18,22 +18,22 @@ The original generator foundation is complete, and the active milestone has now 
 
 ## Active Milestone
 
-### Milestone: Agent-Ready Repo Generator V2
+### Milestone: Agent-Ready Repo Generator Trust Repair
 
 Target outcome:
 
-- generated repos keep one machine-readable contract in `.info/agentic.yaml`
-- canonical repo context lives in generated `README.md` and `docs/`
-- `AGENTS.md` and `CLAUDE.md` stay thin adapters derived from the same source
-- deterministic `tools/` entrypoints exist for setup, run, verify, build, and release preflight
-- generated CI/release surfaces contain no placeholder behavior
-- upgrade syncs generator-owned files without rewriting user-owned app logic
+- `init` syncs the same generator-owned scaffold source as `create` and `upgrade`, or fails instead of fabricating a contract
+- GitLab deploy resolves real generated manual job names for each environment
+- installable module dependencies come from a repo-owned version catalog with no `any` fallback
+- Firebase-backed and startup-bound modules wire through the owned bootstrap seam, including a generated `firebase_options.dart` stub and non-fetching remote-config init
+- README, architecture, deployment docs, and roadmap only claim behavior backed by code or tests
 
 ## Release Gates
 
 - `agentic_base` passes analyze, format check, and test locally and in CI
 - generated app smoke tests pass in CI for GitHub and GitLab scaffolds
 - the pinned macOS generated-app native gate passes in CI
+- `init` parity, deterministic module versioning, and startup-seam regressions stay covered by package tests
 - command docs, generated docs, adapters, and roadmap agree
 - `dart pub publish --dry-run` passes before publication
 

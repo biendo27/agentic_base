@@ -65,6 +65,7 @@ This sequence is partly inference. The repo does not currently codify pub.dev pu
 - require local branch to be pushed
 - resolve one persisted `ci_provider` from `.info/agentic.yaml`
 - do not accept a deploy-time provider override
+- rely on the generated provider surface already matching the persisted contract; `init` now fails instead of keeping conflicting thin adapters or opposite-provider CI files
 
 Supported environments in source:
 
@@ -75,6 +76,10 @@ Supported environments in source:
 ### GitHub generated projects
 
 - scaffold `.github/workflows/*.yml`
+- logical environment mapping is one workflow file per environment:
+  - `dev` → `cd-dev.yml`
+  - `staging` → `cd-staging.yml`
+  - `prod` → `cd-prod.yml`
 - generated workflows call shared local scripts such as:
   - `./tools/verify.sh`
   - `./tools/build.sh <env> [artifact]`
@@ -90,6 +95,10 @@ Supported environments in source:
   - the project must provide a macOS runner with shell executor and Xcode
   - Linux runners may handle Dart-only work, but they do not satisfy native validation
 - deploy jobs route through the same shared project scripts and stay manual
+- logical environment mapping fans out to the real generated jobs:
+  - `dev` → `deploy_dev`
+  - `staging` → `deploy_staging_android_internal` + `deploy_staging_testflight`
+  - `prod` → `deploy_prod_play` + `deploy_prod_app_store`
 
 ## Important Caveat
 
