@@ -69,10 +69,10 @@ None. Relevant prior plans are complete and become context only:
 | 1 | [Repair Runtime Honesty And Toolchain Contract](./phase-01-repair-runtime-honesty-and-toolchain-contract.md) | Completed | None |
 | 2 | [Define Shared App Contracts And Selective Brick Organization](./phase-02-define-shared-app-contracts-and-selective-brick-organization.md) | Completed | 1 |
 | 3 | [Refresh Material 3 Theme Foundations And Token Strategy](./phase-03-refresh-material-3-theme-foundations-and-token-strategy.md) | Completed | 2 |
-| 4 | [Upgrade Starter Flow And Feature Brick Wiring](./phase-04-upgrade-starter-flow-and-feature-brick-wiring.md) | Pending | 2,3 |
-| 5 | [Expand Service Coverage And Generator Verification](./phase-05-expand-service-coverage-and-generator-verification.md) | Pending | 1,2,4 |
-| 6 | [Reduce Test Runtime Without Lowering Assurance](./phase-06-reduce-test-runtime-without-lowering-assurance.md) | Pending | 5 |
-| 7 | [Refresh Generated Docs And Repo Docs](./phase-07-refresh-generated-docs-and-repo-docs.md) | Pending | 1,2,3,4,5,6 |
+| 4 | [Upgrade Starter Flow And Feature Brick Wiring](./phase-04-upgrade-starter-flow-and-feature-brick-wiring.md) | Completed | 2,3 |
+| 5 | [Expand Service Coverage And Generator Verification](./phase-05-expand-service-coverage-and-generator-verification.md) | Completed | 1,2,4 |
+| 6 | [Reduce Test Runtime Without Lowering Assurance](./phase-06-reduce-test-runtime-without-lowering-assurance.md) | Completed | 5 |
+| 7 | [Refresh Generated Docs And Repo Docs](./phase-07-refresh-generated-docs-and-repo-docs.md) | Completed | 1,2,3,4,5,6 |
 
 ## Success Criteria
 
@@ -111,6 +111,15 @@ Execution update: 2026-04-15
 - Phase 03 completed.
 - The app brick now builds its Material 3 theme from `ThemeData.from(...)`, uses the exact default light/dark palette from the supplied Material 3 design-kit variables, aligns baseline typography and measurements to that same source, removes dead ScreenUtil scaffolding, and exposes native adaptive helpers through `BuildContextX`.
 - Theme drift is now covered in `GeneratedProjectContract` plus generated-app smoke coverage so old responsive leftovers fail fast.
+- Phase 04 completed.
+- The starter flow remains the owned dashboard/detail/settings/monetization journey, and full `agentic_feature` generation is now visibly spec-driven in routed production pages instead of limiting the YAML contract to route wiring plus one downstream test.
+- `agentic_base feature --simple` remains the honest lightweight path; full mode keeps the routed/spec-driven guarantees.
+- Phase 05 completed.
+- Repo-level generator tests now assert that full feature pages actually render spec-driven contract surfaces, not just generated helper constants.
+- Phase 06 completed.
+- The retained heavy generated-app matrix stays limited to the unique starter-runtime lanes already documented, while lower-level generator tests carry more of the structural spec-contract proof.
+- Phase 07 completed.
+- Root architecture/design docs now explicitly describe the visible full-feature spec contract and the lightweight `--simple` boundary so public wording matches shipped generator behavior.
 
 ## Context Reminder
 
