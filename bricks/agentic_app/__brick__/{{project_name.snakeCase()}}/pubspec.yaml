@@ -24,7 +24,6 @@ dependencies:
 {{#is_riverpod}}
   flutter_riverpod: ^3.3.1
 {{/is_riverpod}}
-  flutter_screenutil: ^5.9.3
   freezed_annotation: ^3.1.0
 {{#uses_get_it}}
   get_it: ^9.2.1

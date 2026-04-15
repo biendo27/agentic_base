@@ -2,7 +2,8 @@
 
 ## Technology: Material 3
 
-The app uses Material 3 with a custom color scheme and typography.
+The app uses Material 3 with a seeded color scheme, explicit typography,
+semantic component defaults, and Flutter-native adaptive helpers.
 Theme is defined in `lib/core/theme/`.
 
 ## File Structure
@@ -22,6 +23,9 @@ lib/core/theme/
 ## Color Scheme
 
 Colors are defined as `ColorScheme` objects in `color_schemes.dart`.
+The generator keeps `primary_color` as the global brand seed and derives
+light and dark Material 3 schemes from it.
+
 Use semantic color tokens, not raw hex values in widgets:
 
 ```dart
@@ -50,7 +54,8 @@ context.textTheme.labelSmall
 
 ## Spacing & Radius
 
-Use constants instead of magic numbers:
+Use constants instead of magic numbers. Radius values align to the base
+Material 3 measurements, and spacing also exposes shared control heights:
 
 ```dart
 // Spacing
@@ -61,38 +66,49 @@ AppSpacing.lg   // 24
 AppSpacing.xl   // 32
 AppSpacing.xxl  // 48
 
+// Control heights
+AppSpacing.controlHeightSm  // 40
+AppSpacing.controlHeightMd  // 56
+AppSpacing.controlHeightLg  // 72
+
 // Radius
-AppRadius.sm    // 4
-AppRadius.md    // 8
-AppRadius.lg    // 16
-AppRadius.xl    // 24
-AppRadius.full  // 999 (pill)
+AppRadius.field   // 4
+AppRadius.chip    // 8
+AppRadius.card    // 12
+AppRadius.medium  // 16
+AppRadius.large   // 28
+AppRadius.full    // 999
 ```
 
-## Responsive Sizing
+## Adaptive Layout
 
-`flutter_screenutil` is initialized in `AppScreenUtilInit`.
-Use `.r`, `.w`, `.h`, `.sp` suffixes for responsive dimensions:
+The scaffold does not use global scaling libraries like ScreenUtil.
+Use `BuildContextX` in `lib/core/extensions/context_extensions.dart`
+for width-aware layout decisions:
 
 ```dart
-SizedBox(height: 16.h, width: 16.w)
-Text('Hello', style: TextStyle(fontSize: 14.sp))
-BorderRadius.circular(8.r)
+context.isCompactWidth
+context.isExpandedWidth
+context.adaptiveHorizontalPadding
+context.adaptivePagePadding
+context.adaptiveContentMaxWidth
 ```
 
 ## Custom Theme Extension
 
-For values not covered by Material tokens, use `AppThemeExtension`:
+For values not covered by Material tokens, use the status-only
+`AppColors` extension:
 ```dart
-context.appTheme.cardElevation
-context.appTheme.shimmerBaseColor
+context.appColors.success
+context.appColors.warning
+context.appColors.info
 ```
 
 Add new values to `extensions/theme_extensions.dart` and register
-in `AppTheme.lightTheme` and `AppTheme.darkTheme`.
+in `AppTheme.light` and `AppTheme.dark`.
 
 ## Dark Mode
 
-`AppTheme` exposes both `lightTheme` and `darkTheme`.
+`AppTheme` exposes both `light` and `dark`.
 `App` widget uses `MediaQuery.platformBrightnessOf` by default.
 User preference override can be wired through a `ThemeCubit` if needed.

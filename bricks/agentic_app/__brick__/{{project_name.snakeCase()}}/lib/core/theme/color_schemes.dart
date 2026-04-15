@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
 abstract class AppColorSchemes {
-  static const _seedColor = Color(0xFF{{primary_color}});
+  static const seed = Color(0xFF{{primary_color}});
 
-  static final light = ColorScheme.fromSeed(
-    seedColor: _seedColor,
+  static ColorScheme resolve(Brightness brightness) => ColorScheme.fromSeed(
+    seedColor: seed,
+    brightness: brightness,
+    dynamicSchemeVariant: DynamicSchemeVariant.tonalSpot,
   );
 
-  static final dark = ColorScheme.fromSeed(
-    seedColor: _seedColor,
-    brightness: Brightness.dark,
-  );
+  static final light = resolve(Brightness.light);
+
+  static final dark = resolve(Brightness.dark);
 }

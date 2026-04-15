@@ -232,6 +232,7 @@ final class GeneratedProjectContract {
       ciProvider: resolvedCiProvider,
     );
     _validateGeneratedReadme(projectDir);
+    _validateThemeSurface(projectDir);
     validateNativeFlavorOutputs(projectDir);
     if (stateManagement != null) {
       validateStateOutput(projectDir, stateManagement: stateManagement);
@@ -851,6 +852,33 @@ final class GeneratedProjectContract {
       readme,
       'final production store publish remains a human approval step',
     );
+  }
+
+  static void _validateThemeSurface(String projectDir) {
+    final pubspec = _readRequiredFile(projectDir, 'pubspec.yaml');
+    final appTheme = _readRequiredFile(
+      projectDir,
+      'lib/core/theme/app_theme.dart',
+    );
+    final colorSchemes = _readRequiredFile(
+      projectDir,
+      'lib/core/theme/color_schemes.dart',
+    );
+    final contextExtensions = _readRequiredFile(
+      projectDir,
+      'lib/core/extensions/context_extensions.dart',
+    );
+    final themingGuide = _readRequiredFile(
+      projectDir,
+      'docs/05-theming-guide.md',
+    );
+
+    _forbidContent(pubspec, 'flutter_screenutil:');
+    _requireContent(appTheme, 'ThemeData.from(');
+    _requireContent(colorSchemes, 'ColorScheme.fromSeed(');
+    _requireContent(contextExtensions, 'adaptivePagePadding');
+    _requireContent(themingGuide, 'BuildContextX');
+    _forbidPath(projectDir, 'lib/core/responsive/app_screen_util_init.dart');
   }
 
   static void _validateReleaseSurfaces(

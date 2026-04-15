@@ -158,6 +158,20 @@ void main() {
                 'lib/features/home/data/repositories/home_repository_impl.dart',
               ),
             ).readAsStringSync();
+        final generatedPubspec =
+            File(p.join(appDir, 'pubspec.yaml')).readAsStringSync();
+        final generatedTheme =
+            File(
+              p.join(appDir, 'lib/core/theme/app_theme.dart'),
+            ).readAsStringSync();
+        final contextExtensions =
+            File(
+              p.join(appDir, 'lib/core/extensions/context_extensions.dart'),
+            ).readAsStringSync();
+        final themingGuide =
+            File(
+              p.join(appDir, 'docs/05-theming-guide.md'),
+            ).readAsStringSync();
 
         expect(errorInterceptor, contains('ErrorHandler.handle(err)'));
         expect(errorInterceptor, contains('handler.next(mappedError);'));
@@ -168,6 +182,16 @@ void main() {
         expect(
           homeRepository,
           contains('return failure(ErrorHandler.handle(error));'),
+        );
+        expect(generatedPubspec, isNot(contains('flutter_screenutil:')));
+        expect(generatedTheme, contains('ThemeData.from('));
+        expect(contextExtensions, contains('adaptivePagePadding'));
+        expect(themingGuide, contains('BuildContextX'));
+        expect(
+          File(
+            p.join(appDir, 'lib/core/responsive/app_screen_util_init.dart'),
+          ).existsSync(),
+          isFalse,
         );
       },
       skip:

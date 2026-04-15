@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/agent_ready_repo_contract.dart';
+import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/generators/feature_generator.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
@@ -91,6 +91,12 @@ harness:
     'tools/release-preflight.sh': 'credential-setup\nUploadReady\n',
     'tools/release.sh': 'AwaitingFinalPublishApproval\n',
     'tools/verify.sh': 'app-shell-smoke\n',
+    'pubspec.yaml':
+        'name: demo_app\ndependencies:\n  flutter:\n    sdk: flutter\n  fpdart: ^1.1.1\n',
+    'lib/core/theme/app_theme.dart': 'ThemeData.from(\n',
+    'lib/core/theme/color_schemes.dart': 'ColorScheme.fromSeed(\n',
+    'lib/core/extensions/context_extensions.dart': 'adaptivePagePadding\n',
+    'docs/05-theming-guide.md': 'BuildContextX\n',
     '.github/workflows/ci.yml':
         r'./tools/verify.sh ${{ github.workflow }}-${{ github.ref }} ./tools/build.sh ${{ matrix.flavor }} actions/upload-artifact@v4 flutter-version:',
     '.github/workflows/cd-dev.yml': './tools/release.sh dev firebase\n',
@@ -214,6 +220,29 @@ void main() {
       );
 
       await File(p.join(tempDir.path, 'lib/app.dart')).create(recursive: true);
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test('validate rejects legacy screenutil theme leftovers', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-theme-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        returnsNormally,
+      );
+
+      await File(p.join(tempDir.path, 'pubspec.yaml')).writeAsString(
+        'name: demo_app\ndependencies:\n  flutter:\n    sdk: flutter\n  flutter_screenutil: ^5.9.3\n',
+      );
 
       expect(
         () => GeneratedProjectContract.validate(tempDir.path),
