@@ -85,6 +85,9 @@ final class GeneratedProjectContract {
     'tools/test.sh',
     'tools/verify.sh',
     'test/app_smoke_test.dart',
+    'test/features/home/data/repositories/demo_starter_monetization_repository_test.dart',
+    'test/features/home/data/repositories/home_repository_impl_test.dart',
+    'test/features/home/presentation/widgets/starter_action_card_test.dart',
   ];
 
   static const requiredFeatureHostPaths = <String>[
@@ -319,6 +322,7 @@ final class GeneratedProjectContract {
           projectDir,
           'lib/features/home/presentation/cubit/home_cubit.dart',
         );
+        _requirePath(projectDir, 'test/features/home/home_cubit_test.dart');
         _forbidPath(
           projectDir,
           'lib/features/home/presentation/controller/home_controller.dart',
@@ -327,6 +331,8 @@ final class GeneratedProjectContract {
           projectDir,
           'lib/features/home/presentation/store/home_store.dart',
         );
+        _forbidPath(projectDir, 'test/features/home/home_controller_test.dart');
+        _forbidPath(projectDir, 'test/features/home/home_store_test.dart');
       case 'riverpod':
         _requireContent(pubspec, 'flutter_riverpod');
         _forbidContent(pubspec, 'flutter_bloc');
@@ -339,6 +345,7 @@ final class GeneratedProjectContract {
           projectDir,
           'lib/features/home/presentation/controller/home_controller.dart',
         );
+        _requirePath(projectDir, 'test/features/home/home_controller_test.dart');
         _forbidPath(
           projectDir,
           'lib/features/home/presentation/cubit/home_cubit.dart',
@@ -347,6 +354,8 @@ final class GeneratedProjectContract {
           projectDir,
           'lib/features/home/presentation/store/home_store.dart',
         );
+        _forbidPath(projectDir, 'test/features/home/home_cubit_test.dart');
+        _forbidPath(projectDir, 'test/features/home/home_store_test.dart');
       case 'mobx':
         _requireContent(pubspec, 'flutter_mobx');
         _requireContent(pubspec, 'mobx');
@@ -357,6 +366,7 @@ final class GeneratedProjectContract {
           projectDir,
           'lib/features/home/presentation/store/home_store.dart',
         );
+        _requirePath(projectDir, 'test/features/home/home_store_test.dart');
         _forbidPath(
           projectDir,
           'lib/features/home/presentation/cubit/home_cubit.dart',
@@ -365,6 +375,8 @@ final class GeneratedProjectContract {
           projectDir,
           'lib/features/home/presentation/controller/home_controller.dart',
         );
+        _forbidPath(projectDir, 'test/features/home/home_cubit_test.dart');
+        _forbidPath(projectDir, 'test/features/home/home_controller_test.dart');
       default:
         throw ProjectGenerationException(
           'Unsupported state management for contract validation: $stateManagement',

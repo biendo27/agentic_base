@@ -90,6 +90,7 @@ void main() {
             ).readAsStringSync();
         expect(verifySummary, contains('"run_kind": "verify"'));
         expect(verifySummary, contains('"derived_gate_expectation_id"'));
+        expect(verifySummary, contains('"unit-widget"'));
         expect(verifySummary, contains('"app-shell-smoke"'));
       },
       skip:
@@ -172,6 +173,24 @@ void main() {
             File(
               p.join(appDir, 'docs/05-theming-guide.md'),
             ).readAsStringSync();
+        final homeRepositoryTest = File(
+          p.join(
+            appDir,
+            'test/features/home/data/repositories/home_repository_impl_test.dart',
+          ),
+        );
+        final starterMonetizationRepositoryTest = File(
+          p.join(
+            appDir,
+            'test/features/home/data/repositories/demo_starter_monetization_repository_test.dart',
+          ),
+        );
+        final starterActionCardTest = File(
+          p.join(
+            appDir,
+            'test/features/home/presentation/widgets/starter_action_card_test.dart',
+          ),
+        );
 
         expect(errorInterceptor, contains('ErrorHandler.handle(err)'));
         expect(errorInterceptor, contains('handler.next(mappedError);'));
@@ -204,6 +223,63 @@ void main() {
           ).existsSync(),
           isFalse,
         );
+        expect(homeRepositoryTest.existsSync(), isTrue);
+        expect(starterMonetizationRepositoryTest.existsSync(), isTrue);
+        expect(starterActionCardTest.existsSync(), isTrue);
+
+        switch (stateManagement) {
+          case 'cubit':
+            expect(
+              File(p.join(appDir, 'test/features/home/home_cubit_test.dart'))
+                  .existsSync(),
+              isTrue,
+            );
+            expect(
+              File(
+                p.join(appDir, 'test/features/home/home_controller_test.dart'),
+              ).existsSync(),
+              isFalse,
+            );
+            expect(
+              File(p.join(appDir, 'test/features/home/home_store_test.dart'))
+                  .existsSync(),
+              isFalse,
+            );
+          case 'riverpod':
+            expect(
+              File(
+                p.join(appDir, 'test/features/home/home_controller_test.dart'),
+              ).existsSync(),
+              isTrue,
+            );
+            expect(
+              File(p.join(appDir, 'test/features/home/home_cubit_test.dart'))
+                  .existsSync(),
+              isFalse,
+            );
+            expect(
+              File(p.join(appDir, 'test/features/home/home_store_test.dart'))
+                  .existsSync(),
+              isFalse,
+            );
+          case 'mobx':
+            expect(
+              File(p.join(appDir, 'test/features/home/home_store_test.dart'))
+                  .existsSync(),
+              isTrue,
+            );
+            expect(
+              File(p.join(appDir, 'test/features/home/home_cubit_test.dart'))
+                  .existsSync(),
+              isFalse,
+            );
+            expect(
+              File(
+                p.join(appDir, 'test/features/home/home_controller_test.dart'),
+              ).existsSync(),
+              isFalse,
+            );
+        }
       },
       skip:
           flutterAvailable

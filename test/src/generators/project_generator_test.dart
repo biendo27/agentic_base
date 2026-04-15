@@ -9,8 +9,63 @@ import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-Future<void> seedRequiredContractFiles(String projectDir) async {
+Future<void> seedRequiredContractFiles(
+  String projectDir, {
+  String stateManagement = 'cubit',
+}) async {
   const appId = 'com.example.demoapp';
+  final stateSurface = switch (stateManagement) {
+    'cubit' => (
+      testPath: 'test/features/home/home_cubit_test.dart',
+      presentationPath: 'lib/features/home/presentation/cubit/home_cubit.dart',
+      pubspec:
+          'name: demo_app\n'
+          'dependencies:\n'
+          '  flutter:\n'
+          '    sdk: flutter\n'
+          '  flutter_bloc: ^9.1.1\n'
+          '  fpdart: ^1.1.1\n'
+          '  get_it: ^9.2.1\n'
+          '  injectable: ^2.7.1\n',
+      bootstrap: 'Bloc.observer\n',
+      injection: 'GetIt\n',
+    ),
+    'riverpod' => (
+      testPath: 'test/features/home/home_controller_test.dart',
+      presentationPath:
+          'lib/features/home/presentation/controller/home_controller.dart',
+      pubspec:
+          'name: demo_app\n'
+          'dependencies:\n'
+          '  flutter:\n'
+          '    sdk: flutter\n'
+          '  fpdart: ^1.1.1\n'
+          '  flutter_riverpod: ^3.3.1\n',
+      bootstrap: 'UncontrolledProviderScope\n',
+      injection: '// riverpod does not use GetIt\n',
+    ),
+    'mobx' => (
+      testPath: 'test/features/home/home_store_test.dart',
+      presentationPath: 'lib/features/home/presentation/store/home_store.dart',
+      pubspec:
+          'name: demo_app\n'
+          'dependencies:\n'
+          '  flutter:\n'
+          '    sdk: flutter\n'
+          '  flutter_mobx: ^2.2.1\n'
+          '  fpdart: ^1.1.1\n'
+          '  get_it: ^9.2.1\n'
+          '  injectable: ^2.7.1\n'
+          '  mobx: ^2.4.0\n',
+      bootstrap: '// mobx bootstrap\n',
+      injection: 'GetIt\n',
+    ),
+    _ => throw ArgumentError.value(
+      stateManagement,
+      'stateManagement',
+      'Unsupported state management',
+    ),
+  };
   final seededContent = <String, String>{
     '.info/agentic.yaml': '''
 schema_version: 3
@@ -19,7 +74,7 @@ tool_version: 0.1.0
 project_name: demo_app
 org: com.example
 ci_provider: github
-state_management: cubit
+state_management: $stateManagement
 platforms:
   - android
   - ios
@@ -34,7 +89,7 @@ context:
 ${canonicalContextDocs.map((doc) => '    - $doc').join('\n')}
   thin_adapters:
 ${thinAdapterFiles.map((doc) => '    - $doc').join('\n')}
-  state_runtime: cubit
+  state_runtime: $stateManagement
   ci_provider: github
 execution:
   setup: ./tools/setup.sh
@@ -88,11 +143,14 @@ harness:
     'README.md':
         'An agent-ready Flutter repository\nPrimary profile: `consumer-app`\nSupport tier: `Tier 1`\nEvidence directory: `artifacts/evidence`\n./tools/run-dev.sh\nfinal production store publish remains a human approval step\n',
     'tools/_common.sh': 'summary.json\n',
+    'lib/app/bootstrap.dart': stateSurface.bootstrap,
+    'lib/core/di/injection.dart': stateSurface.injection,
+    stateSurface.presentationPath: 'ok',
     'tools/release-preflight.sh': 'credential-setup\nUploadReady\n',
     'tools/release.sh': 'AwaitingFinalPublishApproval\n',
     'tools/verify.sh': 'app-shell-smoke\n',
-    'pubspec.yaml':
-        'name: demo_app\ndependencies:\n  flutter:\n    sdk: flutter\n  fpdart: ^1.1.1\n',
+    'pubspec.yaml': stateSurface.pubspec,
+    stateSurface.testPath: 'ok',
     'lib/core/theme/app_theme.dart': 'ThemeData.from(\n',
     'lib/core/theme/color_schemes.dart':
         'static const light = ColorScheme(\n'
@@ -266,6 +324,61 @@ void main() {
 
       expect(
         () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test('validate requires starter verification test surfaces', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-test-matrix-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        returnsNormally,
+      );
+
+      await File(
+        p.join(
+          tempDir.path,
+          'test/features/home/data/repositories/home_repository_impl_test.dart',
+        ),
+      ).delete();
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test('validateStateOutput requires only the active state test surface', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-state-cubit-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+
+      expect(
+        () => GeneratedProjectContract.validate(
+          tempDir.path,
+          stateManagement: 'cubit',
+        ),
+        returnsNormally,
+      );
+
+      await File(
+        p.join(tempDir.path, 'test/features/home/home_cubit_test.dart'),
+      ).delete();
+
+      expect(
+        () => GeneratedProjectContract.validate(
+          tempDir.path,
+          stateManagement: 'cubit',
+        ),
         throwsA(isA<ProjectGenerationException>()),
       );
     });

@@ -8,7 +8,7 @@ final GetIt getIt = GetIt.instance;
 
 @InjectableInit()
 Future<void> configureDependencies() async {
-  await Future.sync(() => getIt.init());
+  await Future.sync(getIt.init);
   await registerModuleServices(getIt);
   await initializeModuleServices(getIt);
 }
