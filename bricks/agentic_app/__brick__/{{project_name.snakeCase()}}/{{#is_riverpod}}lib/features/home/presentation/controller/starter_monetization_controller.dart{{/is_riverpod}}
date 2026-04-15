@@ -1,0 +1,20 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/data/repositories/demo_starter_monetization_repository.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/domain/entities/starter_paywall_snapshot.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/domain/repositories/starter_monetization_repository.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/domain/usecases/get_starter_paywall.dart';
+
+final starterMonetizationRepositoryProvider =
+    Provider<StarterMonetizationRepository>(
+      (ref) => DemoStarterMonetizationRepository(),
+    );
+
+final getStarterPaywallProvider = Provider<GetStarterPaywall>(
+  (ref) => GetStarterPaywall(
+    ref.watch(starterMonetizationRepositoryProvider),
+  ),
+);
+
+final starterPaywallProvider = FutureProvider<StarterPaywallSnapshot>(
+  (ref) => ref.watch(getStarterPaywallProvider)(),
+);

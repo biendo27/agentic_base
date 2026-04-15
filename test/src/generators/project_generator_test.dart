@@ -315,6 +315,9 @@ void main() {
           p.join(tempDir.path, 'lib/core/error/error_handler.dart'),
         ).create(recursive: true);
         await File(
+          p.join(tempDir.path, 'lib/core/router/app_router.dart'),
+        ).create(recursive: true);
+        await File(
           p.join(tempDir.path, 'pubspec.yaml'),
         ).writeAsString(
           'name: demo_app\ndependencies:\n  flutter:\n    sdk: flutter\n  fpdart: ^1.1.1\n',
@@ -729,5 +732,62 @@ void main() {
       expect(repositoryImpl, contains('ErrorHandler.handle(error)'));
       expect(cubit, contains('result.match('));
     });
+
+    test(
+      'writes spec-driven route and contract surfaces when a router exists',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'feature-generator-router-sync-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        final routerFile = File(
+          p.join(tempDir.path, 'lib/core/router/app_router.dart'),
+        );
+        await routerFile.create(recursive: true);
+        await routerFile.writeAsString('''
+import 'package:auto_route/auto_route.dart';
+import 'package:demo_app/core/router/app_router.gr.dart';
+
+@AutoRouterConfig()
+class AppRouter extends RootStackRouter {
+  @override
+  List<AutoRoute> get routes => [
+        AutoRoute(page: HomeRoute.page, initial: true),
+      ];
+}
+''');
+
+        await FeatureGenerator(logger: AgenticLogger()).generate(
+          featureName: 'user_profile',
+          projectPath: tempDir.path,
+          projectName: 'demo_app',
+          stateManagement: 'cubit',
+        );
+
+        expect(
+          routerFile.readAsStringSync(),
+          contains('AutoRoute(page: UserProfileRoute.page),'),
+        );
+        expect(
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/user_profile_spec.dart',
+            ),
+          ).readAsStringSync(),
+          contains('UserProfileFeatureSpec'),
+        );
+        expect(
+          File(
+            p.join(
+              tempDir.path,
+              'test/features/user_profile/user_profile_spec_contract_test.dart',
+            ),
+          ).existsSync(),
+          isTrue,
+        );
+      },
+    );
   });
 }

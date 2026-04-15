@@ -13,48 +13,39 @@ dependencies:
   fpdart: ^1.1.1
   flutter:
     sdk: flutter
-{{#is_cubit}}
-  flutter_bloc: ^9.1.1
+{{#is_cubit}}  flutter_bloc: ^9.1.1
 {{/is_cubit}}
   flutter_localizations:
     sdk: flutter
-{{#is_mobx}}
-  flutter_mobx: ^2.2.1
-{{/is_mobx}}
-{{#is_riverpod}}
-  flutter_riverpod: ^3.3.1
+{{#is_mobx}}  flutter_mobx: ^2.2.1
+{{/is_mobx}}{{#is_riverpod}}  flutter_riverpod: ^3.3.1
 {{/is_riverpod}}
   freezed_annotation: ^3.1.0
-{{#uses_get_it}}
-  get_it: ^9.2.1
+{{#uses_get_it}}  get_it: ^9.2.1
   injectable: ^2.7.1
 {{/uses_get_it}}
   intl: any
   json_annotation: ^4.11.0
-{{#is_mobx}}
-  mobx: ^2.4.0
+{{#is_mobx}}  mobx: ^2.4.0
 {{/is_mobx}}
   slang: ^4.13.0
   slang_flutter: ^4.13.0
 
 dev_dependencies:
   auto_route_generator: ^10.5.0
-{{#is_cubit}}
-  bloc_test: ^10.0.0
+{{#is_cubit}}  bloc_test: ^10.0.0
 {{/is_cubit}}
   build_runner: ^2.13.1
   flutter_flavorizr: ^2.2.3
   flutter_test:
     sdk: flutter
   freezed: ^3.2.5
-{{#uses_get_it}}
-  injectable_generator: ^2.12.1
+{{#uses_get_it}}  injectable_generator: ^2.12.1
 {{/uses_get_it}}
   integration_test:
     sdk: flutter
   json_serializable: ^6.13.1
-{{#is_mobx}}
-  mobx_codegen: ^2.7.0
+{{#is_mobx}}  mobx_codegen: ^2.7.0
 {{/is_mobx}}
   mocktail: ^1.0.4
   slang_build_runner: ^4.13.0

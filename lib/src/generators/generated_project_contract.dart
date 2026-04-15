@@ -91,6 +91,7 @@ final class GeneratedProjectContract {
     'lib/core/contracts/app_result.dart',
     'lib/core/error/error_handler.dart',
     'lib/core/error/failures.dart',
+    'lib/core/router/app_router.dart',
   ];
 
   static const forbiddenFiles = <String>[

@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:{{project_name.snakeCase()}}/app/flavors.dart';
-import 'package:{{project_name.snakeCase()}}/core/network/interceptors/error_interceptor.dart';
-import 'package:{{project_name.snakeCase()}}/core/network/interceptors/logging_interceptor.dart';
 {{^is_riverpod}}
 import 'package:injectable/injectable.dart';
 {{/is_riverpod}}
+import 'package:{{project_name.snakeCase()}}/app/flavors.dart';
+import 'package:{{project_name.snakeCase()}}/core/network/interceptors/error_interceptor.dart';
+import 'package:{{project_name.snakeCase()}}/core/network/interceptors/logging_interceptor.dart';
 
 {{^is_riverpod}}
 @module

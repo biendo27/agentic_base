@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/{{feature_name.snakeCase()}}_spec.dart';
 {{#is_cubit}}
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:{{project_name.snakeCase()}}/core/di/injection.dart';
@@ -119,16 +120,25 @@ class _{{feature_name.pascalCase()}}View extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('{{feature_name.titleCase()}}')),
+      appBar: AppBar(
+        title: const Text({{feature_name.pascalCase()}}FeatureSpec.title),
+      ),
       body: switch (state) {
         {{feature_name.pascalCase()}}Initial() => const SizedBox.shrink(),
         {{feature_name.pascalCase()}}Loading() =>
           const Center(child: CircularProgressIndicator()),
-        {{feature_name.pascalCase()}}Loaded(:final items) => ListView.builder(
+        {{feature_name.pascalCase()}}Loaded(:final items) => ListView(
           padding: const EdgeInsets.all(16),
-          itemCount: items.length,
-          itemBuilder: (context, index) =>
-              ListTile(title: Text(items[index].name)),
+          children: [
+            Text(
+              {{feature_name.pascalCase()}}FeatureSpec.description,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 16),
+            ...items.map(
+              (item) => ListTile(title: Text(item.name)),
+            ),
+          ],
         ),
         {{feature_name.pascalCase()}}Error(:final message) => Center(
           child: Column(

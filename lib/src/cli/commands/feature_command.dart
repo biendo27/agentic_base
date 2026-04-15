@@ -111,7 +111,11 @@ class FeatureCommand extends Command<int> {
         ..success('Feature "$featureName" created at $structure')
         ..info('')
         ..info('Next steps:')
-        ..info('  Register routes in lib/core/router/app_router.dart')
+        ..info(
+          simple
+              ? '  Verify the generated route entry if your host app owns lib/core/router/app_router.dart'
+              : '  Review the generated spec contract and routed page entry',
+        )
         ..info('  Run: agentic_base gen');
       return 0;
     } on Exception catch (e) {

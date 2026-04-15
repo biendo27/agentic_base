@@ -1,10 +1,13 @@
 headline: "Build from a starter that teaches the right architecture."
 body: "This screen proves the generated app shell, router, flavor config, and localization pipeline all work together on day 0."
+journalTitle: "Starter journey"
+journalBody: "Move from diagnostics into detail, settings, and monetization seams without leaving the generator-owned base flow."
 diagnosticsTitle: "Runtime diagnostics"
 diagnosticsHint: "These values come from compile-time env files and the active flavor entrypoint."
 appNameLabel: "App name"
 flavorLabel: "Flavor"
 apiBaseUrlLabel: "API base URL"
+journeyTitle: "Starter journey"
 checklistTitle: "Starter checklist"
 retry: "Retry"
 loadError: "Could not load starter modules."
@@ -18,3 +21,49 @@ cards:
   flavors:
     title: "Env-driven flavors"
     description: "CLI and IDE launches share the same dart-define contract."
+actions:
+  settings:
+    title: "Settings surface"
+    description: "Preview locale and theme behavior through a dedicated route."
+  monetization:
+    title: "Monetization seam"
+    description: "Exercise a provider-neutral paywall adapter with demo entitlements."
+details:
+  ownership:
+    title: "One Flutter app shell"
+    body: "The starter keeps bootstrap, routing, and shared diagnostics inside lib/app so features can stay focused."
+    highlights:
+      - "MaterialApp.router is mounted once and fed by the generated app router."
+      - "Flavor state stays visible in the starter flow instead of being hidden in setup code."
+      - "Generator-owned surfaces remain obvious to both humans and agents."
+  localization:
+    title: "Typed localization"
+    body: "The starter proves Slang-generated localization on day 0 and keeps locale changes visible through the settings route."
+    highlights:
+      - "Source translations stay in assets/i18n and generate typed accessors."
+      - "Locale switches do not require feature-specific wiring."
+      - "Unsupported locales still fall back through the app locale contract."
+  flavors:
+    title: "Env-driven flavors"
+    body: "Diagnostics show which flavor entrypoint and env contract are currently active, so runtime drift is easy to spot."
+    highlights:
+      - "Each flavor entrypoint remains explicit in lib/main_*.dart."
+      - "Compile-time env files stay visible in the starter diagnostics."
+      - "The same dart-define contract is shared by local scripts, CI, and IDE launch configs."
+settings:
+  title: "Starter settings"
+  subtitle: "Use this route to exercise theme mode and locale behavior without adding product-specific preferences yet."
+  themeModeTitle: "Theme mode"
+  themeModeSystem: "Follow system"
+  themeModeLight: "Always light"
+  themeModeDark: "Always dark"
+  localeTitle: "Locale preview"
+  localeSystem: "Use device locale"
+  localeEnglish: "English"
+  localeVietnamese: "Tieng Viet"
+monetization:
+  title: "Starter monetization"
+  subtitle: "This route demonstrates a provider-neutral paywall seam backed by a demo adapter."
+  activeStatus: "Active"
+  inactiveStatus: "Inactive"
+  availablePlansTitle: "Available plans"

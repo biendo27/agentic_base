@@ -5,28 +5,32 @@ import 'package:flutter/material.dart';
 {{#is_cubit}}
 import 'package:flutter_bloc/flutter_bloc.dart';
 {{/is_cubit}}
-{{#is_riverpod}}
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-{{/is_riverpod}}
 {{#is_mobx}}
 import 'package:flutter_mobx/flutter_mobx.dart';
 {{/is_mobx}}
-import 'package:{{project_name.snakeCase()}}/app/flavors.dart';
+{{#is_riverpod}}
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+{{/is_riverpod}}
 import 'package:{{project_name.snakeCase()}}/app/i18n/translations.g.dart';
 {{#uses_get_it}}
 import 'package:{{project_name.snakeCase()}}/core/di/injection.dart';
 {{/uses_get_it}}
+import 'package:{{project_name.snakeCase()}}/core/extensions/context_extensions.dart';
+import 'package:{{project_name.snakeCase()}}/core/router/app_router.gr.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/domain/entities/home_item.dart';
 {{#is_cubit}}
 import 'package:{{project_name.snakeCase()}}/features/home/presentation/cubit/home_cubit.dart';
 {{/is_cubit}}
+import 'package:{{project_name.snakeCase()}}/features/home/presentation/cubit/home_state.dart';
 {{#is_riverpod}}
 import 'package:{{project_name.snakeCase()}}/features/home/presentation/controller/home_controller.dart';
 {{/is_riverpod}}
 {{#is_mobx}}
 import 'package:{{project_name.snakeCase()}}/features/home/presentation/store/home_store.dart';
 {{/is_mobx}}
-import 'package:{{project_name.snakeCase()}}/features/home/presentation/cubit/home_state.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/presentation/widgets/home_item_card.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/presentation/widgets/runtime_diagnostics_card.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/presentation/widgets/starter_action_card.dart';
 
 @RoutePage()
 {{#is_cubit}}
@@ -123,73 +127,8 @@ class _HomeScaffold extends StatelessWidget {
       appBar: AppBar(title: Text(context.t.app.title)),
       body: switch (state) {
         HomeInitial() => const SizedBox.shrink(),
-        HomeLoading() => const Center(
-          child: CircularProgressIndicator(),
-        ),
-        HomeLoaded(:final items) => ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.t.home.headline,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      context.t.home.body,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.t.home.diagnosticsTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      context.t.home.diagnosticsHint,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    _RuntimeRow(
-                      label: context.t.home.appNameLabel,
-                      value: FlavorConfig.instance.appName,
-                    ),
-                    _RuntimeRow(
-                      label: context.t.home.flavorLabel,
-                      value: FlavorConfig.instance.flavor.name,
-                    ),
-                    _RuntimeRow(
-                      label: context.t.home.apiBaseUrlLabel,
-                      value: FlavorConfig.instance.apiBaseUrl,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              context.t.home.checklistTitle,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            ...items.map((item) => HomeItemCard(item: item)),
-          ],
-        ),
+        HomeLoading() => const Center(child: CircularProgressIndicator()),
+        HomeLoaded(:final items) => _StarterDashboard(items: items),
         HomeError(:final message) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -210,24 +149,101 @@ class _HomeScaffold extends StatelessWidget {
   }
 }
 
-class _RuntimeRow extends StatelessWidget {
-  const _RuntimeRow({required this.label, required this.value});
+class _StarterDashboard extends StatelessWidget {
+  const _StarterDashboard({required this.items});
 
-  final String label;
-  final String value;
+  final List<HomeItem> items;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: theme.textTheme.labelLarge),
-          const SizedBox(height: 2),
-          Text(value, style: theme.textTheme.bodyMedium),
-        ],
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: context.adaptiveContentMaxWidth),
+        child: ListView(
+          padding: context.adaptivePagePadding,
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.t.home.headline,
+                      style: context.textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      context.t.home.body,
+                      style: context.textTheme.bodyLarge,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const RuntimeDiagnosticsCard(),
+            const SizedBox(height: 24),
+            Text(
+              context.t.home.journeyTitle,
+              style: context.textTheme.titleLarge,
+            ),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final shouldStack = constraints.maxWidth < 720;
+                final settingsCard = StarterActionCard(
+                  icon: Icons.settings_suggest_outlined,
+                  title: context.t.home.actions.settings.title,
+                  description: context.t.home.actions.settings.description,
+                  onTap: () => context.router.push(
+                    const StarterSettingsRoute(),
+                  ),
+                );
+                final monetizationCard = StarterActionCard(
+                  icon: Icons.workspace_premium_outlined,
+                  title: context.t.home.actions.monetization.title,
+                  description: context.t.home.actions.monetization.description,
+                  onTap: () => context.router.push(
+                    const StarterMonetizationRoute(),
+                  ),
+                );
+                if (shouldStack) {
+                  return Column(
+                    children: [
+                      settingsCard,
+                      const SizedBox(height: 12),
+                      monetizationCard,
+                    ],
+                  );
+                }
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: settingsCard),
+                    const SizedBox(width: 12),
+                    Expanded(child: monetizationCard),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+            Text(
+              context.t.home.checklistTitle,
+              style: context.textTheme.titleLarge,
+            ),
+            const SizedBox(height: 12),
+            ...items.map(
+              (item) => HomeItemCard(
+                item: item,
+                onTap: () => context.router.push(
+                  StarterDetailRoute(itemId: item.id),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

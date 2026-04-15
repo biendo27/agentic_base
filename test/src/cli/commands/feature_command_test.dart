@@ -61,6 +61,15 @@ void main() {
           ).existsSync(),
           isTrue,
         );
+        expect(
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/user_profile_spec.dart',
+            ),
+          ).existsSync(),
+          isFalse,
+        );
       },
     );
 
@@ -80,6 +89,30 @@ void main() {
             ),
           ).existsSync(),
           isTrue,
+        );
+        expect(
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/user_profile_spec.dart',
+            ),
+          ).readAsStringSync(),
+          contains('UserProfileFeatureSpec'),
+        );
+        expect(
+          File(
+            p.join(
+              tempDir.path,
+              'test/features/user_profile/user_profile_spec_contract_test.dart',
+            ),
+          ).existsSync(),
+          isTrue,
+        );
+        expect(
+          File(
+            p.join(tempDir.path, 'lib/core/router/app_router.dart'),
+          ).readAsStringSync(),
+          contains('AutoRoute(page: UserProfileRoute.page),'),
         );
       },
     );
@@ -113,6 +146,20 @@ void _seedFullFeatureHost(String projectPath) {
   File(p.join(projectPath, 'lib/core/error/failures.dart'))
     ..createSync(recursive: true)
     ..writeAsStringSync('sealed class AppFailure {}\n');
+  File(p.join(projectPath, 'lib/core/router/app_router.dart'))
+    ..createSync(recursive: true)
+    ..writeAsStringSync('''
+import 'package:auto_route/auto_route.dart';
+import 'package:demo_app/core/router/app_router.gr.dart';
+
+@AutoRouterConfig()
+class AppRouter extends RootStackRouter {
+  @override
+  List<AutoRoute> get routes => [
+        AutoRoute(page: HomeRoute.page, initial: true),
+      ];
+}
+''');
   File(p.join(projectPath, 'pubspec.yaml')).writeAsStringSync(
     'name: demo_app\ndependencies:\n  flutter:\n    sdk: flutter\n  fpdart: ^1.1.1\n',
   );
