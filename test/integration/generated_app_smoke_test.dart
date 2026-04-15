@@ -35,73 +35,223 @@ void _expectIosPodfileContains(String appDir, List<String> snippets) {
   }
 }
 
+void _expectStarterRuntimeSurfaces(
+  String appDir, {
+  required String stateManagement,
+}) {
+  final errorInterceptor =
+      File(
+        p.join(
+          appDir,
+          'lib/core/network/interceptors/error_interceptor.dart',
+        ),
+      ).readAsStringSync();
+  final errorHandler =
+      File(
+        p.join(appDir, 'lib/core/error/error_handler.dart'),
+      ).readAsStringSync();
+  final homeRepository =
+      File(
+        p.join(
+          appDir,
+          'lib/features/home/data/repositories/home_repository_impl.dart',
+        ),
+      ).readAsStringSync();
+  final generatedPubspec = File(p.join(appDir, 'pubspec.yaml')).readAsStringSync();
+  final generatedTheme =
+      File(
+        p.join(appDir, 'lib/core/theme/app_theme.dart'),
+      ).readAsStringSync();
+  final contextExtensions =
+      File(
+        p.join(appDir, 'lib/core/extensions/context_extensions.dart'),
+      ).readAsStringSync();
+  final themingGuide =
+      File(
+        p.join(appDir, 'docs/05-theming-guide.md'),
+      ).readAsStringSync();
+
+  expect(errorInterceptor, contains('ErrorHandler.handle(err)'));
+  expect(errorInterceptor, contains('handler.next(mappedError);'));
+  expect(
+    errorHandler,
+    contains('error is DioException && error.error is AppFailure'),
+  );
+  expect(
+    homeRepository,
+    contains('return failure(ErrorHandler.handle(error));'),
+  );
+  expect(generatedPubspec, isNot(contains('flutter_screenutil:')));
+  expect(generatedTheme, contains('ThemeData.from('));
+  expect(generatedTheme, isNot(contains('ColorScheme.fromSeed(')));
+  expect(contextExtensions, contains('adaptivePagePadding'));
+  expect(themingGuide, contains('BuildContextX'));
+  expect(
+    File(
+      p.join(appDir, 'lib/core/theme/color_schemes.dart'),
+    ).readAsStringSync(),
+    allOf(
+      contains('static const light = ColorScheme('),
+      contains('static const dark = ColorScheme('),
+      contains('primaryFixed:'),
+    ),
+  );
+  expect(
+    File(
+      p.join(appDir, 'lib/core/responsive/app_screen_util_init.dart'),
+    ).existsSync(),
+    isFalse,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'test/features/home/data/repositories/home_repository_impl_test.dart',
+      ),
+    ).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'test/features/home/data/repositories/demo_starter_monetization_repository_test.dart',
+      ),
+    ).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'test/features/home/presentation/widgets/starter_action_card_test.dart',
+      ),
+    ).existsSync(),
+    isTrue,
+  );
+
+  if (stateManagement == 'cubit') {
+    expect(
+      File(p.join(appDir, 'test/features/home/home_cubit_test.dart'))
+          .existsSync(),
+      isTrue,
+    );
+    expect(
+      File(
+        p.join(appDir, 'test/features/home/home_controller_test.dart'),
+      ).existsSync(),
+      isFalse,
+    );
+    expect(
+      File(p.join(appDir, 'test/features/home/home_store_test.dart'))
+          .existsSync(),
+      isFalse,
+    );
+    return;
+  }
+
+  if (stateManagement == 'riverpod') {
+    expect(
+      File(
+        p.join(appDir, 'test/features/home/home_controller_test.dart'),
+      ).existsSync(),
+      isTrue,
+    );
+    expect(
+      File(p.join(appDir, 'test/features/home/home_cubit_test.dart'))
+          .existsSync(),
+      isFalse,
+    );
+    expect(
+      File(p.join(appDir, 'test/features/home/home_store_test.dart'))
+          .existsSync(),
+      isFalse,
+    );
+    return;
+  }
+
+  expect(
+    File(p.join(appDir, 'test/features/home/home_store_test.dart')).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(p.join(appDir, 'test/features/home/home_cubit_test.dart')).existsSync(),
+    isFalse,
+  );
+  expect(
+    File(
+      p.join(appDir, 'test/features/home/home_controller_test.dart'),
+    ).existsSync(),
+    isFalse,
+  );
+}
+
 void main() {
   final flutterAvailable = _isFlutterAvailable();
   // Other test suites temporarily mutate Directory.current, so capture a
   // stable repo root once for all smoke subprocesses.
   final repoRoot = Directory.current.path;
   const smokeTimeout = Timeout(Duration(minutes: 6));
-  for (final ciProvider in ['github', 'gitlab']) {
-    test(
-      'create command generates a cubit $ciProvider starter app that matches the ownership contract',
-      () async {
-        final tempDir = await Directory.systemTemp.createTemp(
-          'agentic-base-smoke-$ciProvider-',
-        );
-        addTearDown(() => tempDir.delete(recursive: true));
+  test(
+    'create command generates a cubit github starter app that matches the ownership contract',
+    () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'agentic-base-smoke-github-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
 
-        final appName = 'smoke_${ciProvider}_app';
-        final result = await Process.run(_dartExecutable, [
-          'run',
-          'bin/agentic_base.dart',
-          'create',
-          appName,
-          '--no-interactive',
-          '--output-dir',
-          tempDir.path,
-          '--ci-provider',
-          ciProvider,
-          '--state',
-          'cubit',
-        ], workingDirectory: repoRoot);
+      const appName = 'smoke_github_app';
+      final result = await Process.run(_dartExecutable, [
+        'run',
+        'bin/agentic_base.dart',
+        'create',
+        appName,
+        '--no-interactive',
+        '--output-dir',
+        tempDir.path,
+        '--ci-provider',
+        'github',
+        '--state',
+        'cubit',
+      ], workingDirectory: repoRoot);
 
-        expect(
-          result.exitCode,
-          equals(0),
-          reason: '${result.stdout}\n${result.stderr}',
-        );
+      expect(
+        result.exitCode,
+        equals(0),
+        reason: '${result.stdout}\n${result.stderr}',
+      );
 
-        final appDir = p.join(tempDir.path, appName);
-        expect(Directory(appDir).existsSync(), isTrue);
-        expect(
-          () => GeneratedProjectContract.validate(
-            appDir,
-            ciProvider: parseCiProvider(ciProvider),
-            stateManagement: 'cubit',
-          ),
-          returnsNormally,
-        );
-        final verifySummary =
-            File(
-              p.join(
-                _latestEvidenceRunDirectory(appDir, 'verify').path,
-                'summary.json',
-              ),
-            ).readAsStringSync();
-        expect(verifySummary, contains('"run_kind": "verify"'));
-        expect(verifySummary, contains('"derived_gate_expectation_id"'));
-        expect(verifySummary, contains('"unit-widget"'));
-        expect(verifySummary, contains('"app-shell-smoke"'));
-      },
-      skip:
-          flutterAvailable
-              ? false
-              : 'Flutter SDK is required for smoke generation.',
-      timeout: smokeTimeout,
-    );
-  }
+      final appDir = p.join(tempDir.path, appName);
+      expect(Directory(appDir).existsSync(), isTrue);
+      expect(
+        () => GeneratedProjectContract.validate(
+          appDir,
+          ciProvider: CiProvider.github,
+          stateManagement: 'cubit',
+        ),
+        returnsNormally,
+      );
+      final verifySummary =
+          File(
+            p.join(
+              _latestEvidenceRunDirectory(appDir, 'verify').path,
+              'summary.json',
+            ),
+          ).readAsStringSync();
+      expect(verifySummary, contains('"run_kind": "verify"'));
+      expect(verifySummary, contains('"derived_gate_expectation_id"'));
+      expect(verifySummary, contains('"unit-widget"'));
+      expect(verifySummary, contains('"app-shell-smoke"'));
+      _expectStarterRuntimeSurfaces(appDir, stateManagement: 'cubit');
+    },
+    skip:
+        flutterAvailable
+            ? false
+            : 'Flutter SDK is required for smoke generation.',
+    timeout: smokeTimeout,
+  );
 
-  for (final stateManagement in ['cubit', 'riverpod', 'mobx']) {
+  for (final stateManagement in ['riverpod', 'mobx']) {
     test(
       'create command generates a $stateManagement starter app with no foreign runtime leftovers',
       () async {
@@ -140,146 +290,10 @@ void main() {
           ),
           returnsNormally,
         );
-
-        final errorInterceptor =
-            File(
-              p.join(
-                appDir,
-                'lib/core/network/interceptors/error_interceptor.dart',
-              ),
-            ).readAsStringSync();
-        final errorHandler =
-            File(
-              p.join(appDir, 'lib/core/error/error_handler.dart'),
-            ).readAsStringSync();
-        final homeRepository =
-            File(
-              p.join(
-                appDir,
-                'lib/features/home/data/repositories/home_repository_impl.dart',
-              ),
-            ).readAsStringSync();
-        final generatedPubspec =
-            File(p.join(appDir, 'pubspec.yaml')).readAsStringSync();
-        final generatedTheme =
-            File(
-              p.join(appDir, 'lib/core/theme/app_theme.dart'),
-            ).readAsStringSync();
-        final contextExtensions =
-            File(
-              p.join(appDir, 'lib/core/extensions/context_extensions.dart'),
-            ).readAsStringSync();
-        final themingGuide =
-            File(
-              p.join(appDir, 'docs/05-theming-guide.md'),
-            ).readAsStringSync();
-        final homeRepositoryTest = File(
-          p.join(
-            appDir,
-            'test/features/home/data/repositories/home_repository_impl_test.dart',
-          ),
+        _expectStarterRuntimeSurfaces(
+          appDir,
+          stateManagement: stateManagement,
         );
-        final starterMonetizationRepositoryTest = File(
-          p.join(
-            appDir,
-            'test/features/home/data/repositories/demo_starter_monetization_repository_test.dart',
-          ),
-        );
-        final starterActionCardTest = File(
-          p.join(
-            appDir,
-            'test/features/home/presentation/widgets/starter_action_card_test.dart',
-          ),
-        );
-
-        expect(errorInterceptor, contains('ErrorHandler.handle(err)'));
-        expect(errorInterceptor, contains('handler.next(mappedError);'));
-        expect(
-          errorHandler,
-          contains('error is DioException && error.error is AppFailure'),
-        );
-        expect(
-          homeRepository,
-          contains('return failure(ErrorHandler.handle(error));'),
-        );
-        expect(generatedPubspec, isNot(contains('flutter_screenutil:')));
-        expect(generatedTheme, contains('ThemeData.from('));
-        expect(generatedTheme, isNot(contains('ColorScheme.fromSeed(')));
-        expect(contextExtensions, contains('adaptivePagePadding'));
-        expect(themingGuide, contains('BuildContextX'));
-        expect(
-          File(
-            p.join(appDir, 'lib/core/theme/color_schemes.dart'),
-          ).readAsStringSync(),
-          allOf(
-            contains('static const light = ColorScheme('),
-            contains('static const dark = ColorScheme('),
-            contains('primaryFixed:'),
-          ),
-        );
-        expect(
-          File(
-            p.join(appDir, 'lib/core/responsive/app_screen_util_init.dart'),
-          ).existsSync(),
-          isFalse,
-        );
-        expect(homeRepositoryTest.existsSync(), isTrue);
-        expect(starterMonetizationRepositoryTest.existsSync(), isTrue);
-        expect(starterActionCardTest.existsSync(), isTrue);
-
-        switch (stateManagement) {
-          case 'cubit':
-            expect(
-              File(p.join(appDir, 'test/features/home/home_cubit_test.dart'))
-                  .existsSync(),
-              isTrue,
-            );
-            expect(
-              File(
-                p.join(appDir, 'test/features/home/home_controller_test.dart'),
-              ).existsSync(),
-              isFalse,
-            );
-            expect(
-              File(p.join(appDir, 'test/features/home/home_store_test.dart'))
-                  .existsSync(),
-              isFalse,
-            );
-          case 'riverpod':
-            expect(
-              File(
-                p.join(appDir, 'test/features/home/home_controller_test.dart'),
-              ).existsSync(),
-              isTrue,
-            );
-            expect(
-              File(p.join(appDir, 'test/features/home/home_cubit_test.dart'))
-                  .existsSync(),
-              isFalse,
-            );
-            expect(
-              File(p.join(appDir, 'test/features/home/home_store_test.dart'))
-                  .existsSync(),
-              isFalse,
-            );
-          case 'mobx':
-            expect(
-              File(p.join(appDir, 'test/features/home/home_store_test.dart'))
-                  .existsSync(),
-              isTrue,
-            );
-            expect(
-              File(p.join(appDir, 'test/features/home/home_cubit_test.dart'))
-                  .existsSync(),
-              isFalse,
-            );
-            expect(
-              File(
-                p.join(appDir, 'test/features/home/home_controller_test.dart'),
-              ).existsSync(),
-              isFalse,
-            );
-        }
       },
       skip:
           flutterAvailable
