@@ -13,13 +13,12 @@ class {{feature_name.pascalCase()}}Store {
 
   Future<void> load() async {
     runInAction(() => state.value = const {{feature_name.pascalCase()}}State.loading());
-    final (items, failure) = await _get{{feature_name.pascalCase()}}();
+    final result = await _get{{feature_name.pascalCase()}}();
     runInAction(() {
-      if (failure != null) {
-        state.value = {{feature_name.pascalCase()}}State.error(failure.message);
-      } else {
-        state.value = {{feature_name.pascalCase()}}State.loaded(items);
-      }
+      state.value = result.match(
+        (failure) => {{feature_name.pascalCase()}}State.error(failure.message),
+        {{feature_name.pascalCase()}}State.loaded,
+      );
     });
   }
 }

@@ -51,7 +51,11 @@ final class GeneratedProjectContract {
     'lib/app/app.dart',
     'lib/app/bootstrap.dart',
     'lib/app/flavors.dart',
+    'lib/app/locale/app_locale_contract.dart',
     'lib/app/i18n/translations.g.dart',
+    'lib/core/contracts/app_response.dart',
+    'lib/core/contracts/app_result.dart',
+    'lib/core/contracts/pagination.dart',
     'lib/main.dart',
     'lib/main_dev.dart',
     'lib/main_staging.dart',
@@ -81,6 +85,16 @@ final class GeneratedProjectContract {
     'tools/test.sh',
     'tools/verify.sh',
     'test/app_smoke_test.dart',
+    'test/features/home/data/repositories/demo_starter_monetization_repository_test.dart',
+    'test/features/home/data/repositories/home_repository_impl_test.dart',
+    'test/features/home/presentation/widgets/starter_action_card_test.dart',
+  ];
+
+  static const requiredFeatureHostPaths = <String>[
+    'lib/core/contracts/app_result.dart',
+    'lib/core/error/error_handler.dart',
+    'lib/core/error/failures.dart',
+    'lib/core/router/app_router.dart',
   ];
 
   static const forbiddenFiles = <String>[
@@ -222,9 +236,41 @@ final class GeneratedProjectContract {
       ciProvider: resolvedCiProvider,
     );
     _validateGeneratedReadme(projectDir);
+    _validateThemeSurface(projectDir);
     validateNativeFlavorOutputs(projectDir);
     if (stateManagement != null) {
       validateStateOutput(projectDir, stateManagement: stateManagement);
+    }
+  }
+
+  static void validateFeatureHost(String projectDir, {bool simple = false}) {
+    if (simple) {
+      return;
+    }
+
+    for (final relativePath in requiredFeatureHostPaths) {
+      final type = FileSystemEntity.typeSync(
+        _resolveProjectPath(projectDir, relativePath),
+      );
+      if (type == FileSystemEntityType.notFound) {
+        throw ProjectGenerationException(
+          'Full feature scaffolds require the shared host file `$relativePath`.',
+        );
+      }
+    }
+
+    final pubspecFile = File(_resolveProjectPath(projectDir, 'pubspec.yaml'));
+    if (!pubspecFile.existsSync()) {
+      throw const ProjectGenerationException(
+        'Full feature scaffolds require `pubspec.yaml` in the host project.',
+      );
+    }
+
+    final pubspecContents = pubspecFile.readAsStringSync();
+    if (!pubspecContents.contains('fpdart:')) {
+      throw const ProjectGenerationException(
+        'Full feature scaffolds require the `fpdart` dependency in `pubspec.yaml`.',
+      );
     }
   }
 
@@ -276,6 +322,7 @@ final class GeneratedProjectContract {
           projectDir,
           'lib/features/home/presentation/cubit/home_cubit.dart',
         );
+        _requirePath(projectDir, 'test/features/home/home_cubit_test.dart');
         _forbidPath(
           projectDir,
           'lib/features/home/presentation/controller/home_controller.dart',
@@ -284,6 +331,8 @@ final class GeneratedProjectContract {
           projectDir,
           'lib/features/home/presentation/store/home_store.dart',
         );
+        _forbidPath(projectDir, 'test/features/home/home_controller_test.dart');
+        _forbidPath(projectDir, 'test/features/home/home_store_test.dart');
       case 'riverpod':
         _requireContent(pubspec, 'flutter_riverpod');
         _forbidContent(pubspec, 'flutter_bloc');
@@ -296,6 +345,7 @@ final class GeneratedProjectContract {
           projectDir,
           'lib/features/home/presentation/controller/home_controller.dart',
         );
+        _requirePath(projectDir, 'test/features/home/home_controller_test.dart');
         _forbidPath(
           projectDir,
           'lib/features/home/presentation/cubit/home_cubit.dart',
@@ -304,6 +354,8 @@ final class GeneratedProjectContract {
           projectDir,
           'lib/features/home/presentation/store/home_store.dart',
         );
+        _forbidPath(projectDir, 'test/features/home/home_cubit_test.dart');
+        _forbidPath(projectDir, 'test/features/home/home_store_test.dart');
       case 'mobx':
         _requireContent(pubspec, 'flutter_mobx');
         _requireContent(pubspec, 'mobx');
@@ -314,6 +366,7 @@ final class GeneratedProjectContract {
           projectDir,
           'lib/features/home/presentation/store/home_store.dart',
         );
+        _requirePath(projectDir, 'test/features/home/home_store_test.dart');
         _forbidPath(
           projectDir,
           'lib/features/home/presentation/cubit/home_cubit.dart',
@@ -322,6 +375,8 @@ final class GeneratedProjectContract {
           projectDir,
           'lib/features/home/presentation/controller/home_controller.dart',
         );
+        _forbidPath(projectDir, 'test/features/home/home_cubit_test.dart');
+        _forbidPath(projectDir, 'test/features/home/home_controller_test.dart');
       default:
         throw ProjectGenerationException(
           'Unsupported state management for contract validation: $stateManagement',
@@ -810,6 +865,36 @@ final class GeneratedProjectContract {
       readme,
       'final production store publish remains a human approval step',
     );
+  }
+
+  static void _validateThemeSurface(String projectDir) {
+    final pubspec = _readRequiredFile(projectDir, 'pubspec.yaml');
+    final appTheme = _readRequiredFile(
+      projectDir,
+      'lib/core/theme/app_theme.dart',
+    );
+    final colorSchemes = _readRequiredFile(
+      projectDir,
+      'lib/core/theme/color_schemes.dart',
+    );
+    final contextExtensions = _readRequiredFile(
+      projectDir,
+      'lib/core/extensions/context_extensions.dart',
+    );
+    final themingGuide = _readRequiredFile(
+      projectDir,
+      'docs/05-theming-guide.md',
+    );
+
+    _forbidContent(pubspec, 'flutter_screenutil:');
+    _requireContent(appTheme, 'ThemeData.from(');
+    _requireContent(colorSchemes, 'static const light = ColorScheme(');
+    _requireContent(colorSchemes, 'static const dark = ColorScheme(');
+    _requireContent(colorSchemes, 'primaryFixed:');
+    _forbidContent(colorSchemes, 'ColorScheme.fromSeed(');
+    _requireContent(contextExtensions, 'adaptivePagePadding');
+    _requireContent(themingGuide, 'BuildContextX');
+    _forbidPath(projectDir, 'lib/core/responsive/app_screen_util_init.dart');
   }
 
   static void _validateReleaseSurfaces(

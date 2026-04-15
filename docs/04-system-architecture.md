@@ -2,7 +2,7 @@
 
 ## Overview
 
-`agentic_base` is a generator package, not an app runtime. The repo architecture centers on a command-line control plane that shells out to Flutter and Dart tooling, applies Mason templates, and mutates target-project files in a controlled way so generated repos have one canonical context contract and deterministic execution surfaces.
+`agentic_base` is a generator package, not an app runtime. The repo architecture centers on a command-line control plane that resolves a manager-aware Flutter/Dart toolchain, shells out through that resolved executable path, applies Mason templates, and mutates target-project files in a controlled way so generated repos have one canonical context contract and deterministic execution surfaces.
 
 ```mermaid
 flowchart LR
@@ -24,6 +24,7 @@ flowchart LR
   ProjectGenerator --> Verify["setup / run / verify / build / release-preflight"]
 
   Feature --> FeatureGenerator["FeatureGenerator"]
+  Feature --> FeatureHost["Feature host contract"]
   FeatureGenerator --> FeatureBrick["agentic_feature brick"]
 
   Modules --> Registry["ModuleRegistry"]
@@ -51,6 +52,7 @@ Files under `lib/src/generators/` own scaffold workflows:
 
 - `ProjectGenerator` handles fresh app creation
 - `FeatureGenerator` applies feature bricks
+- `FeatureHostSynchronizer` wires full feature specs into host routes and spec-contract tests
 - `TestGenerator` turns a feature spec into test stubs
 
 `ProjectGenerator` is the central create-flow orchestrator. `AgenticAppSurfaceSynchronizer` is the shared surface materializer for `create`, `init`, and `upgrade`. Together they call native tooling, overlay templates, sync generator-owned surfaces, install modules, apply ownership cleanup, materialize typed translations, then verify the generated project contract through the generated harness scripts.
@@ -60,8 +62,9 @@ Files under `lib/src/generators/` own scaffold workflows:
 Files under `lib/src/config/` define repo-managed state:
 
 - `AgenticConfig` reads and writes `.info/agentic.yaml`
-- `ProjectMetadata`, `HarnessMetadata`, and `FlutterSdkContract` define the typed machine contract
+- `ProjectMetadata`, `HarnessMetadata`, and `FlutterSdkContract` define the typed machine contract, including preferred-vs-resolved SDK state
 - `InitProjectMetadataResolver` infers repair-time metadata from an existing Flutter repo
+- `resolveFlutterToolchain(...)` centralizes fallback order and command-shape resolution for Flutter and Dart subprocesses
 - `SpecParser` parses `feature.spec.yaml`
 - `StateConfig` maps supported state-management choices to dependencies
 
@@ -85,7 +88,15 @@ Mason bricks under `bricks/` hold generated project structure:
 - `agentic_app` for whole-app bootstrap
 - `agentic_feature` for feature scaffolding
 
-The app brick also carries generated-project documentation, thin agent adapters, harness scripts, CI/release templates, and post-generation dependency install behavior.
+The app brick also carries generated-project documentation, thin agent adapters,
+harness scripts, CI/release templates, shared app contracts
+(`app_result`, `app_response`, `pagination`, `app_locale_contract` outside the
+generated `lib/app/i18n` tree), an explicit Material 3 theme foundation sourced
+from the owned design-kit tokens and built with `ThemeData.from(...)`,
+internal adaptive breakpoint helpers instead of ScreenUtil-style global
+scaling, a starter day-0 flow (dashboard, detail, settings, monetization),
+and a generated test matrix that proves repository seams, state runtime,
+starter widget surfaces, and app-shell boot behavior.
 
 ## Key Flows
 
@@ -93,15 +104,16 @@ The app brick also carries generated-project documentation, thin agent adapters,
 
 1. user runs `agentic_base create <project>`
 2. CLI validates name, org, platforms, profile, traits, and toolchain input
-3. `ProjectGenerator` runs `flutter create`
-4. app brick overlays opinionated project files
-5. `.info/agentic.yaml` is written with one persisted machine-readable repo contract plus Harness Contract V1 metadata
-6. selected modules are installed
-7. `build_runner` runs for DI/router/model codegen
-8. duplicate root shell files and forbidden IDE artifacts are removed
-9. `dart run slang` materializes typed localization output from `build.yaml`
-10. generated `./tools/verify.sh` runs named gates and writes evidence bundles
-11. generated repos ship deterministic `tools/` entrypoints and thin adapters that point back to canonical docs
+3. `ProjectGenerator` resolves the actual executable toolchain from preferred manager -> inferred repo manager -> system fallback
+4. `ProjectGenerator` runs `flutter create` through the resolved toolchain
+5. app brick overlays opinionated project files
+6. `.info/agentic.yaml` is written with one persisted machine-readable repo contract plus Harness Contract V1 metadata
+7. selected modules are installed
+8. `build_runner` runs for DI/router/model codegen through the resolved toolchain
+9. duplicate root shell files and forbidden IDE artifacts are removed
+10. `dart run slang` materializes typed localization output from `build.yaml`
+11. generated `./tools/verify.sh` runs named gates and writes evidence bundles
+12. generated repos ship deterministic `tools/` entrypoints and thin adapters that point back to canonical docs
 
 ### Add Module Flow
 
@@ -113,6 +125,15 @@ The app brick also carries generated-project documentation, thin agent adapters,
 6. `ModuleIntegrationGenerator` refreshes DI/provider registries and auto-discovers startup `init()` hooks
 7. `build_runner` plus `dart format` refresh the generated project graph
 8. manual platform steps are printed when needed
+
+### Feature Flow
+
+1. user runs `agentic_base feature <name>` or `agentic_base feature <name> --simple`
+2. command validates the target repo contract through `.info/agentic.yaml`
+3. full feature scaffolds verify the shared host surfaces (`app_result`, `error_handler`, `failures`, `fpdart`) before generation so legacy repos fail fast instead of receiving broken imports
+4. `FeatureGenerator` applies the state-specific `agentic_feature` brick
+5. `FeatureHostSynchronizer` patches the host router, writes `<feature>_spec.dart`, and adds a spec-contract test when full mode is used
+6. generated feature boundaries use `AppResult<T>` and repository-side error normalization through `ErrorHandler.handle(...)`
 
 ### Existing Project Init Flow
 
@@ -130,7 +151,7 @@ Repo CI currently lives in one GitHub Actions workflow:
 
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
 
-That workflow verifies the package, runs generated-app smoke coverage for both CI providers, and enforces a separate pinned macOS generated-app native gate. Generated-project CI is scaffolded into downstream repos, where provider-specific workflows now also preserve harness evidence artifacts.
+That workflow verifies the package, keeps one full cubit/GitHub generated-repo lane plus riverpod and mobx starter-runtime lanes, and enforces a separate pinned macOS generated-app native gate. GitLab provider semantics are still covered, but now mostly through lower-level contract tests instead of a duplicate full generated-app lane. Generated-project CI is scaffolded into downstream repos, where provider-specific workflows now also preserve harness evidence artifacts.
 
 ## Architectural Pressure Points
 
@@ -180,6 +201,7 @@ The important rule is that Flutter-specific details must not redefine the harnes
 - [`lib/src/generators/project_generator.dart`](../lib/src/generators/project_generator.dart)
 - [`lib/src/generators/generated_project_contract.dart`](../lib/src/generators/generated_project_contract.dart)
 - [`lib/src/generators/feature_generator.dart`](../lib/src/generators/feature_generator.dart)
+- [`lib/src/generators/feature_host_synchronizer.dart`](../lib/src/generators/feature_host_synchronizer.dart)
 - [`lib/src/modules/module_registry.dart`](../lib/src/modules/module_registry.dart)
 - [`bricks/agentic_app/brick.yaml`](../bricks/agentic_app/brick.yaml)
 - [`docs/08-harness-contract-v1.md`](./08-harness-contract-v1.md)

@@ -38,7 +38,10 @@ final class FlutterSdkContract {
     required this.channel,
     required this.version,
     required this.policy,
-  });
+    FlutterSdkManager? preferredManager,
+    String? preferredVersion,
+  }) : preferredManager = preferredManager ?? manager,
+       preferredVersion = preferredVersion ?? version;
 
   factory FlutterSdkContract.fromConfigMap(dynamic raw) {
     if (raw is! Map) {
@@ -50,15 +53,23 @@ final class FlutterSdkContract {
       );
     }
 
+    final resolvedManager = FlutterSdkManagerX.fromWireName(
+      raw['manager']?.toString(),
+    );
+
     return FlutterSdkContract(
-      manager: FlutterSdkManagerX.fromWireName(
-        raw['manager']?.toString(),
-      ),
+      manager: resolvedManager,
       channel: _readString(raw['channel']) ?? defaultFlutterChannel,
       version: _readString(raw['version']) ?? newestTestedFlutterVersion,
       policy: FlutterVersionPolicyX.fromWireName(
         raw['policy']?.toString(),
       ),
+      preferredManager:
+          _readFlutterSdkManager(raw['preferred_manager']) ?? resolvedManager,
+      preferredVersion:
+          _readString(raw['preferred_version']) ??
+          _readString(raw['version']) ??
+          newestTestedFlutterVersion,
     );
   }
 
@@ -66,18 +77,24 @@ final class FlutterSdkContract {
   final String channel;
   final String version;
   final FlutterVersionPolicy policy;
+  final FlutterSdkManager preferredManager;
+  final String preferredVersion;
 
   FlutterSdkContract copyWith({
     FlutterSdkManager? manager,
     String? channel,
     String? version,
     FlutterVersionPolicy? policy,
+    FlutterSdkManager? preferredManager,
+    String? preferredVersion,
   }) {
     return FlutterSdkContract(
       manager: manager ?? this.manager,
       channel: channel ?? this.channel,
       version: version ?? this.version,
       policy: policy ?? this.policy,
+      preferredManager: preferredManager ?? this.preferredManager,
+      preferredVersion: preferredVersion ?? this.preferredVersion,
     );
   }
 
@@ -87,6 +104,8 @@ final class FlutterSdkContract {
       'channel': channel,
       'version': version,
       'policy': policy.wireName,
+      'preferred_manager': preferredManager.wireName,
+      'preferred_version': preferredVersion,
     };
   }
 }
@@ -149,24 +168,12 @@ String? _readString(dynamic value) {
   return null;
 }
 
-FlutterSdkContract resolveFlutterSdkContract({
-  required String projectPath,
-  FlutterSdkManager? manager,
-  String? version,
-  String channel = defaultFlutterChannel,
-  FlutterVersionPolicy policy = FlutterVersionPolicy.newestTested,
-}) {
-  final resolvedManager = manager ?? inferFlutterSdkManager(projectPath);
-  final detected = detectFlutterToolchain(
-    manager: resolvedManager,
-    projectPath: projectPath,
-  );
-  return FlutterSdkContract(
-    manager: resolvedManager,
-    channel: detected.channel ?? channel,
-    version: version ?? detected.version ?? newestTestedFlutterVersion,
-    policy: policy,
-  );
+FlutterSdkManager? _readFlutterSdkManager(dynamic value) {
+  final wireValue = _readString(value);
+  if (wireValue == null) {
+    return null;
+  }
+  return FlutterSdkManagerX.fromWireName(wireValue);
 }
 
 DetectedFlutterToolchain detectFlutterToolchain({

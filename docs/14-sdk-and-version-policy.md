@@ -8,15 +8,16 @@ This document defines the V1 SDK manager and version policy.
 
 Status:
 
-- design target for future implementation waves
-- current generator does not yet persist this full SDK policy in `.info/agentic.yaml`
+- implemented for `create`, `init`, `add`, `remove`, `gen`, and `upgrade`
+- `.info/agentic.yaml` now persists resolved `manager` / `version` plus manifest-facing `preferred_manager` / `preferred_version`
 
 ## Policy Summary
 
 - support explicit Flutter manager modes: `system`, `fvm`, `puro`
-- record the selected manager and tested version in `.info/agentic.yaml`
+- record both the preferred toolchain request and the resolved executable toolchain in `.info/agentic.yaml`
 - prefer newest tested, not newest available
-- fail clearly when the local toolchain does not match the declared contract
+- fall back deterministically when the preferred manager is unavailable
+- fail clearly when no executable Flutter SDK can be resolved
 
 ## Manager Strategy
 
@@ -49,13 +50,14 @@ Best for:
 
 ## Resolution Rules
 
-The future adapter should resolve Flutter in this order:
+The adapter now resolves Flutter in this order:
 
-1. manifest-declared manager and version
-2. repo-local manager config if the manifest allows inference during migration
-3. system Flutter as an explicit fallback only when documented and validated
+1. preferred manager from manifest or CLI input if executable
+2. repo-local inferred manager if executable
+3. system Flutter as the final validated fallback
+4. fail if no executable Flutter SDK exists
 
-`doctor` should report both the declared contract and the discovered local toolchain.
+Resolved values are the public contract used by generated surfaces and scripts. Preferred values stay in manifest/runtime metadata so agents can reason about the user’s intent without cluttering README-level docs.
 
 ## Version Policy
 
@@ -85,9 +87,9 @@ Version movement should be explicit:
 
 Generated repos should fail clearly when:
 
-- declared manager is unavailable
-- local SDK version falls outside the tested window
-- manager metadata and actual executable disagree
+- no executable manager can be resolved through the fallback order
+- a pinned upgrade contract resolves to a different version/channel than declared
+- manager metadata and actual executable disagree after resolution
 - release-preflight would use an unverified toolchain
 
 ## Security And Reliability Notes

@@ -22,9 +22,16 @@ presentation -> domain <- data
 ## App Bootstrap
 
 1. `FlavorConfig.init(flavor)` resolves env-driven runtime values
-2. `bootstrap(() => App())` initializes bindings, locale, DI, and observers
-3. `App` mounts `TranslationProvider` and `MaterialApp.router`
+2. `bootstrap(() => App())` initializes bindings, locale through `AppLocaleContract`, DI, and observers
+3. `App` mounts `AppThemeScope`, `TranslationProvider`, and `MaterialApp.router`
 4. `AppRouter` lands on the starter home route
+
+## Starter Day-0 Flow
+
+- `HomePage` is the starter dashboard and runtime diagnostics surface
+- `StarterDetailPage` proves the ownership/localization/flavor checkpoints
+- `StarterSettingsPage` is the default route for theme-mode and locale preview
+- `StarterMonetizationPage` stays provider-neutral through `StarterMonetizationRepository`
 
 ## Ownership Boundary
 
@@ -67,6 +74,7 @@ Meaningful verify and release-preflight runs emit named gate outputs under `{{{e
 
 - Source translations live in `assets/i18n/<module>/<module>_<locale>.i18n.yaml`
 - `build_runner` + Slang generate typed APIs into `lib/app/i18n/translations.g.dart`
+- `lib/app/locale/app_locale_contract.dart` is the stable app-facing locale wrapper for runtime code
 - Starter namespaces:
   - `app`
   - `home`

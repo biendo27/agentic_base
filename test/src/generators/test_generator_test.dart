@@ -343,5 +343,26 @@ void main() {
         expect(cubitCode, contains('PaymentProcessingModule'));
       });
     });
+
+    group('generateFeatureSpecContractTest', () {
+      test('references the generated feature spec class', () {
+        final code = TestGenerator.generateFeatureSpecContractTest(
+          testSpec,
+          projectName,
+        );
+
+        expect(code, contains('UserAuthenticationFeatureSpec'));
+      });
+
+      test('includes acceptance criteria and edge cases from the spec', () {
+        final code = TestGenerator.generateFeatureSpecContractTest(
+          testSpec,
+          projectName,
+        );
+
+        expect(code, contains('User can login with valid email/password'));
+        expect(code, contains('Empty email field'));
+      });
+    });
   });
 }

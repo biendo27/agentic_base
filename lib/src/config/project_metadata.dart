@@ -214,12 +214,20 @@ final class ProjectMetadata {
         'harness.sdk.manager',
         hasDefault: true,
       ),
+      'harness.sdk.preferred_manager': resolve(
+        'harness.sdk.preferred_manager',
+        hasDefault: true,
+      ),
       'harness.sdk.channel': resolve(
         'harness.sdk.channel',
         hasDefault: true,
       ),
       'harness.sdk.version': resolve(
         'harness.sdk.version',
+        hasDefault: true,
+      ),
+      'harness.sdk.preferred_version': resolve(
+        'harness.sdk.preferred_version',
         hasDefault: true,
       ),
       'harness.sdk.policy': resolve(

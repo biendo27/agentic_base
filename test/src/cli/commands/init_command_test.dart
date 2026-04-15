@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:agentic_base/src/cli/commands/init_command.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
@@ -85,8 +86,14 @@ void main() {
             File(
               p.join(tempDir.path, 'analysis_options.yaml'),
             ).readAsStringSync();
+        final makefile =
+            File(p.join(tempDir.path, 'Makefile')).readAsStringSync();
         expect(analysisOptions, isNot(contains('very_good_analysis')));
         expect(analysisOptions, contains('public_member_api_docs: false'));
+        expect(makefile, contains('./tools/lint.sh'));
+        expect(makefile, contains('./tools/format.sh'));
+        expect(makefile, contains('./tools/test.sh'));
+        expect(makefile, contains('./tools/build.sh'));
       },
     );
 
@@ -209,5 +216,41 @@ void main() {
         expect(Directory(p.join(tempDir.path, 'docs')).existsSync(), isFalse);
       },
     );
+
+    test('persists preferred and resolved toolchain values honestly', () async {
+      File(p.join(tempDir.path, '.fvmrc')).writeAsStringSync('stable\n');
+      final localRunner = CommandRunner<int>('agentic_base', 'test runner')
+        ..addCommand(
+          InitCommand(
+            logger: AgenticLogger(),
+            toolchainDetector: _fallbackToolchainDetector,
+          ),
+        );
+
+      final exitCode = await localRunner.run(['init']);
+
+      expect(exitCode, equals(0));
+      final metadata = AgenticConfig(projectPath: tempDir.path).readMetadata(
+        fallbackProjectName: 'fallback',
+        fallbackToolVersion: 'test',
+      );
+      expect(metadata.harness.sdk.preferredManager, FlutterSdkManager.fvm);
+      expect(metadata.harness.sdk.manager, FlutterSdkManager.system);
+      expect(metadata.harness.sdk.version, '3.41.6');
+    });
   });
+}
+
+DetectedFlutterToolchain _fallbackToolchainDetector({
+  required FlutterSdkManager manager,
+  required String projectPath,
+}) {
+  return DetectedFlutterToolchain(
+    manager: manager,
+    version: manager == FlutterSdkManager.system ? '3.41.6' : null,
+    channel: 'stable',
+    available: manager == FlutterSdkManager.system,
+    command: manager.wireName,
+    problem: manager == FlutterSdkManager.system ? null : 'missing',
+  );
 }

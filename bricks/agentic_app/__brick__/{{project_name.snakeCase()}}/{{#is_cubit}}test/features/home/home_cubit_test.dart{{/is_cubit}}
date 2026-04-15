@@ -2,6 +2,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:{{project_name.snakeCase()}}/core/contracts/app_result.dart';
 import 'package:{{project_name.snakeCase()}}/core/error/failures.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/entities/home_item.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/usecases/get_home_items.dart';
@@ -29,11 +30,10 @@ void main() {
     'emits [loading, loaded] when loadItems succeeds',
     build: () {
       when(() => mockGetHomeItems()).thenAnswer(
-        (_) async => (
+        (_) async => success(
           [
-            HomeItem(id: 'ownership'),
+            const HomeItem(id: 'ownership'),
           ],
-          null,
         ),
       );
       return cubit;
@@ -50,9 +50,8 @@ void main() {
     'emits [loading, error] when loadItems fails',
     build: () {
       when(() => mockGetHomeItems()).thenAnswer(
-        (_) async => (
-          <HomeItem>[],
-          UnexpectedFailure(message: 'fail'),
+        (_) async => failure(
+          const UnexpectedFailure(message: 'fail'),
         ),
       );
       return cubit;

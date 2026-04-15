@@ -122,6 +122,8 @@ final class HarnessMetadata {
                 channel: resolvedSdk.channel,
                 version: resolvedSdk.version,
                 policy: resolvedSdk.policy,
+                preferredManager: resolvedSdk.preferredManager,
+                preferredVersion: resolvedSdk.preferredVersion,
               )
               : resolvedSdk,
     );

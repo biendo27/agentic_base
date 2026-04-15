@@ -43,10 +43,6 @@ class CreateCommand extends Command<int> {
         help: 'Output directory (default: ./<app_name>)',
       )
       ..addOption(
-        'primary-color',
-        help: 'Primary color hex (e.g., 6750A4)',
-      )
-      ..addOption(
         'modules',
         help: 'Modules to install (comma-separated)',
         abbr: 'm',
@@ -221,20 +217,6 @@ class CreateCommand extends Command<int> {
 
     final flavors = requestedFlavors;
 
-    final primaryColor =
-        noInteractive
-            ? (args['primary-color'] as String? ?? '6750A4')
-            : prompts.promptPrimaryColor(args['primary-color'] as String?);
-
-    // Validate hex color
-    if (!_validHex.hasMatch(primaryColor)) {
-      _logger.err(
-        'Invalid hex color. Expected 6-char hex '
-        '(e.g. 6750A4). Got: "$primaryColor"',
-      );
-      return 1;
-    }
-
     final modules =
         noInteractive
             ? requestedModules ?? <String>[]
@@ -250,7 +232,6 @@ class CreateCommand extends Command<int> {
         platforms: platforms,
         stateManagement: state,
         flavors: flavors,
-        primaryColor: primaryColor,
         ciProvider: ciProvider,
         appProfile: appProfile,
         flutterSdkManager: flutterSdkManager,
@@ -264,10 +245,7 @@ class CreateCommand extends Command<int> {
         ..info('')
         ..info('Next steps:')
         ..info('  cd $projectName')
-        ..info(
-          '  flutter run --flavor dev -t lib/main_dev.dart '
-          '--dart-define-from-file=env/dev.env.example',
-        );
+        ..info('  ./tools/run-dev.sh');
       return 0;
     } on Exception catch (e) {
       _logger.err('Failed to create project: $e');
@@ -282,7 +260,6 @@ class CreateCommand extends Command<int> {
 
   static final _validName = RegExp(r'^[a-z][a-z0-9_]*$');
   static final _validOrg = RegExp(r'^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$');
-  static final _validHex = RegExp(r'^[0-9a-fA-F]{6}$');
 
   static ProjectGenerator _defaultProjectGeneratorBuilder(
     AgenticLogger logger,

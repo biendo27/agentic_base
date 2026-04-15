@@ -47,11 +47,6 @@ class CreatePrompts {
     );
   }
 
-  String promptPrimaryColor(String? flagValue) {
-    if (flagValue != null) return flagValue;
-    return _logger.prompt('Primary color (hex)', defaultValue: '6750A4');
-  }
-
   /// Recommended modules pre-selected during interactive create.
   static const defaultModules = ['analytics', 'logging'];
 

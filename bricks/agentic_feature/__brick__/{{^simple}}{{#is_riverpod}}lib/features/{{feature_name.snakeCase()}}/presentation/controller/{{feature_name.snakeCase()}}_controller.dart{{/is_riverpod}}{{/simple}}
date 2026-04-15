@@ -29,11 +29,10 @@ class {{feature_name.pascalCase()}}Controller
 
   Future<void> load() async {
     state = const {{feature_name.pascalCase()}}State.loading();
-    final (items, failure) = await ref.read(get{{feature_name.pascalCase()}}Provider)();
-    if (failure != null) {
-      state = {{feature_name.pascalCase()}}State.error(failure.message);
-    } else {
-      state = {{feature_name.pascalCase()}}State.loaded(items);
-    }
+    final result = await ref.read(get{{feature_name.pascalCase()}}Provider)();
+    state = result.match(
+      (failure) => {{feature_name.pascalCase()}}State.error(failure.message),
+      {{feature_name.pascalCase()}}State.loaded,
+    );
   }
 }

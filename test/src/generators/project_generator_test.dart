@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:agentic_base/src/config/agent_ready_repo_contract.dart';
+import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/generators/feature_generator.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
@@ -8,8 +9,63 @@ import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-Future<void> seedRequiredContractFiles(String projectDir) async {
+Future<void> seedRequiredContractFiles(
+  String projectDir, {
+  String stateManagement = 'cubit',
+}) async {
   const appId = 'com.example.demoapp';
+  final stateSurface = switch (stateManagement) {
+    'cubit' => (
+      testPath: 'test/features/home/home_cubit_test.dart',
+      presentationPath: 'lib/features/home/presentation/cubit/home_cubit.dart',
+      pubspec:
+          'name: demo_app\n'
+          'dependencies:\n'
+          '  flutter:\n'
+          '    sdk: flutter\n'
+          '  flutter_bloc: ^9.1.1\n'
+          '  fpdart: ^1.1.1\n'
+          '  get_it: ^9.2.1\n'
+          '  injectable: ^2.7.1\n',
+      bootstrap: 'Bloc.observer\n',
+      injection: 'GetIt\n',
+    ),
+    'riverpod' => (
+      testPath: 'test/features/home/home_controller_test.dart',
+      presentationPath:
+          'lib/features/home/presentation/controller/home_controller.dart',
+      pubspec:
+          'name: demo_app\n'
+          'dependencies:\n'
+          '  flutter:\n'
+          '    sdk: flutter\n'
+          '  fpdart: ^1.1.1\n'
+          '  flutter_riverpod: ^3.3.1\n',
+      bootstrap: 'UncontrolledProviderScope\n',
+      injection: '// riverpod does not use GetIt\n',
+    ),
+    'mobx' => (
+      testPath: 'test/features/home/home_store_test.dart',
+      presentationPath: 'lib/features/home/presentation/store/home_store.dart',
+      pubspec:
+          'name: demo_app\n'
+          'dependencies:\n'
+          '  flutter:\n'
+          '    sdk: flutter\n'
+          '  flutter_mobx: ^2.2.1\n'
+          '  fpdart: ^1.1.1\n'
+          '  get_it: ^9.2.1\n'
+          '  injectable: ^2.7.1\n'
+          '  mobx: ^2.4.0\n',
+      bootstrap: '// mobx bootstrap\n',
+      injection: 'GetIt\n',
+    ),
+    _ => throw ArgumentError.value(
+      stateManagement,
+      'stateManagement',
+      'Unsupported state management',
+    ),
+  };
   final seededContent = <String, String>{
     '.info/agentic.yaml': '''
 schema_version: 3
@@ -18,7 +74,7 @@ tool_version: 0.1.0
 project_name: demo_app
 org: com.example
 ci_provider: github
-state_management: cubit
+state_management: $stateManagement
 platforms:
   - android
   - ios
@@ -33,7 +89,7 @@ context:
 ${canonicalContextDocs.map((doc) => '    - $doc').join('\n')}
   thin_adapters:
 ${thinAdapterFiles.map((doc) => '    - $doc').join('\n')}
-  state_runtime: cubit
+  state_runtime: $stateManagement
   ci_provider: github
 execution:
   setup: ./tools/setup.sh
@@ -87,9 +143,21 @@ harness:
     'README.md':
         'An agent-ready Flutter repository\nPrimary profile: `consumer-app`\nSupport tier: `Tier 1`\nEvidence directory: `artifacts/evidence`\n./tools/run-dev.sh\nfinal production store publish remains a human approval step\n',
     'tools/_common.sh': 'summary.json\n',
+    'lib/app/bootstrap.dart': stateSurface.bootstrap,
+    'lib/core/di/injection.dart': stateSurface.injection,
+    stateSurface.presentationPath: 'ok',
     'tools/release-preflight.sh': 'credential-setup\nUploadReady\n',
     'tools/release.sh': 'AwaitingFinalPublishApproval\n',
     'tools/verify.sh': 'app-shell-smoke\n',
+    'pubspec.yaml': stateSurface.pubspec,
+    stateSurface.testPath: 'ok',
+    'lib/core/theme/app_theme.dart': 'ThemeData.from(\n',
+    'lib/core/theme/color_schemes.dart':
+        'static const light = ColorScheme(\n'
+        'static const dark = ColorScheme(\n'
+        'primaryFixed:\n',
+    'lib/core/extensions/context_extensions.dart': 'adaptivePagePadding\n',
+    'docs/05-theming-guide.md': 'BuildContextX\n',
     '.github/workflows/ci.yml':
         r'./tools/verify.sh ${{ github.workflow }}-${{ github.ref }} ./tools/build.sh ${{ matrix.flavor }} actions/upload-artifact@v4 flutter-version:',
     '.github/workflows/cd-dev.yml': './tools/release.sh dev firebase\n',
@@ -219,6 +287,161 @@ void main() {
         throwsA(isA<ProjectGenerationException>()),
       );
     });
+
+    test('validate rejects seed-derived theme surfaces', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-seed-theme-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+      await File(
+        p.join(tempDir.path, 'lib/core/theme/color_schemes.dart'),
+      ).writeAsString('ColorScheme.fromSeed(\n');
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test('validate rejects legacy screenutil theme leftovers', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-theme-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        returnsNormally,
+      );
+
+      await File(p.join(tempDir.path, 'pubspec.yaml')).writeAsString(
+        'name: demo_app\ndependencies:\n  flutter:\n    sdk: flutter\n  flutter_screenutil: ^5.9.3\n',
+      );
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test('validate requires starter verification test surfaces', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-test-matrix-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        returnsNormally,
+      );
+
+      await File(
+        p.join(
+          tempDir.path,
+          'test/features/home/data/repositories/home_repository_impl_test.dart',
+        ),
+      ).delete();
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test('validateStateOutput requires only the active state test surface', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-state-cubit-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+
+      expect(
+        () => GeneratedProjectContract.validate(
+          tempDir.path,
+          stateManagement: 'cubit',
+        ),
+        returnsNormally,
+      );
+
+      await File(
+        p.join(tempDir.path, 'test/features/home/home_cubit_test.dart'),
+      ).delete();
+
+      expect(
+        () => GeneratedProjectContract.validate(
+          tempDir.path,
+          stateManagement: 'cubit',
+        ),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test(
+      'validateFeatureHost requires shared full-feature contracts but skips simple mode',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'generated-project-contract-feature-host-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        AgenticConfig.createInitial(
+          projectPath: tempDir.path,
+          projectName: 'demo_app',
+          org: 'com.example',
+          stateManagement: 'cubit',
+          platforms: const ['android', 'ios'],
+          flavors: const ['dev', 'staging', 'prod'],
+          toolVersion: 'test',
+        );
+        await File(
+          p.join(tempDir.path, 'pubspec.yaml'),
+        ).writeAsString(
+          'name: demo_app\ndependencies:\n  flutter:\n    sdk: flutter\n',
+        );
+        await File(
+          p.join(tempDir.path, 'lib/core/error/failures.dart'),
+        ).create(recursive: true);
+
+        expect(
+          () => GeneratedProjectContract.validateFeatureHost(tempDir.path),
+          throwsA(isA<ProjectGenerationException>()),
+        );
+        expect(
+          () => GeneratedProjectContract.validateFeatureHost(
+            tempDir.path,
+            simple: true,
+          ),
+          returnsNormally,
+        );
+
+        await File(
+          p.join(tempDir.path, 'lib/core/contracts/app_result.dart'),
+        ).create(recursive: true);
+        await File(
+          p.join(tempDir.path, 'lib/core/error/error_handler.dart'),
+        ).create(recursive: true);
+        await File(
+          p.join(tempDir.path, 'lib/core/router/app_router.dart'),
+        ).create(recursive: true);
+        await File(
+          p.join(tempDir.path, 'pubspec.yaml'),
+        ).writeAsString(
+          'name: demo_app\ndependencies:\n  flutter:\n    sdk: flutter\n  fpdart: ^1.1.1\n',
+        );
+
+        expect(
+          () => GeneratedProjectContract.validateFeatureHost(tempDir.path),
+          returnsNormally,
+        );
+      },
+    );
 
     test(
       'validate enforces Android flavor wiring when android output exists',
@@ -493,6 +716,24 @@ void main() {
         ).existsSync(),
         isFalse,
       );
+      final repository =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/data/repositories/user_profile_repository_impl.dart',
+            ),
+          ).readAsStringSync();
+      final controller =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/presentation/controller/user_profile_controller.dart',
+            ),
+          ).readAsStringSync();
+
+      expect(repository, contains('core/contracts/app_result.dart'));
+      expect(repository, contains('ErrorHandler.handle(error)'));
+      expect(controller, contains('result.match('));
     });
 
     test('generates mobx presentation files without cubit output', () async {
@@ -526,6 +767,140 @@ void main() {
         ).existsSync(),
         isFalse,
       );
+      final repository =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/data/repositories/user_profile_repository_impl.dart',
+            ),
+          ).readAsStringSync();
+      final store =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/presentation/store/user_profile_store.dart',
+            ),
+          ).readAsStringSync();
+
+      expect(repository, contains('core/contracts/app_result.dart'));
+      expect(repository, contains('ErrorHandler.handle(error)'));
+      expect(store, contains('result.match('));
     });
+
+    test('generates shared app-result boundaries for full features', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'feature-generator-contracts-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await FeatureGenerator(logger: AgenticLogger()).generate(
+        featureName: 'user_profile',
+        projectPath: tempDir.path,
+        projectName: 'demo_app',
+        stateManagement: 'cubit',
+      );
+
+      final repository =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/domain/repositories/user_profile_repository.dart',
+            ),
+          ).readAsStringSync();
+      final useCase =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/domain/usecases/get_user_profile.dart',
+            ),
+          ).readAsStringSync();
+      final cubit =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/presentation/cubit/user_profile_cubit.dart',
+            ),
+          ).readAsStringSync();
+      final repositoryImpl =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/data/repositories/user_profile_repository_impl.dart',
+            ),
+          ).readAsStringSync();
+
+      expect(repository, contains('core/contracts/app_result.dart'));
+      expect(
+        repository,
+        contains(
+          'Future<AppResult<List<UserProfileEntity>>> getAll();',
+        ),
+      );
+      expect(
+        useCase,
+        contains(
+          'Future<AppResult<List<UserProfileEntity>>> call() =>',
+        ),
+      );
+      expect(repositoryImpl, contains('ErrorHandler.handle(error)'));
+      expect(cubit, contains('result.match('));
+    });
+
+    test(
+      'writes spec-driven route and contract surfaces when a router exists',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'feature-generator-router-sync-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        final routerFile = File(
+          p.join(tempDir.path, 'lib/core/router/app_router.dart'),
+        );
+        await routerFile.create(recursive: true);
+        await routerFile.writeAsString('''
+import 'package:auto_route/auto_route.dart';
+import 'package:demo_app/core/router/app_router.gr.dart';
+
+@AutoRouterConfig()
+class AppRouter extends RootStackRouter {
+  @override
+  List<AutoRoute> get routes => [
+        AutoRoute(page: HomeRoute.page, initial: true),
+      ];
+}
+''');
+
+        await FeatureGenerator(logger: AgenticLogger()).generate(
+          featureName: 'user_profile',
+          projectPath: tempDir.path,
+          projectName: 'demo_app',
+          stateManagement: 'cubit',
+        );
+
+        expect(
+          routerFile.readAsStringSync(),
+          contains('AutoRoute(page: UserProfileRoute.page),'),
+        );
+        expect(
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/user_profile_spec.dart',
+            ),
+          ).readAsStringSync(),
+          contains('UserProfileFeatureSpec'),
+        );
+        expect(
+          File(
+            p.join(
+              tempDir.path,
+              'test/features/user_profile/user_profile_spec_contract_test.dart',
+            ),
+          ).existsSync(),
+          isTrue,
+        );
+      },
+    );
   });
 }

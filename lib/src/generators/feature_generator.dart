@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:agentic_base/src/config/scaffold_state_profile.dart';
+import 'package:agentic_base/src/config/spec_parser.dart';
+import 'package:agentic_base/src/generators/feature_host_synchronizer.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:mason/mason.dart';
 import 'package:path/path.dart' as p;
@@ -44,11 +46,29 @@ class FeatureGenerator {
 
       final target = DirectoryGeneratorTarget(Directory(projectPath));
       final files = await generator.generate(target, vars: vars);
+      final spec = simple ? null : _loadGeneratedSpec(projectPath, featureName);
+      const FeatureHostSynchronizer().sync(
+        projectPath: projectPath,
+        projectName: projectName,
+        featureName: featureName,
+        simple: simple,
+        spec: spec,
+      );
       progress.complete('Feature scaffold generated (${files.length} files)');
     } catch (e) {
       progress.fail('Feature generation failed');
       rethrow;
     }
+  }
+
+  FeatureSpec? _loadGeneratedSpec(String projectPath, String featureName) {
+    final specFile = File(
+      p.join(projectPath, 'lib/features/$featureName/$featureName.spec.yaml'),
+    );
+    if (!specFile.existsSync()) {
+      return null;
+    }
+    return SpecParser.parse(specFile.readAsStringSync());
   }
 
   /// Resolve bricks root — mirrors ProjectGenerator._resolveBricksRoot().

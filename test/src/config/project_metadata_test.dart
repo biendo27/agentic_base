@@ -48,8 +48,10 @@ void main() {
             },
             'sdk': <String, dynamic>{
               'manager': 'fvm',
+              'preferred_manager': 'puro',
               'channel': 'stable',
               'version': '3.29.0',
+              'preferred_version': '3.28.0',
               'policy': 'newest_tested',
             },
           },
@@ -66,7 +68,12 @@ void main() {
         metadata.harness.sdk.manager,
         equals(FlutterSdkManager.fvm),
       );
+      expect(
+        metadata.harness.sdk.preferredManager,
+        equals(FlutterSdkManager.puro),
+      );
       expect(metadata.harness.sdk.version, equals('3.29.0'));
+      expect(metadata.harness.sdk.preferredVersion, equals('3.28.0'));
     });
 
     test('defaults harness metadata for legacy configs', () {
@@ -94,5 +101,38 @@ void main() {
         equals('firebase_analytics'),
       );
     });
+
+    test(
+      'legacy sdk contracts keep resolved manager as the preferred fallback',
+      () {
+        final metadata = ProjectMetadata.fromConfigMap(
+          <String, dynamic>{
+            'tool_version': '0.1.0',
+            'project_name': 'legacy_app',
+            'org': 'com.example',
+            'ci_provider': 'github',
+            'state_management': 'cubit',
+            'platforms': ['android'],
+            'flavors': ['dev', 'staging', 'prod'],
+            'modules': <String>[],
+            'harness': <String, dynamic>{
+              'sdk': <String, dynamic>{
+                'manager': 'fvm',
+                'channel': 'stable',
+                'version': '3.29.0',
+                'policy': 'newest_tested',
+              },
+            },
+          },
+        );
+
+        expect(metadata.harness.sdk.manager, FlutterSdkManager.fvm);
+        expect(
+          metadata.harness.sdk.preferredManager,
+          FlutterSdkManager.fvm,
+        );
+        expect(metadata.harness.sdk.preferredVersion, '3.29.0');
+      },
+    );
   });
 }

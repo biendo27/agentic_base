@@ -7,4 +7,10 @@ abstract class AppSpacing {
   static const double xl = 32;
   static const double xxl = 48;
   static const double xxxl = 64;
+
+  static const double controlHeightSm = 40;
+  static const double controlHeightMd = 56;
+  static const double controlHeightLg = 72;
+  static const double fieldPaddingComfortable = 8;
+  static const double fieldPaddingLarge = 12;
 }

@@ -5,75 +5,48 @@ import 'package:{{project_name.snakeCase()}}/core/theme/extensions/theme_extensi
 import 'package:{{project_name.snakeCase()}}/core/theme/typography.dart';
 
 abstract class AppTheme {
-  static ThemeData get light => ThemeData(
-        useMaterial3: true,
-        colorScheme: AppColorSchemes.light,
-        textTheme: AppTypography.textTheme,
-        extensions: const [AppColors.light],
-        appBarTheme: AppComponentThemes.appBarTheme(AppColorSchemes.light),
-        cardTheme: AppComponentThemes.cardTheme,
-        elevatedButtonTheme:
-            AppComponentThemes.elevatedButtonTheme(AppColorSchemes.light),
-        outlinedButtonTheme:
-            AppComponentThemes.outlinedButtonTheme(AppColorSchemes.light),
-        textButtonTheme:
-            AppComponentThemes.textButtonTheme(AppColorSchemes.light),
-        inputDecorationTheme:
-            AppComponentThemes.inputDecorationTheme(AppColorSchemes.light),
-        chipTheme: AppComponentThemes.chipTheme(AppColorSchemes.light),
-        dialogTheme: AppComponentThemes.dialogTheme,
-        bottomNavigationBarTheme:
-            AppComponentThemes.bottomNavTheme(AppColorSchemes.light),
-        navigationBarTheme:
-            AppComponentThemes.navigationBarTheme(AppColorSchemes.light),
-        floatingActionButtonTheme:
-            AppComponentThemes.fabTheme(AppColorSchemes.light),
-        snackBarTheme:
-            AppComponentThemes.snackBarTheme(AppColorSchemes.light),
-        dividerTheme:
-            AppComponentThemes.dividerTheme(AppColorSchemes.light),
-        bottomSheetTheme: AppComponentThemes.bottomSheetTheme,
-        listTileTheme: AppComponentThemes.listTileTheme,
-        switchTheme: AppComponentThemes.switchTheme(AppColorSchemes.light),
-        checkboxTheme:
-            AppComponentThemes.checkboxTheme(AppColorSchemes.light),
-        radioTheme: AppComponentThemes.radioTheme(AppColorSchemes.light),
-        tabBarTheme: AppComponentThemes.tabBarTheme(AppColorSchemes.light),
-      );
+  static ThemeData get light =>
+      _buildTheme(AppColorSchemes.light, AppColors.light);
 
-  static ThemeData get dark => ThemeData(
-        useMaterial3: true,
-        colorScheme: AppColorSchemes.dark,
-        textTheme: AppTypography.textTheme,
-        extensions: const [AppColors.dark],
-        appBarTheme: AppComponentThemes.appBarTheme(AppColorSchemes.dark),
-        cardTheme: AppComponentThemes.cardTheme,
-        elevatedButtonTheme:
-            AppComponentThemes.elevatedButtonTheme(AppColorSchemes.dark),
-        outlinedButtonTheme:
-            AppComponentThemes.outlinedButtonTheme(AppColorSchemes.dark),
-        textButtonTheme:
-            AppComponentThemes.textButtonTheme(AppColorSchemes.dark),
-        inputDecorationTheme:
-            AppComponentThemes.inputDecorationTheme(AppColorSchemes.dark),
-        chipTheme: AppComponentThemes.chipTheme(AppColorSchemes.dark),
-        dialogTheme: AppComponentThemes.dialogTheme,
-        bottomNavigationBarTheme:
-            AppComponentThemes.bottomNavTheme(AppColorSchemes.dark),
-        navigationBarTheme:
-            AppComponentThemes.navigationBarTheme(AppColorSchemes.dark),
-        floatingActionButtonTheme:
-            AppComponentThemes.fabTheme(AppColorSchemes.dark),
-        snackBarTheme:
-            AppComponentThemes.snackBarTheme(AppColorSchemes.dark),
-        dividerTheme:
-            AppComponentThemes.dividerTheme(AppColorSchemes.dark),
-        bottomSheetTheme: AppComponentThemes.bottomSheetTheme,
-        listTileTheme: AppComponentThemes.listTileTheme,
-        switchTheme: AppComponentThemes.switchTheme(AppColorSchemes.dark),
-        checkboxTheme:
-            AppComponentThemes.checkboxTheme(AppColorSchemes.dark),
-        radioTheme: AppComponentThemes.radioTheme(AppColorSchemes.dark),
-        tabBarTheme: AppComponentThemes.tabBarTheme(AppColorSchemes.dark),
-      );
+  static ThemeData get dark =>
+      _buildTheme(AppColorSchemes.dark, AppColors.dark);
+
+  static ThemeData _buildTheme(ColorScheme colorScheme, AppColors colors) {
+    final textTheme = AppTypography.textTheme.apply(
+      bodyColor: colorScheme.onSurface,
+      displayColor: colorScheme.onSurface,
+    );
+    final baseTheme = ThemeData.from(
+      colorScheme: colorScheme,
+      textTheme: textTheme,
+      useMaterial3: true,
+    );
+
+    return baseTheme.copyWith(
+      textTheme: textTheme,
+      scaffoldBackgroundColor: colorScheme.surface,
+      extensions: [colors],
+      appBarTheme: AppComponentThemes.appBarTheme(colorScheme),
+      cardTheme: AppComponentThemes.cardTheme(colorScheme),
+      elevatedButtonTheme: AppComponentThemes.elevatedButtonTheme(colorScheme),
+      outlinedButtonTheme: AppComponentThemes.outlinedButtonTheme(colorScheme),
+      textButtonTheme: AppComponentThemes.textButtonTheme(colorScheme),
+      inputDecorationTheme: AppComponentThemes.inputDecorationTheme(
+        colorScheme,
+      ),
+      chipTheme: AppComponentThemes.chipTheme(colorScheme),
+      dialogTheme: AppComponentThemes.dialogTheme,
+      bottomNavigationBarTheme: AppComponentThemes.bottomNavTheme(colorScheme),
+      navigationBarTheme: AppComponentThemes.navigationBarTheme(colorScheme),
+      floatingActionButtonTheme: AppComponentThemes.fabTheme(colorScheme),
+      snackBarTheme: AppComponentThemes.snackBarTheme(colorScheme),
+      dividerTheme: AppComponentThemes.dividerTheme(colorScheme),
+      bottomSheetTheme: AppComponentThemes.bottomSheetTheme,
+      listTileTheme: AppComponentThemes.listTileTheme,
+      switchTheme: AppComponentThemes.switchTheme(colorScheme),
+      checkboxTheme: AppComponentThemes.checkboxTheme(colorScheme),
+      radioTheme: AppComponentThemes.radioTheme(colorScheme),
+      tabBarTheme: AppComponentThemes.tabBarTheme(colorScheme),
+    );
+  }
 }

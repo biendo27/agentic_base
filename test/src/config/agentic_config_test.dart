@@ -136,6 +136,8 @@ void main() {
             channel: 'stable',
             version: '3.29.0',
             policy: FlutterVersionPolicy.newestTested,
+            preferredManager: FlutterSdkManager.fvm,
+            preferredVersion: '3.28.0',
           ),
         ),
         provenance: const {
@@ -187,6 +189,11 @@ void main() {
         ((raw['harness'] as Map<String, dynamic>)['sdk']
             as Map<String, dynamic>)['version'],
         equals('3.29.0'),
+      );
+      expect(
+        ((raw['harness'] as Map<String, dynamic>)['sdk']
+            as Map<String, dynamic>)['preferred_manager'],
+        equals('fvm'),
       );
     });
 

@@ -16,10 +16,11 @@ Generated apps should bias toward:
 ## Template-Level Rules
 
 - keep app-wide theming in shared app/core theme files, not scattered across features
-- use the `primary_color` create input as a seed for the global theme, not as a per-screen override
+- generated starter themes should default to the explicit Material 3 design-kit tokens, not a derived seed palette
 - keep reusable UI primitives in shared locations; keep feature-specific widgets inside the feature
 - prefer generated docs and clear file names over hidden conventions
-- keep starter surfaces honest: app shell, flavor diagnostics, router, and localization should all be visible in the default home flow
+- keep starter surfaces honest: app shell, flavor diagnostics, router, localization, settings, and the provider-neutral monetization seam should all be visible in the default home flow
+- keep the starter monetization route polished, but do not present the demo adapter as a real billing integration
 
 ## Feature UI Boundaries
 
@@ -59,7 +60,9 @@ Keep those docs aligned with the actual template output whenever the app brick c
 
 What is verified here:
 
-- the app brick accepts `primary_color`
+- the app brick ships explicit Material 3 default tokens from the supplied Figma kit
+- the generator no longer exposes a create-time color override for the default theme
+- the default starter journey now includes dashboard, detail, settings, and monetization surfaces
 - the package README positions generated apps around Clean Architecture
 - the generated app template includes a theming guide in its own `docs/`
 

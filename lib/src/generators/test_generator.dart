@@ -137,6 +137,40 @@ class TestGenerator {
     return buffer.toString();
   }
 
+  /// Generate a lightweight downstream contract test that proves the emitted
+  /// runtime-facing spec constants still match the source YAML.
+  static String generateFeatureSpecContractTest(
+    FeatureSpec spec,
+    String projectName,
+  ) {
+    final featureSnake = _toSnakeCase(spec.feature);
+    final featurePascal = _toPascalCase(spec.feature);
+
+    return '''
+import 'package:flutter_test/flutter_test.dart';
+import 'package:$projectName/features/$featureSnake/${featureSnake}_spec.dart';
+
+void main() {
+  test('${featurePascal}FeatureSpec mirrors the generated YAML contract', () {
+    expect(${featurePascal}FeatureSpec.feature, '${spec.feature}');
+    expect(${featurePascal}FeatureSpec.description, '${_escape(spec.description)}');
+    expect(
+      ${featurePascal}FeatureSpec.acceptanceCriteria,
+      const <String>[
+${spec.acceptanceCriteria.map((criterion) => "        '${_escape(criterion)}',").join('\n')}
+      ],
+    );
+    expect(
+      ${featurePascal}FeatureSpec.edgeCases,
+      const <String>[
+${spec.edgeCases.map((edgeCase) => "        '${_escape(edgeCase)}',").join('\n')}
+      ],
+    );
+  });
+}
+''';
+  }
+
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
@@ -159,5 +193,11 @@ class TestGenerator {
       if (part.isEmpty) return '';
       return part[0].toUpperCase() + part.substring(1).toLowerCase();
     }).join();
+  }
+
+  static String _escape(String value) {
+    return value
+        .replaceAll(String.fromCharCode(92), r'\\')
+        .replaceAll("'", r"\'");
   }
 }

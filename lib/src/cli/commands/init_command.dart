@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/flutter_toolchain_runtime.dart';
 import 'package:agentic_base/src/config/init_project_metadata_resolver.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:agentic_base/src/generators/agentic_app_surface_synchronizer.dart';
@@ -19,7 +21,11 @@ import 'package:yaml_edit/yaml_edit.dart';
 ///
 /// Usage: `agentic_base init`
 class InitCommand extends Command<int> {
-  InitCommand({required AgenticLogger logger}) : _logger = logger {
+  InitCommand({
+    required AgenticLogger logger,
+    FlutterToolchainDetector? toolchainDetector,
+  }) : _logger = logger,
+       _toolchainDetector = toolchainDetector ?? detectFlutterToolchain {
     argParser.addOption(
       'ci-provider',
       help: 'CI provider: github or gitlab',
@@ -28,6 +34,7 @@ class InitCommand extends Command<int> {
   }
 
   final AgenticLogger _logger;
+  final FlutterToolchainDetector _toolchainDetector;
 
   @override
   String get name => 'init';
@@ -55,13 +62,26 @@ class InitCommand extends Command<int> {
 
     final config = AgenticConfig(projectPath: projectPath);
     final pubspecContent = pubspecFile.readAsStringSync();
-    final resolver = InitProjectMetadataResolver();
-    final metadata = resolver.resolve(
-      projectPath: projectPath,
-      pubspecContent: pubspecContent,
-      projectNameFallback: p.basename(projectPath),
-      explicitCiProvider: argResults!['ci-provider'] as String?,
+    final resolver = InitProjectMetadataResolver(
+      toolchainDetector: _toolchainDetector,
     );
+    final metadata =
+        (() {
+          try {
+            return resolver.resolve(
+              projectPath: projectPath,
+              pubspecContent: pubspecContent,
+              projectNameFallback: p.basename(projectPath),
+              explicitCiProvider: argResults!['ci-provider'] as String?,
+            );
+          } on FlutterToolchainResolutionException catch (error) {
+            _logger.err(error.message);
+            return null;
+          }
+        })();
+    if (metadata == null) {
+      return 1;
+    }
     final projectName = metadata.projectName;
     final modeLabel = config.exists ? 'Repairing' : 'Initialising';
 
@@ -138,7 +158,7 @@ class InitCommand extends Command<int> {
     _logger
       ..info('')
       ..info('Next steps:')
-      ..info('  flutter pub get')
+      ..info('  ./tools/setup.sh')
       ..info('  agentic_base doctor');
 
     return 0;
@@ -248,16 +268,16 @@ const _makefileContent = '''
 .PHONY: analyze format test build
 
 analyze:
-\tdart analyze
+\t./tools/lint.sh
 
 format:
-\tdart format .
+\t./tools/format.sh
 
 test:
-\tflutter test
+\t./tools/test.sh
 
 build:
-\tflutter build apk
+\t./tools/build.sh
 ''';
 
 const _safeAnalysisOptionsContent = '''

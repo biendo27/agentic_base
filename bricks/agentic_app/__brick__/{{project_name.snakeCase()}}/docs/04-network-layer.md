@@ -6,6 +6,11 @@
 {{#uses_get_it}}Generated apps register it through `@singleton` + injectable/GetIt.{{/uses_get_it}}
 {{#is_riverpod}}Generated apps read it through Riverpod provider composition.{{/is_riverpod}}
 
+Shared boundary contracts live in:
+- `lib/core/contracts/app_result.dart`
+- `lib/core/contracts/app_response.dart`
+- `lib/core/contracts/pagination.dart`
+
 ## Setup
 
 `ApiClient` is configured in `lib/core/network/api_client.dart`:
@@ -24,7 +29,9 @@ Three interceptors applied in order:
 - On refresh failure: emit unauthenticated event, clear tokens
 
 ### 2. ErrorInterceptor (`error_interceptor.dart`)
-- Converts `DioException` into typed `AppFailure` subclasses:
+- Logs failed requests and attaches typed `AppFailure` payloads to the
+  propagated `DioException` so repositories can normalize transport errors
+  through `ErrorHandler.handle(...)`:
   - `NetworkFailure` — no connectivity
   - `ServerFailure` — 5xx responses
   - `UnauthorizedFailure` — 401
@@ -47,12 +54,12 @@ class FeatureRepositoryImpl implements FeatureRepository {
   final ApiClient _apiClient;
 
   @override
-  Future<Either<AppFailure, FeatureEntity>> getData() async {
+  Future<AppResult<FeatureEntity>> getData() async {
     try {
       final response = await _apiClient.dio.get('/feature/data');
-      return Right(FeatureModel.fromJson(response.data).toEntity());
-    } on AppFailure catch (failure) {
-      return Left(failure);
+      return success(FeatureModel.fromJson(response.data).toEntity());
+    } on Object catch (error) {
+      return failure(ErrorHandler.handle(error));
     }
   }
 }
@@ -60,8 +67,11 @@ class FeatureRepositoryImpl implements FeatureRepository {
 
 ## Error Handling Contract
 
-All repository methods return `Either<AppFailure, T>` (using `dartz` or inline).
+All repository methods return `Either<AppFailure, T>` via `fpdart`.
 Never throw from a repository — always return `Left(failure)`.
+Transport failures are normalized by `ErrorHandler`, with
+`ErrorInterceptor` pre-populating typed failure payloads for HTTP-layer
+errors.
 The presentation runtime maps repository/use case results into state transitions.
 
 ## Environment URLs

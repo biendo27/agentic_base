@@ -4,6 +4,7 @@ import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/flutter_toolchain_runtime.dart';
 import 'package:agentic_base/src/config/harness_metadata.dart';
 import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
@@ -16,9 +17,14 @@ import 'package:agentic_base/src/tui/agentic_logger.dart';
 
 /// Orchestrates Flutter project creation + Mason brick overlay.
 class ProjectGenerator {
-  const ProjectGenerator({required AgenticLogger logger}) : _logger = logger;
+  const ProjectGenerator({
+    required AgenticLogger logger,
+    FlutterToolchainDetector toolchainDetector = detectFlutterToolchain,
+  }) : _logger = logger,
+       _toolchainDetector = toolchainDetector;
 
   final AgenticLogger _logger;
+  final FlutterToolchainDetector _toolchainDetector;
 
   /// Generate a new Flutter project with native scaffolding + templates.
   Future<void> generate({
@@ -28,7 +34,6 @@ class ProjectGenerator {
     required List<String> platforms,
     required String stateManagement,
     required List<String> flavors,
-    required String primaryColor,
     required CiProvider ciProvider,
     required HarnessAppProfile appProfile,
     required FlutterSdkManager flutterSdkManager,
@@ -36,15 +41,18 @@ class ProjectGenerator {
     List<String> secondaryTraits = const [],
     List<String> modules = const [],
   }) async {
+    final toolchain = resolveFlutterToolchain(
+      projectPath: Directory.current.path,
+      preferredManager: flutterSdkManager,
+      preferredVersion: flutterSdkVersion,
+      detector: _toolchainDetector,
+    );
+    _logResolvedToolchain(toolchain);
     final harness = HarnessMetadata.defaultFor(
       appProfile: appProfile,
       secondaryTraits: secondaryTraits,
       capabilities: modules,
-      sdk: resolveFlutterSdkContract(
-        projectPath: Directory.current.path,
-        manager: flutterSdkManager,
-        version: flutterSdkVersion,
-      ),
+      sdk: toolchain.contract,
     );
     final metadata = AgenticConfig.buildInitialMetadata(
       projectName: projectName,
@@ -54,7 +62,7 @@ class ProjectGenerator {
       platforms: platforms,
       flavors: flavors,
       toolVersion: AgenticBaseCliRunner.version,
-      provenance: const {
+      provenance: {
         'tool_version': MetadataProvenance.explicit,
         'project_name': MetadataProvenance.explicit,
         'org': MetadataProvenance.explicit,
@@ -71,9 +79,17 @@ class ProjectGenerator {
         'harness.eval.evidence_dir': MetadataProvenance.defaulted,
         'harness.eval.quality_dimensions': MetadataProvenance.defaulted,
         'harness.approvals.pause_on': MetadataProvenance.defaulted,
-        'harness.sdk.manager': MetadataProvenance.explicit,
-        'harness.sdk.channel': MetadataProvenance.defaulted,
+        'harness.sdk.manager': MetadataProvenance.inferred,
+        'harness.sdk.preferred_manager': MetadataProvenance.explicit,
+        'harness.sdk.channel':
+            toolchain.detected.channel == null
+                ? MetadataProvenance.defaulted
+                : MetadataProvenance.inferred,
         'harness.sdk.version': MetadataProvenance.inferred,
+        'harness.sdk.preferred_version':
+            flutterSdkVersion == null
+                ? MetadataProvenance.inferred
+                : MetadataProvenance.explicit,
         'harness.sdk.policy': MetadataProvenance.defaulted,
       },
       modules: modules,
@@ -86,13 +102,13 @@ class ProjectGenerator {
       outputDirectory: outputDirectory,
       org: org,
       platforms: platforms,
+      toolchain: toolchain,
     );
 
     // Step 2: Overlay Mason brick templates
     await const AgenticAppSurfaceSynchronizer().overlay(
       outputDirectory: outputDirectory,
       metadata: metadata,
-      primaryColor: primaryColor,
     );
 
     GeneratedProjectContract.enforceCiProviderOutputs(
@@ -104,18 +120,19 @@ class ProjectGenerator {
     AgenticConfig(projectPath: outputDirectory).writeMetadata(metadata);
 
     // Step 4: Install dependencies
-    await _runInProject(outputDirectory, 'Installing dependencies', 'flutter', [
-      'pub',
-      'get',
-    ]);
+    await _runInProject(
+      outputDirectory,
+      'Installing dependencies',
+      toolchain.flutterCommand(['pub', 'get']),
+    );
 
     // Step 5: Run flavorizr to configure native flavor builds
     if (GeneratedProjectContract.requiresNativeFlavorization(platforms)) {
-      await _runInteractive(outputDirectory, 'Configuring flavors', 'dart', [
-        'run',
-        'flutter_flavorizr',
-        '-f',
-      ]);
+      await _runInteractive(
+        outputDirectory,
+        'Configuring flavors',
+        toolchain.dartCommand(['run', 'flutter_flavorizr', '-f']),
+      );
       GeneratedProjectContract.validateNativeFlavorOutputs(outputDirectory);
     } else {
       _logger.detail(
@@ -130,45 +147,45 @@ class ProjectGenerator {
         projectName,
         stateManagement,
         modules,
+        toolchain,
       );
     }
 
     // Step 7: Code generation (freezed, injectable, auto_route)
     GeneratedProjectContract.deleteGeneratedI18nOutputs(outputDirectory);
-    await _runInProject(outputDirectory, 'Running code generation', 'dart', [
-      'run',
-      'build_runner',
-      'build',
-      '--delete-conflicting-outputs',
-    ]);
+    await _runInProject(
+      outputDirectory,
+      'Running code generation',
+      toolchain.dartCommand([
+        'run',
+        'build_runner',
+        'build',
+        '--delete-conflicting-outputs',
+      ]),
+    );
 
     // Step 8: Remove tool-owned Flutter-layer outputs.
     GeneratedProjectContract.cleanupForbiddenOutputs(outputDirectory);
 
     // Step 9: Auto-fix lint (sort imports)
-    await _runInProject(outputDirectory, 'Applying lint fixes', 'dart', [
-      'fix',
-      '--apply',
-    ]);
+    await _runInProject(
+      outputDirectory,
+      'Applying lint fixes',
+      toolchain.dartCommand(['fix', '--apply']),
+    );
 
     // Step 10: Materialize Slang outputs from build.yaml.
     await _runInProject(
       outputDirectory,
       'Generating typed translations',
-      'dart',
-      ['run', 'slang'],
+      toolchain.dartCommand(['run', 'slang']),
     );
 
     // Step 11: Normalize starter formatting after all generators finish.
     await _runInProject(
       outputDirectory,
       'Formatting generated sources',
-      'dart',
-      [
-        'format',
-        'lib',
-        'test',
-      ],
+      toolchain.dartCommand(['format', 'lib', 'test']),
     );
 
     GeneratedProjectContract.validate(
@@ -187,6 +204,7 @@ class ProjectGenerator {
     String projectName,
     String stateManagement,
     List<String> modules,
+    ResolvedFlutterToolchain toolchain,
   ) async {
     final progress = _logger.progress('Installing ${modules.length} module(s)');
     final installed = <String>[];
@@ -235,8 +253,7 @@ class ProjectGenerator {
     await _runInProject(
       projectDir,
       'Refreshing dependencies after module install',
-      'flutter',
-      ['pub', 'get'],
+      toolchain.flutterCommand(['pub', 'get']),
     );
     final config = AgenticConfig(projectPath: projectDir);
     final metadata = config.readMetadata(
@@ -262,8 +279,10 @@ class ProjectGenerator {
     await _runInProject(
       projectDir,
       'Verifying generated app with harness contract',
-      'bash',
-      ['tools/verify.sh'],
+      const ToolCommandSpec(
+        executable: 'bash',
+        arguments: ['tools/verify.sh'],
+      ),
     );
   }
 
@@ -271,13 +290,12 @@ class ProjectGenerator {
   Future<void> _runInteractive(
     String projectDir,
     String label,
-    String cmd,
-    List<String> args,
+    ToolCommandSpec command,
   ) async {
     _logger.info(label);
     final process = await Process.start(
-      cmd,
-      args,
+      command.executable,
+      command.arguments,
       workingDirectory: projectDir,
       mode: ProcessStartMode.inheritStdio,
     );
@@ -293,11 +311,14 @@ class ProjectGenerator {
   Future<void> _runInProject(
     String projectDir,
     String label,
-    String cmd,
-    List<String> args,
+    ToolCommandSpec command,
   ) async {
     final progress = _logger.progress(label);
-    final result = await Process.run(cmd, args, workingDirectory: projectDir);
+    final result = await Process.run(
+      command.executable,
+      command.arguments,
+      workingDirectory: projectDir,
+    );
     if (result.exitCode != 0) {
       progress.fail('$label failed');
       final stderr = (result.stderr as String).trim();
@@ -319,9 +340,10 @@ class ProjectGenerator {
     required String outputDirectory,
     required String org,
     required List<String> platforms,
+    required ResolvedFlutterToolchain toolchain,
   }) async {
     final progress = _logger.progress('Creating Flutter project');
-    final result = await Process.run('flutter', [
+    final command = toolchain.flutterCommand([
       'create',
       '--org',
       org,
@@ -332,6 +354,10 @@ class ProjectGenerator {
       projectName,
       outputDirectory,
     ]);
+    final result = await Process.run(
+      command.executable,
+      command.arguments,
+    );
     if (result.exitCode != 0) {
       progress.fail('flutter create failed');
       _logger.err((result.stderr as String).trim());
@@ -340,5 +366,21 @@ class ProjectGenerator {
       );
     }
     progress.complete('Flutter project created');
+  }
+
+  void _logResolvedToolchain(ResolvedFlutterToolchain toolchain) {
+    if (toolchain.source != FlutterToolchainResolutionSource.preferred) {
+      _logger.warn(
+        'Preferred Flutter manager '
+        '"${toolchain.contract.preferredManager.wireName}" is unavailable. '
+        'Using "${toolchain.contract.manager.wireName}" instead.',
+      );
+    }
+    if (toolchain.contract.preferredVersion != toolchain.contract.version) {
+      _logger.warn(
+        'Preferred Flutter version ${toolchain.contract.preferredVersion} '
+        'is not active. Resolved ${toolchain.contract.version} instead.',
+      );
+    }
   }
 }
