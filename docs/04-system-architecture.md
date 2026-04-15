@@ -134,6 +134,7 @@ starter widget surfaces, and app-shell boot behavior.
 4. `FeatureGenerator` applies the state-specific `agentic_feature` brick
 5. `FeatureHostSynchronizer` patches the host router, writes `<feature>_spec.dart`, and adds a spec-contract test when full mode is used
 6. generated feature boundaries use `AppResult<T>` and repository-side error normalization through `ErrorHandler.handle(...)`
+7. full-mode generated pages render spec-derived overview, acceptance criteria, and edge-case copy so the YAML contract is visible in real UI output; `--simple` stays a lighter route/page scaffold without those guarantees
 
 ### Existing Project Init Flow
 

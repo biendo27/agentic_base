@@ -127,18 +127,8 @@ class _{{feature_name.pascalCase()}}View extends StatelessWidget {
         {{feature_name.pascalCase()}}Initial() => const SizedBox.shrink(),
         {{feature_name.pascalCase()}}Loading() =>
           const Center(child: CircularProgressIndicator()),
-        {{feature_name.pascalCase()}}Loaded(:final items) => ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text(
-              {{feature_name.pascalCase()}}FeatureSpec.description,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 16),
-            ...items.map(
-              (item) => ListTile(title: Text(item.name)),
-            ),
-          ],
+        {{feature_name.pascalCase()}}Loaded(:final items) => _{{feature_name.pascalCase()}}LoadedView(
+          items: items,
         ),
         {{feature_name.pascalCase()}}Error(:final message) => Center(
           child: Column(
@@ -154,6 +144,96 @@ class _{{feature_name.pascalCase()}}View extends StatelessWidget {
           ),
         ),
       },
+    );
+  }
+}
+
+class _{{feature_name.pascalCase()}}LoadedView extends StatelessWidget {
+  const _{{feature_name.pascalCase()}}LoadedView({required this.items});
+
+  final List<{{feature_name.pascalCase()}}Entity> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  {{feature_name.pascalCase()}}FeatureSpec.description,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 16),
+                _SpecSection(
+                  title: 'Acceptance criteria',
+                  entries: {{feature_name.pascalCase()}}FeatureSpec.acceptanceCriteria,
+                ),
+                if ({{feature_name.pascalCase()}}FeatureSpec.edgeCases.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _SpecSection(
+                    title: 'Edge cases',
+                    entries: {{feature_name.pascalCase()}}FeatureSpec.edgeCases,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (items.isEmpty)
+          const Card(
+            child: ListTile(
+              title: Text('No starter items yet'),
+              subtitle: Text(
+                'Replace the placeholder repository with a real data source when this feature is implemented.',
+              ),
+            ),
+          )
+        else
+          ...items.map((item) => ListTile(title: Text(item.name))),
+      ],
+    );
+  }
+}
+
+class _SpecSection extends StatelessWidget {
+  const _SpecSection({
+    required this.title,
+    required this.entries,
+  });
+
+  final String title;
+  final List<String> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        ...entries.map(
+          (entry) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 6),
+                  child: Icon(Icons.check_circle_outline, size: 18),
+                ),
+                const SizedBox(width: 8),
+                Expanded(child: Text(entry)),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

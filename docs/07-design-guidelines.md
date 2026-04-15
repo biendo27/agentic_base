@@ -21,6 +21,7 @@ Generated apps should bias toward:
 - prefer generated docs and clear file names over hidden conventions
 - keep starter surfaces honest: app shell, flavor diagnostics, router, localization, settings, and the provider-neutral monetization seam should all be visible in the default home flow
 - keep the starter monetization route polished, but do not present the demo adapter as a real billing integration
+- keep full generated features visibly spec-driven in UI copy, while `agentic_base feature --simple` remains the intentionally lighter-weight leaf scaffold
 
 ## Feature UI Boundaries
 

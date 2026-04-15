@@ -904,6 +904,20 @@ class AppRouter extends RootStackRouter {
           ).existsSync(),
           isTrue,
         );
+        final generatedPage =
+            File(
+              p.join(
+                tempDir.path,
+                'lib/features/user_profile/presentation/pages/user_profile_page.dart',
+              ),
+            ).readAsStringSync();
+        expect(generatedPage, contains('UserProfileFeatureSpec.description'));
+        expect(
+          generatedPage,
+          contains('UserProfileFeatureSpec.acceptanceCriteria'),
+        );
+        expect(generatedPage, contains('UserProfileFeatureSpec.edgeCases'));
+        expect(generatedPage, contains('Acceptance criteria'));
       },
     );
   });
