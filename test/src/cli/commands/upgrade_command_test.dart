@@ -60,6 +60,7 @@ modules: []
           return ProcessResult(0, 0, 'ok', '');
         },
         projectPathProvider: () => tempDir.path,
+        toolchainDetector: _systemToolchainDetector,
       );
 
       runner = CommandRunner<int>('agentic_base', 'test runner')
@@ -168,5 +169,19 @@ DetectedFlutterToolchain _recordingToolchainDetector({
     available: manager == FlutterSdkManager.fvm,
     command: manager.wireName,
     problem: manager == FlutterSdkManager.fvm ? null : 'missing',
+  );
+}
+
+DetectedFlutterToolchain _systemToolchainDetector({
+  required FlutterSdkManager manager,
+  required String projectPath,
+}) {
+  return DetectedFlutterToolchain(
+    manager: manager,
+    version: manager == FlutterSdkManager.system ? '3.41.6' : null,
+    channel: 'stable',
+    available: manager == FlutterSdkManager.system,
+    command: manager.wireName,
+    problem: manager == FlutterSdkManager.system ? null : 'missing',
   );
 }

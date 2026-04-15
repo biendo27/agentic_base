@@ -37,6 +37,7 @@ void main() {
           logger: AgenticLogger(),
           projectPathProvider: () => tempDir.path,
           processRunner: _recordingProcessRunner(processCalls),
+          toolchainDetector: _systemToolchainDetector,
         ),
       );
     });
@@ -202,5 +203,19 @@ DetectedFlutterToolchain _recordingToolchainDetector({
     available: manager == FlutterSdkManager.fvm,
     command: manager.wireName,
     problem: manager == FlutterSdkManager.fvm ? null : 'missing',
+  );
+}
+
+DetectedFlutterToolchain _systemToolchainDetector({
+  required FlutterSdkManager manager,
+  required String projectPath,
+}) {
+  return DetectedFlutterToolchain(
+    manager: manager,
+    version: manager == FlutterSdkManager.system ? '3.41.6' : null,
+    channel: 'stable',
+    available: manager == FlutterSdkManager.system,
+    command: manager.wireName,
+    problem: manager == FlutterSdkManager.system ? null : 'missing',
   );
 }

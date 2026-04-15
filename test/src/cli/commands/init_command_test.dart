@@ -28,8 +28,12 @@ void main() {
       ).writeAsStringSync(
         'name: demo_app\ndependencies:\n  flutter_bloc: any\n',
       );
-      runner = CommandRunner<int>('agentic_base', 'test runner')
-        ..addCommand(InitCommand(logger: AgenticLogger()));
+      runner = CommandRunner<int>('agentic_base', 'test runner')..addCommand(
+        InitCommand(
+          logger: AgenticLogger(),
+          toolchainDetector: _fallbackToolchainDetector,
+        ),
+      );
     });
 
     tearDown(() {
