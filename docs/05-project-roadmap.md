@@ -28,7 +28,7 @@ Status:
 - Harness Contract V1 implementation complete
 - Shared app contracts now standardize generated starter and feature data/domain boundaries on `fpdart` while keeping presentation state APIs simple
 - Generated locale runtime wrapping now lives outside the Slang output tree so contract verification stays stable after regeneration
-- Generated starter apps now ship a stronger Material 3 foundation with exact base typography and measurement tokens, `ThemeData.from(...)`, and internal adaptive helpers instead of ScreenUtil leftovers
+- Generated starter apps now ship a stronger Material 3 foundation with the exact default Figma palette, exact base typography and measurement tokens, `ThemeData.from(...)`, and internal adaptive helpers instead of ScreenUtil leftovers
 - Docs and release claims aligned with shipped behavior
 - Remaining work is stabilization, release hygiene, and future generator polish
 

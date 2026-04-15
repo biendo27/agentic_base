@@ -73,11 +73,6 @@ vars:
     type: list
     description: Build flavors
     prompt: "Flavors:"
-  primary_color:
-    type: string
-    description: Primary color hex
-    default: "6750A4"
-    prompt: "Primary color:"
   ci_provider:
     type: string
     description: CI provider choice

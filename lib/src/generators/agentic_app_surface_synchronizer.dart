@@ -43,7 +43,6 @@ final class AgenticAppSurfaceSynchronizer {
   Future<void> overlay({
     required String outputDirectory,
     required ProjectMetadata metadata,
-    required String primaryColor,
   }) async {
     final stateProfile = ScaffoldStateProfile.fromState(
       metadata.stateManagement,
@@ -62,7 +61,6 @@ final class AgenticAppSurfaceSynchronizer {
         'org': metadata.org,
         'platforms': metadata.platforms,
         'flavors': metadata.flavors,
-        'primary_color': primaryColor,
         'ci_provider': metadata.ciProvider.name,
         'app_id_base': appIdBase,
         'has_native_flavors': metadata.platforms.any(
@@ -96,7 +94,6 @@ final class AgenticAppSurfaceSynchronizer {
   Future<void> syncUpgradeOwnedSurfaces({
     required String projectPath,
     required ProjectMetadata metadata,
-    String primaryColor = '6750A4',
   }) async {
     final tempDir = await Directory.systemTemp.createTemp(
       'agentic-base-upgrade-',
@@ -107,7 +104,6 @@ final class AgenticAppSurfaceSynchronizer {
       await overlay(
         outputDirectory: renderedProjectPath,
         metadata: metadata,
-        primaryColor: primaryColor,
       );
       GeneratedProjectContract.enforceCiProviderOutputs(
         renderedProjectPath,
@@ -135,7 +131,6 @@ final class AgenticAppSurfaceSynchronizer {
   Future<InitSurfaceSyncResult> syncInitOwnedSurfaces({
     required String projectPath,
     required ProjectMetadata metadata,
-    String primaryColor = '6750A4',
     ProjectMutationJournal? journal,
   }) async {
     final tempDir = await Directory.systemTemp.createTemp(
@@ -148,7 +143,6 @@ final class AgenticAppSurfaceSynchronizer {
       await overlay(
         outputDirectory: renderedProjectPath,
         metadata: metadata,
-        primaryColor: primaryColor,
       );
       GeneratedProjectContract.enforceCiProviderOutputs(
         renderedProjectPath,

@@ -2,7 +2,8 @@
 
 ## Technology: Material 3
 
-The app uses Material 3 with a seeded color scheme, explicit typography,
+The app uses Material 3 with the exact default colors from the supplied
+Material 3 Figma design kit, explicit typography,
 semantic component defaults, and Flutter-native adaptive helpers.
 Theme is defined in `lib/core/theme/`.
 
@@ -23,8 +24,8 @@ lib/core/theme/
 ## Color Scheme
 
 Colors are defined as `ColorScheme` objects in `color_schemes.dart`.
-The generator keeps `primary_color` as the global brand seed and derives
-light and dark Material 3 schemes from it.
+The generator uses the exact light and dark values from the Material 3
+Figma `Color Modes` collection as the default palette.
 
 Use semantic color tokens, not raw hex values in widgets:
 
@@ -59,8 +60,9 @@ Material 3 measurements, and spacing also exposes shared control heights:
 
 ```dart
 // Spacing
-AppSpacing.xs   // 4
-AppSpacing.sm   // 8
+AppSpacing.xxs  // 4
+AppSpacing.xs   // 8
+AppSpacing.sm   // 12
 AppSpacing.md   // 16
 AppSpacing.lg   // 24
 AppSpacing.xl   // 32

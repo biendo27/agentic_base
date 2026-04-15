@@ -185,8 +185,19 @@ void main() {
         );
         expect(generatedPubspec, isNot(contains('flutter_screenutil:')));
         expect(generatedTheme, contains('ThemeData.from('));
+        expect(generatedTheme, isNot(contains('ColorScheme.fromSeed(')));
         expect(contextExtensions, contains('adaptivePagePadding'));
         expect(themingGuide, contains('BuildContextX'));
+        expect(
+          File(
+            p.join(appDir, 'lib/core/theme/color_schemes.dart'),
+          ).readAsStringSync(),
+          allOf(
+            contains('static const light = ColorScheme('),
+            contains('static const dark = ColorScheme('),
+            contains('primaryFixed:'),
+          ),
+        );
         expect(
           File(
             p.join(appDir, 'lib/core/responsive/app_screen_util_init.dart'),

@@ -140,7 +140,6 @@ lib/
 | `--traits` | Optional profile traits (comma-separated) | none |
 | `--flutter-sdk-manager` | Declared Flutter SDK manager (`system`, `fvm`, `puro`) | `system` |
 | `--flutter-version` | Explicit tested Flutter SDK version | auto-detected from selected manager |
-| `--primary-color` | Primary color hex | `6750A4` |
 | `--no-interactive` | Skip prompts, use defaults | `false` |
 
 ## CI Provider Selection

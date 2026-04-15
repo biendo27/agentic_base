@@ -875,7 +875,10 @@ final class GeneratedProjectContract {
 
     _forbidContent(pubspec, 'flutter_screenutil:');
     _requireContent(appTheme, 'ThemeData.from(');
-    _requireContent(colorSchemes, 'ColorScheme.fromSeed(');
+    _requireContent(colorSchemes, 'static const light = ColorScheme(');
+    _requireContent(colorSchemes, 'static const dark = ColorScheme(');
+    _requireContent(colorSchemes, 'primaryFixed:');
+    _forbidContent(colorSchemes, 'ColorScheme.fromSeed(');
     _requireContent(contextExtensions, 'adaptivePagePadding');
     _requireContent(themingGuide, 'BuildContextX');
     _forbidPath(projectDir, 'lib/core/responsive/app_screen_util_init.dart');

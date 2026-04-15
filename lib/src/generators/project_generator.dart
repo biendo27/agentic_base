@@ -34,7 +34,6 @@ class ProjectGenerator {
     required List<String> platforms,
     required String stateManagement,
     required List<String> flavors,
-    required String primaryColor,
     required CiProvider ciProvider,
     required HarnessAppProfile appProfile,
     required FlutterSdkManager flutterSdkManager,
@@ -110,7 +109,6 @@ class ProjectGenerator {
     await const AgenticAppSurfaceSynchronizer().overlay(
       outputDirectory: outputDirectory,
       metadata: metadata,
-      primaryColor: primaryColor,
     );
 
     GeneratedProjectContract.enforceCiProviderOutputs(

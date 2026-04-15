@@ -94,7 +94,10 @@ harness:
     'pubspec.yaml':
         'name: demo_app\ndependencies:\n  flutter:\n    sdk: flutter\n  fpdart: ^1.1.1\n',
     'lib/core/theme/app_theme.dart': 'ThemeData.from(\n',
-    'lib/core/theme/color_schemes.dart': 'ColorScheme.fromSeed(\n',
+    'lib/core/theme/color_schemes.dart':
+        'static const light = ColorScheme(\n'
+        'static const dark = ColorScheme(\n'
+        'primaryFixed:\n',
     'lib/core/extensions/context_extensions.dart': 'adaptivePagePadding\n',
     'docs/05-theming-guide.md': 'BuildContextX\n',
     '.github/workflows/ci.yml':
@@ -220,6 +223,23 @@ void main() {
       );
 
       await File(p.join(tempDir.path, 'lib/app.dart')).create(recursive: true);
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test('validate rejects seed-derived theme surfaces', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-seed-theme-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+      await File(
+        p.join(tempDir.path, 'lib/core/theme/color_schemes.dart'),
+      ).writeAsString('ColorScheme.fromSeed(\n');
 
       expect(
         () => GeneratedProjectContract.validate(tempDir.path),

@@ -21,7 +21,6 @@ class RecordingProjectGenerator extends ProjectGenerator {
   List<String>? platforms;
   String? stateManagement;
   List<String>? flavors;
-  String? primaryColor;
   CiProvider? ciProvider;
   HarnessAppProfile? appProfile;
   FlutterSdkManager? flutterSdkManager;
@@ -37,7 +36,6 @@ class RecordingProjectGenerator extends ProjectGenerator {
     required List<String> platforms,
     required String stateManagement,
     required List<String> flavors,
-    required String primaryColor,
     required CiProvider ciProvider,
     required HarnessAppProfile appProfile,
     required FlutterSdkManager flutterSdkManager,
@@ -51,7 +49,6 @@ class RecordingProjectGenerator extends ProjectGenerator {
     this.platforms = List.of(platforms);
     this.stateManagement = stateManagement;
     this.flavors = List.of(flavors);
-    this.primaryColor = primaryColor;
     this.ciProvider = ciProvider;
     this.appProfile = appProfile;
     this.flutterSdkManager = flutterSdkManager;
@@ -90,7 +87,7 @@ void main() {
       expect(command.argParser.options.keys, contains('platforms'));
       expect(command.argParser.options.keys, contains('state'));
       expect(command.argParser.options.keys, contains('flavors'));
-      expect(command.argParser.options.keys, contains('primary-color'));
+      expect(command.argParser.options.keys, isNot(contains('primary-color')));
       expect(command.argParser.options.keys, contains('ci-provider'));
       expect(command.argParser.options.keys, contains('app-profile'));
       expect(command.argParser.options.keys, contains('traits'));
@@ -151,18 +148,6 @@ void main() {
         RegExp(r'^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$').hasMatch('ComExample'),
         false,
       );
-    });
-
-    test('validates hex color with regex', () {
-      // Valid 6-char hex
-      expect(RegExp(r'^[0-9a-fA-F]{6}$').hasMatch('6750A4'), true);
-      expect(RegExp(r'^[0-9a-fA-F]{6}$').hasMatch('abcdef'), true);
-      expect(RegExp(r'^[0-9a-fA-F]{6}$').hasMatch('ABCDEF'), true);
-
-      // Invalid hex
-      expect(RegExp(r'^[0-9a-fA-F]{6}$').hasMatch('GGGGGG'), false);
-      expect(RegExp(r'^[0-9a-fA-F]{6}$').hasMatch('6750A4F'), false);
-      expect(RegExp(r'^[0-9a-fA-F]{6}$').hasMatch('6750A'), false);
     });
 
     test('supports all platform options', () {

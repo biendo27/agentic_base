@@ -90,10 +90,10 @@ Mason bricks under `bricks/` hold generated project structure:
 The app brick also carries generated-project documentation, thin agent adapters,
 harness scripts, CI/release templates, shared app contracts
 (`app_result`, `app_response`, `pagination`, `app_locale_contract` outside the
-generated `lib/app/i18n` tree), a seed-driven Material 3 theme foundation built
-around `ThemeData.from(...)`, internal adaptive breakpoint helpers instead of
-ScreenUtil-style global scaling, and post-generation dependency install
-behavior.
+generated `lib/app/i18n` tree), an explicit Material 3 theme foundation sourced
+from the owned design-kit tokens and built with `ThemeData.from(...)`,
+internal adaptive breakpoint helpers instead of ScreenUtil-style global
+scaling, and post-generation dependency install behavior.
 
 ## Key Flows
 

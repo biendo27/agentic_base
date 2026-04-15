@@ -11,7 +11,7 @@
 
 - Priority: P1
 - Status: Completed
-- Goal: upgrade the generated base theme from seed-plus-overrides into a stronger, explicit Material 3 foundation without breaking the public `primary_color` seed contract.
+- Goal: upgrade the generated base theme from seed-plus-overrides into a stronger, explicit Material 3 foundation driven by the supplied Figma tokens.
 
 ## Key Insights
 
@@ -58,7 +58,7 @@
 1. Resolve the exact Figma/Material token inputs to use.
    - completed via the Figma plugin API after the Variables-view URL resolved to onboarding canvas metadata instead of token data
 2. Define the target token map and theme ownership model.
-   - kept `primary_color` as the global seed source while aligning typography, spacing, and radius to the Material 3 kit
+   - use the exact Material 3 design-kit palette as the generated default while aligning typography, spacing, and radius to the same source
 3. Refresh color roles, typography, spacing, and component theme defaults.
 4. Replace dead responsive scaffolding with an internal adaptive-native layer.
 5. Validate the generated starter surfaces against the new theme contract.
@@ -96,6 +96,6 @@
 ## Completion Notes
 
 - Resolved Material 3 collections and text styles through the Figma plugin API after direct variable extraction from the supplied URL failed.
-- Kept `primary_color` as the scaffold's public theme seed while upgrading the base assembly to `ThemeData.from(...)`.
+- Replaced the seed-derived default palette with the exact light and dark `Color Modes` values from the supplied Figma file and removed the create-time `primary_color` surface so the generator contract matches the shipped defaults.
 - Corrected the Material 3 `bodySmall` typography token, aligned radius/spacing ownership to the design kit, and removed dead `flutter_screenutil` scaffolding.
 - Added generator-side validation plus smoke assertions so theme regressions fail fast instead of drifting silently.

@@ -71,8 +71,8 @@ Each command should:
 - typed Slang output belongs in `lib/app/i18n/**`
 - generated app and feature data/domain boundaries should use `fpdart` `Either`
   wrappers from the shared contract files, not tuple returns
-- generated app theme assembly must use `ThemeData.from(...)` on top of a
-  seed-derived Material 3 `ColorScheme`
+- generated app theme assembly must use `ThemeData.from(...)` on top of an
+  explicit Material 3 `ColorScheme` sourced from the owned design-kit tokens
 - generated app adaptive layout should use `BuildContextX` breakpoint helpers,
   not `flutter_screenutil` or global size scaling
 - generated apps must preserve state parity across `cubit`, `riverpod`, and `mobx`

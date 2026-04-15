@@ -109,7 +109,7 @@ Execution update: 2026-04-15
 - Phase 02 closeout also hardened legacy full-feature generation with explicit host-contract validation and aligned generated transport error normalization with the documented `AppFailure` contract.
 - Validation passed for package analysis, generator tests, and generated-app smoke coverage across cubit/GitHub, cubit/GitLab, riverpod, and mobx starter paths.
 - Phase 03 completed.
-- The app brick now builds its Material 3 theme from `ThemeData.from(...)`, keeps `primary_color` as the global seed source, aligns baseline typography and measurements to the Material 3 design kit, removes dead ScreenUtil scaffolding, and exposes native adaptive helpers through `BuildContextX`.
+- The app brick now builds its Material 3 theme from `ThemeData.from(...)`, uses the exact default light/dark palette from the supplied Material 3 design-kit variables, aligns baseline typography and measurements to that same source, removes dead ScreenUtil scaffolding, and exposes native adaptive helpers through `BuildContextX`.
 - Theme drift is now covered in `GeneratedProjectContract` plus generated-app smoke coverage so old responsive leftovers fail fast.
 
 ## Context Reminder
