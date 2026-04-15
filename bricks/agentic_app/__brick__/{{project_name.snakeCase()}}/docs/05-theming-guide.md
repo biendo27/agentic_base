@@ -112,5 +112,7 @@ in `AppTheme.light` and `AppTheme.dark`.
 ## Dark Mode
 
 `AppTheme` exposes both `light` and `dark`.
-`App` widget uses `MediaQuery.platformBrightnessOf` by default.
-User preference override can be wired through a `ThemeCubit` if needed.
+`AppThemeController` owns the active `ThemeMode` and is mounted through
+`AppThemeScope` in `App`.
+`StarterSettingsPage` is the default surface for previewing system, light,
+and dark mode without adding product-specific preferences yet.

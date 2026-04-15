@@ -14,199 +14,106 @@ The primary verification surface is `./tools/verify.sh`. It runs the same local 
 Use `./tools/release-preflight.sh` before any upload-oriented release command.
 Inspect evidence under `{{{evidence_dir}}}` for `summary.json`, gate check files, and logs.
 
-## Test Structure
+## Generated Test Matrix
 
-```
+```text
 test/
-├── app_smoke_test.dart       # Starter app-shell smoke path
-├── features/
-│   └── <name>/
-│       ├── <name>_state_runtime_test.dart
-│       └── mock_<name>_repository.dart
-├── helpers/
-│   ├── mock_helpers.dart    # Shared mocks
-│   └── pump_app.dart        # Widget test helper
-└── core/
-    └── network/
-        └── api_client_test.dart
+├── app_smoke_test.dart
+├── features/home/
+│   ├── data/repositories/demo_starter_monetization_repository_test.dart
+│   ├── data/repositories/home_repository_impl_test.dart
+{{#is_cubit}}│   ├── home_cubit_test.dart{{/is_cubit}}
+{{#is_riverpod}}│   ├── home_controller_test.dart{{/is_riverpod}}
+{{#is_mobx}}│   ├── home_store_test.dart{{/is_mobx}}
+│   └── presentation/widgets/starter_action_card_test.dart
+└── helpers/pump_app.dart
 ```
 
-## Unit Tests — State Runtime
+## Starter Service Tests
 
-{{#is_cubit}}Use `bloc_test` + `mocktail`:{{/is_cubit}}
-{{#is_riverpod}}Use `ProviderContainer` + `mocktail`:{{/is_riverpod}}
-{{#is_mobx}}Use `mobx` observable assertions + `mocktail`:{{/is_mobx}}
+Repository tests prove the starter-owned seams without relying on full app boot:
+
+- `home_repository_impl_test.dart` proves the dashboard checklist contract
+- `demo_starter_monetization_repository_test.dart` proves the provider-neutral paywall snapshot
+
+```dart
+test('returns the starter dashboard checklist items', () async {
+  final result = await HomeRepositoryImpl().getHomeItems();
+
+  result.match(
+    (failure) => fail('Expected starter items, got: ${failure.message}'),
+    (items) => expect(
+      items.map((item) => item.id).toList(),
+      equals(['ownership', 'localization', 'flavors']),
+    ),
+  );
+});
+```
+
+## State Runtime Tests
+
+{{#is_cubit}}`test/features/home/home_cubit_test.dart` proves initial, loading, loaded, and error behavior for `HomeCubit`.{{/is_cubit}}
+{{#is_riverpod}}`test/features/home/home_controller_test.dart` proves initial and loaded behavior for `homeControllerProvider`.{{/is_riverpod}}
+{{#is_mobx}}`test/features/home/home_store_test.dart` proves initial and loaded behavior for `HomeStore`.{{/is_mobx}}
 
 ```dart
 {{#is_cubit}}
-class MockGetHomeItems extends Mock implements GetHomeItems {}
-
-void main() {
-  late HomeCubit cubit;
-  late MockGetHomeItems mockGetHomeItems;
-
-  setUp(() {
-    mockGetHomeItems = MockGetHomeItems();
-    cubit = HomeCubit(mockGetHomeItems);
-  });
-
-  tearDown(() => cubit.close());
-
-  group('HomeCubit', () {
-    blocTest<HomeCubit, HomeState>(
-      'emits [loading, success] on successful load',
-      build: () {
-        when(() => mockGetHomeItems()).thenAnswer(
-          (_) async => Right([HomeItem(id: '1', title: 'Test')]),
-        );
-        return cubit;
-      },
-      act: (c) => c.load(),
-      expect: () => [
-        const HomeState.loading(),
-        isA<HomeState>().having(
-          (s) => (s as dynamic).items,
-          'items',
-          isNotEmpty,
-        ),
-      ],
+blocTest<HomeCubit, HomeState>(
+  'emits [loading, error] when loadItems fails',
+  build: () {
+    when(() => mockGetHomeItems()).thenAnswer(
+      (_) async => failure(const UnexpectedFailure(message: 'fail')),
     );
-
-    blocTest<HomeCubit, HomeState>(
-      'emits [loading, failure] on error',
-      build: () {
-        when(() => mockGetHomeItems()).thenAnswer(
-          (_) async => Left(ServerFailure('error')),
-        );
-        return cubit;
-      },
-      act: (c) => c.load(),
-      expect: () => [
-        const HomeState.loading(),
-        isA<HomeState>(),
-      ],
-    );
-  });
-}
-```
+    return cubit;
+  },
+  act: (cubit) => cubit.loadItems(),
+  expect: () => [
+    HomeState.loading(),
+    HomeState.error('fail'),
+  ],
+);
 {{/is_cubit}}
 {{#is_riverpod}}
-class MockGetHomeItems extends Mock implements GetHomeItems {}
+test('loadItems emits loaded state', () async {
+  final container = ProviderContainer();
+  addTearDown(container.dispose);
 
-void main() {
-  late ProviderContainer container;
-  late MockGetHomeItems mockGetHomeItems;
+  await container.read(homeControllerProvider.notifier).loadItems();
 
-  setUp(() {
-    mockGetHomeItems = MockGetHomeItems();
-    container = ProviderContainer(
-      overrides: [
-        getHomeItemsProvider.overrideWithValue(mockGetHomeItems),
-      ],
-    );
-  });
-
-  tearDown(() => container.dispose());
-
-  test('loads success state', () async {
-    when(() => mockGetHomeItems()).thenAnswer(
-      (_) async => success(fakeItems),
-    );
-
-    await container.read(homeControllerProvider.notifier).loadItems();
-
-    expect(container.read(homeControllerProvider), isA<HomeLoaded>());
-  });
-}
-```
+  expect(container.read(homeControllerProvider), isA<HomeLoaded>());
+});
 {{/is_riverpod}}
 {{#is_mobx}}
-class MockGetHomeItems extends Mock implements GetHomeItems {}
+test('loadItems emits loaded state', () async {
+  await store.loadItems();
 
-void main() {
-  late HomeStore store;
-  late MockGetHomeItems mockGetHomeItems;
-
-  setUp(() {
-    mockGetHomeItems = MockGetHomeItems();
-    store = HomeStore(mockGetHomeItems);
-  });
-
-  test('loads success state', () async {
-    when(() => mockGetHomeItems()).thenAnswer(
-      (_) async => success(fakeItems),
-    );
-
-    await store.loadItems();
-
-    expect(store.state.value, isA<HomeLoaded>());
-  });
-}
-```
+  expect(store.state.value, isA<HomeLoaded>());
+});
 {{/is_mobx}}
+```
 
 ## Widget Tests
 
-Use `pumpApp` helper from `test/helpers/pump_app.dart`:
+Use `pumpApp` from `test/helpers/pump_app.dart` for small starter widgets:
 
 ```dart
-testWidgets('shows loading indicator', (tester) async {
-{{#is_cubit}}
-  whenListen(
-    mockCubit,
-    Stream.value(const HomeState.loading()),
-    initialState: const HomeState.initial(),
-  );
+import '../../../../helpers/pump_app.dart';
+
+testWidgets('renders the starter CTA and reacts to taps', (tester) async {
+  var tapped = false;
 
   await tester.pumpApp(
-    BlocProvider<HomeCubit>.value(
-      value: mockCubit,
-      child: const HomePage(),
+    StarterActionCard(
+      icon: Icons.settings_outlined,
+      title: 'Starter settings',
+      description: 'Preview locale and theme behavior.',
+      onTap: () => tapped = true,
     ),
   );
 
-  expect(find.byType(CircularProgressIndicator), findsOneWidget);
-});
-```
-{{/is_cubit}}
-{{#is_riverpod}}
-  await tester.pumpApp(
-    ProviderScope(
-      overrides: [
-        homeControllerProvider.overrideWith(() => FakeHomeController()),
-      ],
-      child: const HomePage(),
-    ),
-  );
+  await tester.tap(find.text('Starter settings'));
 
-  expect(find.byType(CircularProgressIndicator), findsOneWidget);
-});
-```
-{{/is_riverpod}}
-{{#is_mobx}}
-  final store = HomeStore(mockGetHomeItems);
-  runInAction(() => store.state.value = const HomeState.loading());
-
-  await tester.pumpApp(const HomePage());
-  await tester.pump();
-
-  expect(find.byType(CircularProgressIndicator), findsOneWidget);
-});
-```
-{{/is_mobx}}
-
-## Unit Tests — Use Cases
-
-```dart
-test('returns items from repository', () async {
-  when(() => mockRepo.getItems()).thenAnswer(
-    (_) async => Right(fakeItems),
-  );
-
-  final result = await getHomeItems();
-
-  expect(result, Right(fakeItems));
-  verify(() => mockRepo.getItems()).called(1);
+  expect(tapped, isTrue);
 });
 ```
 

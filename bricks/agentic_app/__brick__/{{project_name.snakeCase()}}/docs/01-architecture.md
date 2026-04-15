@@ -23,8 +23,15 @@ presentation -> domain <- data
 
 1. `FlavorConfig.init(flavor)` resolves env-driven runtime values
 2. `bootstrap(() => App())` initializes bindings, locale through `AppLocaleContract`, DI, and observers
-3. `App` mounts `TranslationProvider` and `MaterialApp.router`
+3. `App` mounts `AppThemeScope`, `TranslationProvider`, and `MaterialApp.router`
 4. `AppRouter` lands on the starter home route
+
+## Starter Day-0 Flow
+
+- `HomePage` is the starter dashboard and runtime diagnostics surface
+- `StarterDetailPage` proves the ownership/localization/flavor checkpoints
+- `StarterSettingsPage` is the default route for theme-mode and locale preview
+- `StarterMonetizationPage` stays provider-neutral through `StarterMonetizationRepository`
 
 ## Ownership Boundary
 

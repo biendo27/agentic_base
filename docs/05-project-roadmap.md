@@ -29,6 +29,8 @@ Status:
 - Shared app contracts now standardize generated starter and feature data/domain boundaries on `fpdart` while keeping presentation state APIs simple
 - Generated locale runtime wrapping now lives outside the Slang output tree so contract verification stays stable after regeneration
 - Generated starter apps now ship a stronger Material 3 foundation with the exact default Figma palette, exact base typography and measurement tokens, `ThemeData.from(...)`, and internal adaptive helpers instead of ScreenUtil leftovers
+- The starter app now proves one day-0 journey: runtime diagnostics, detail navigation, settings, and a provider-neutral monetization screen
+- Verification no longer relies mainly on downstream boot smoke: generated apps now ship repository tests, state-runtime tests, a starter widget test, and the package smoke matrix retains only the heavy lanes that still prove unique behavior
 - Docs and release claims aligned with shipped behavior
 - Remaining work is stabilization, release hygiene, and future generator polish
 
@@ -61,7 +63,8 @@ Key docs:
 ## Release Gates
 
 - `agentic_base` passes analyze, format check, and test locally and in CI
-- generated app smoke tests pass in CI for GitHub and GitLab scaffolds
+- generated app smoke tests pass in CI for the retained heavy starter lanes (GitHub cubit plus riverpod and mobx runtime variants)
+- GitLab scaffold semantics remain covered by contract validators and repo-level tests instead of a duplicate full generated-app lane
 - the pinned macOS generated-app native gate passes in CI
 - `init` parity, deterministic module versioning, and startup-seam regressions stay covered by package tests
 - command docs, generated docs, adapters, and roadmap agree

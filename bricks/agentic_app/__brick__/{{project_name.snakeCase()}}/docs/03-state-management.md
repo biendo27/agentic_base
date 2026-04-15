@@ -2,99 +2,102 @@
 
 The selected runtime is persisted in `.info/agentic.yaml` and mirrored here as canonical human-readable context.
 
-## Technology: flutter_bloc / Cubit
+## Active Runtime
 
-Cubit is preferred over full Bloc for simplicity. Use Bloc only when event-driven
-history or transformation is required.
+- Selected runtime: `{{state_display_name}}`
+- Shared presentation state type: `HomeState` (`initial`, `loading`, `loaded`, `error`)
+- Shared domain contract: presentation reads the same `GetHomeItems` use case and converts `AppResult<T>` into UI state
 
-## State Design
+## Starter Home Runtime
 
-States are **sealed classes** using `@freezed`. Each feature defines its own state.
+{{#is_cubit}}
+### Cubit + get_it/injectable
 
-### Standard State Shape
-```dart
-@freezed
-sealed class FeatureState with _$FeatureState {
-  const factory FeatureState.initial() = _Initial;
-  const factory FeatureState.loading() = _Loading;
-  const factory FeatureState.success(FeatureData data) = _Success;
-  const factory FeatureState.failure(String message) = _Failure;
-}
-```
+- runtime file: `lib/features/home/presentation/cubit/home_cubit.dart`
+- injection: `getIt<HomeCubit>()`
+- widget consumption: `BlocProvider` + `BlocBuilder`
+- debug transitions: `AppBlocObserver`
 
-### When to Add States
-- `initial` — before any action (always required)
-- `loading` — async operation in progress
-- `success` — data available
-- `failure` — error with message
-- Additional states only when UI needs distinct rendering
-
-## Cubit Patterns
-
-### Constructor injection (get_it + injectable)
 ```dart
 @injectable
-class FeatureCubit extends Cubit<FeatureState> {
-  FeatureCubit(this._useCase) : super(const FeatureState.initial());
+class HomeCubit extends Cubit<HomeState> {
+  HomeCubit(this._getHomeItems) : super(const HomeState.initial());
 
-  final UseCaseName _useCase;
+  final GetHomeItems _getHomeItems;
+
+  Future<void> loadItems() async {
+    emit(const HomeState.loading());
+    final result = await _getHomeItems();
+    result.match(
+      (failure) => emit(HomeState.error(failure.message)),
+      (items) => emit(HomeState.loaded(items)),
+    );
+  }
 }
 ```
+{{/is_cubit}}
 
-### Safe async emission
+{{#is_riverpod}}
+### Riverpod Notifier
+
+- runtime file: `lib/features/home/presentation/controller/home_controller.dart`
+- composition: repository provider -> use-case provider -> notifier provider
+- widget consumption: `ConsumerWidget` / `WidgetRef`
+- no `get_it` or `injectable` runtime for the starter shell
+
 ```dart
-Future<void> load() async {
-  if (isClosed) return;
-  emit(const FeatureState.loading());
-  final result = await _useCase(params);
-  if (isClosed) return;
-  result.match(
-    (failure) => emit(FeatureState.failure(failure.message)),
-    (data) => emit(FeatureState.success(data)),
-  );
+final homeControllerProvider =
+    NotifierProvider<HomeController, HomeState>(HomeController.new);
+
+class HomeController extends Notifier<HomeState> {
+  @override
+  HomeState build() => const HomeState.initial();
+
+  Future<void> loadItems() async {
+    state = const HomeState.loading();
+    final result = await ref.read(getHomeItemsProvider)();
+    state = result.match(
+      (failure) => HomeState.error(failure.message),
+      HomeState.loaded,
+    );
+  }
 }
 ```
+{{/is_riverpod}}
 
-## UI Consumption
+{{#is_mobx}}
+### MobX Store
 
-### BlocProvider (page level)
-```dart
-BlocProvider(
-  create: (context) => getIt<FeatureCubit>()..load(),
-  child: const FeaturePage(),
-)
-```
-
-### BlocBuilder
-```dart
-BlocBuilder<FeatureCubit, FeatureState>(
-  builder: (context, state) => switch (state) {
-    _Initial() => const SizedBox.shrink(),
-    _Loading() => const CircularProgressIndicator(),
-    _Success(:final data) => FeatureContent(data: data),
-    _Failure(:final message) => ErrorView(message: message),
-  },
-)
-```
-
-## Testing Cubits
+- runtime file: `lib/features/home/presentation/store/home_store.dart`
+- injection: `getIt<HomeStore>()`
+- widget consumption: `Observer`
+- state holder: `Observable<HomeState>`
 
 ```dart
-blocTest<FeatureCubit, FeatureState>(
-  'emits [loading, success] when load succeeds',
-  build: () {
-    when(() => mockUseCase()).thenAnswer((_) async => Right(fakeData));
-    return FeatureCubit(mockUseCase);
-  },
-  act: (cubit) => cubit.load(),
-  expect: () => [
-    const FeatureState.loading(),
-    FeatureState.success(fakeData),
-  ],
-);
+@injectable
+class HomeStore {
+  HomeStore(this._getHomeItems);
+
+  final GetHomeItems _getHomeItems;
+  final Observable<HomeState> state = Observable(const HomeState.initial());
+
+  Future<void> loadItems() async {
+    runInAction(() => state.value = const HomeState.loading());
+    final result = await _getHomeItems();
+    runInAction(() {
+      state.value = result.match(
+        (failure) => HomeState.error(failure.message),
+        HomeState.loaded,
+      );
+    });
+  }
+}
 ```
+{{/is_mobx}}
 
-## BlocObserver
+## Testing Surface
 
-`AppBlocObserver` in `lib/app/observers/` logs all transitions in debug builds.
-Do not remove — it provides crucial debugging information.
+{{#is_cubit}}- runtime regression test: `test/features/home/home_cubit_test.dart`{{/is_cubit}}
+{{#is_riverpod}}- runtime regression test: `test/features/home/home_controller_test.dart`{{/is_riverpod}}
+{{#is_mobx}}- runtime regression test: `test/features/home/home_store_test.dart`{{/is_mobx}}
+- all runtimes still share the same repository tests and starter widget test

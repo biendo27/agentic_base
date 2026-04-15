@@ -52,6 +52,7 @@ Files under `lib/src/generators/` own scaffold workflows:
 
 - `ProjectGenerator` handles fresh app creation
 - `FeatureGenerator` applies feature bricks
+- `FeatureHostSynchronizer` wires full feature specs into host routes and spec-contract tests
 - `TestGenerator` turns a feature spec into test stubs
 
 `ProjectGenerator` is the central create-flow orchestrator. `AgenticAppSurfaceSynchronizer` is the shared surface materializer for `create`, `init`, and `upgrade`. Together they call native tooling, overlay templates, sync generator-owned surfaces, install modules, apply ownership cleanup, materialize typed translations, then verify the generated project contract through the generated harness scripts.
@@ -93,7 +94,9 @@ harness scripts, CI/release templates, shared app contracts
 generated `lib/app/i18n` tree), an explicit Material 3 theme foundation sourced
 from the owned design-kit tokens and built with `ThemeData.from(...)`,
 internal adaptive breakpoint helpers instead of ScreenUtil-style global
-scaling, and post-generation dependency install behavior.
+scaling, a starter day-0 flow (dashboard, detail, settings, monetization),
+and a generated test matrix that proves repository seams, state runtime,
+starter widget surfaces, and app-shell boot behavior.
 
 ## Key Flows
 
@@ -129,7 +132,8 @@ scaling, and post-generation dependency install behavior.
 2. command validates the target repo contract through `.info/agentic.yaml`
 3. full feature scaffolds verify the shared host surfaces (`app_result`, `error_handler`, `failures`, `fpdart`) before generation so legacy repos fail fast instead of receiving broken imports
 4. `FeatureGenerator` applies the state-specific `agentic_feature` brick
-5. generated feature boundaries use `AppResult<T>` and repository-side error normalization through `ErrorHandler.handle(...)`
+5. `FeatureHostSynchronizer` patches the host router, writes `<feature>_spec.dart`, and adds a spec-contract test when full mode is used
+6. generated feature boundaries use `AppResult<T>` and repository-side error normalization through `ErrorHandler.handle(...)`
 
 ### Existing Project Init Flow
 
@@ -147,7 +151,7 @@ Repo CI currently lives in one GitHub Actions workflow:
 
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
 
-That workflow verifies the package, runs generated-app smoke coverage for both CI providers, and enforces a separate pinned macOS generated-app native gate. Generated-project CI is scaffolded into downstream repos, where provider-specific workflows now also preserve harness evidence artifacts.
+That workflow verifies the package, keeps one full cubit/GitHub generated-repo lane plus riverpod and mobx starter-runtime lanes, and enforces a separate pinned macOS generated-app native gate. GitLab provider semantics are still covered, but now mostly through lower-level contract tests instead of a duplicate full generated-app lane. Generated-project CI is scaffolded into downstream repos, where provider-specific workflows now also preserve harness evidence artifacts.
 
 ## Architectural Pressure Points
 
@@ -197,6 +201,7 @@ The important rule is that Flutter-specific details must not redefine the harnes
 - [`lib/src/generators/project_generator.dart`](../lib/src/generators/project_generator.dart)
 - [`lib/src/generators/generated_project_contract.dart`](../lib/src/generators/generated_project_contract.dart)
 - [`lib/src/generators/feature_generator.dart`](../lib/src/generators/feature_generator.dart)
+- [`lib/src/generators/feature_host_synchronizer.dart`](../lib/src/generators/feature_host_synchronizer.dart)
 - [`lib/src/modules/module_registry.dart`](../lib/src/modules/module_registry.dart)
 - [`bricks/agentic_app/brick.yaml`](../bricks/agentic_app/brick.yaml)
 - [`docs/08-harness-contract-v1.md`](./08-harness-contract-v1.md)

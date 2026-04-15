@@ -26,8 +26,8 @@ agentic_base add analytics
 agentic_base add logging
 
 # Scaffold a feature
-agentic_base feature auth
-agentic_base feature settings --simple
+agentic_base feature auth                 # full scaffold + feature spec + route/test wiring
+agentic_base feature settings --simple   # lighter-weight leaf scaffold
 
 # Run code generation
 agentic_base gen
@@ -70,6 +70,8 @@ Every generated repo ships:
 - thin vendor adapters in `AGENTS.md` and `CLAUDE.md`
 - deterministic local entrypoints in `tools/` for setup, run, verify, build, and release preflight
 - named verify and release-preflight evidence bundles under `artifacts/evidence/`
+- a product-neutral starter flow that proves runtime diagnostics, detail navigation, settings, and a provider-neutral monetization seam on day 0
+- starter tests that cover repository seams, the selected state runtime, a starter widget surface, app boot smoke, and native readiness where the host supports it
 - explicit human checkpoints for credentials and final store publish
 
 `init` now uses the same brick-owned scaffold source as `create` and `upgrade`, but sync is additive:
@@ -123,7 +125,7 @@ assets/i18n/
 lib/
 ├── app/          # Bootstrap, flavors, generated i18n
 ├── core/         # DI, network, theme, router, error handling
-├── features/     # Feature modules (3-layer Clean Architecture)
+├── features/     # Starter home flow plus spec-driven feature modules
 └── shared/       # Shared widgets and utilities
 ```
 
