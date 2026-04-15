@@ -67,8 +67,8 @@ None. Relevant prior plans are complete and become context only:
 | Phase | Name | Status | Depends on |
 | --- | --- | --- | --- |
 | 1 | [Repair Runtime Honesty And Toolchain Contract](./phase-01-repair-runtime-honesty-and-toolchain-contract.md) | Completed | None |
-| 2 | [Define Shared App Contracts And Selective Brick Organization](./phase-02-define-shared-app-contracts-and-selective-brick-organization.md) | Ready | 1 |
-| 3 | [Refresh Material 3 Theme Foundations And Token Strategy](./phase-03-refresh-material-3-theme-foundations-and-token-strategy.md) | Pending | 2 |
+| 2 | [Define Shared App Contracts And Selective Brick Organization](./phase-02-define-shared-app-contracts-and-selective-brick-organization.md) | Completed | 1 |
+| 3 | [Refresh Material 3 Theme Foundations And Token Strategy](./phase-03-refresh-material-3-theme-foundations-and-token-strategy.md) | Ready | 2 |
 | 4 | [Upgrade Starter Flow And Feature Brick Wiring](./phase-04-upgrade-starter-flow-and-feature-brick-wiring.md) | Pending | 2,3 |
 | 5 | [Expand Service Coverage And Generator Verification](./phase-05-expand-service-coverage-and-generator-verification.md) | Pending | 1,2,4 |
 | 6 | [Reduce Test Runtime Without Lowering Assurance](./phase-06-reduce-test-runtime-without-lowering-assurance.md) | Pending | 5 |
@@ -104,6 +104,10 @@ Execution update: 2026-04-15
 - Phase 01 completed.
 - Repo now resolves manager-aware Flutter/Dart commands through one fallback path and persists preferred-vs-resolved SDK metadata honestly.
 - Full package validation passed after the Phase 01 implementation (`dart analyze --fatal-infos`, `dart test`).
+- Phase 02 completed.
+- Generated starter apps and generated features now share one typed `fpdart` boundary contract at data/domain edges, plus reusable response/pagination contracts and a stable locale wrapper outside the generated Slang output directory.
+- Phase 02 closeout also hardened legacy full-feature generation with explicit host-contract validation and aligned generated transport error normalization with the documented `AppFailure` contract.
+- Validation passed for package analysis, generator tests, and generated-app smoke coverage across cubit/GitHub, cubit/GitLab, riverpod, and mobx starter paths.
 
 ## Context Reminder
 

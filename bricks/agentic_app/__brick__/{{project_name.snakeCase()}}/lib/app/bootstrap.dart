@@ -10,17 +10,14 @@ import 'package:{{project_name.snakeCase()}}/app/observers/app_bloc_observer.dar
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:{{project_name.snakeCase()}}/app/modules/module_providers.dart';
 {{/is_riverpod}}
+import 'package:{{project_name.snakeCase()}}/app/locale/app_locale_contract.dart';
 {{^is_riverpod}}
-import 'package:{{project_name.snakeCase()}}/app/i18n/translations.g.dart';
 import 'package:{{project_name.snakeCase()}}/core/di/injection.dart';
-{{/is_riverpod}}
-{{#is_riverpod}}
-import 'package:{{project_name.snakeCase()}}/app/i18n/translations.g.dart';
 {{/is_riverpod}}
 
 Future<void> bootstrap(Widget Function() builder) async {
   WidgetsFlutterBinding.ensureInitialized();
-  unawaited(LocaleSettings.useDeviceLocale());
+  unawaited(AppLocaleContract.useDeviceLocale());
 {{#is_cubit}}
   Bloc.observer = AppBlocObserver();
 {{/is_cubit}}

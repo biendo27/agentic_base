@@ -12,11 +12,10 @@ class {{feature_name.pascalCase()}}Cubit extends Cubit<{{feature_name.pascalCase
 
   Future<void> load() async {
     emit(const {{feature_name.pascalCase()}}State.loading());
-    final (items, failure) = await _get{{feature_name.pascalCase()}}();
-    if (failure != null) {
-      emit({{feature_name.pascalCase()}}State.error(failure.message));
-    } else {
-      emit({{feature_name.pascalCase()}}State.loaded(items));
-    }
+    final result = await _get{{feature_name.pascalCase()}}();
+    result.match(
+      (failure) => emit({{feature_name.pascalCase()}}State.error(failure.message)),
+      (items) => emit({{feature_name.pascalCase()}}State.loaded(items)),
+    );
   }
 }

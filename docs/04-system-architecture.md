@@ -24,6 +24,7 @@ flowchart LR
   ProjectGenerator --> Verify["setup / run / verify / build / release-preflight"]
 
   Feature --> FeatureGenerator["FeatureGenerator"]
+  Feature --> FeatureHost["Feature host contract"]
   FeatureGenerator --> FeatureBrick["agentic_feature brick"]
 
   Modules --> Registry["ModuleRegistry"]
@@ -86,7 +87,10 @@ Mason bricks under `bricks/` hold generated project structure:
 - `agentic_app` for whole-app bootstrap
 - `agentic_feature` for feature scaffolding
 
-The app brick also carries generated-project documentation, thin agent adapters, harness scripts, CI/release templates, and post-generation dependency install behavior.
+The app brick also carries generated-project documentation, thin agent adapters,
+harness scripts, CI/release templates, shared app contracts
+(`app_result`, `app_response`, `pagination`, `app_locale_contract` outside the
+generated `lib/app/i18n` tree), and post-generation dependency install behavior.
 
 ## Key Flows
 
@@ -115,6 +119,14 @@ The app brick also carries generated-project documentation, thin agent adapters,
 6. `ModuleIntegrationGenerator` refreshes DI/provider registries and auto-discovers startup `init()` hooks
 7. `build_runner` plus `dart format` refresh the generated project graph
 8. manual platform steps are printed when needed
+
+### Feature Flow
+
+1. user runs `agentic_base feature <name>` or `agentic_base feature <name> --simple`
+2. command validates the target repo contract through `.info/agentic.yaml`
+3. full feature scaffolds verify the shared host surfaces (`app_result`, `error_handler`, `failures`, `fpdart`) before generation so legacy repos fail fast instead of receiving broken imports
+4. `FeatureGenerator` applies the state-specific `agentic_feature` brick
+5. generated feature boundaries use `AppResult<T>` and repository-side error normalization through `ErrorHandler.handle(...)`
 
 ### Existing Project Init Flow
 

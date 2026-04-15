@@ -12,6 +12,12 @@ Generated from `repomix-output.xml` on 2026-04-13.
 
 The repository root is the package root. Evergreen docs live in `docs/`; implementation plans and reports live in `plans/`.
 
+## Key Updates Since Snapshot
+
+- full feature scaffolds now validate required host contract files before Mason generation, so older repos fail fast instead of receiving broken imports
+- generated app and feature repositories now normalize transport/runtime failures through shared `ErrorHandler` + `AppFailure` contracts
+- starter and feature boundaries now standardize on shared `AppResult<T>` contract files plus reusable locale/response/pagination surfaces
+
 ## Main Code Areas
 
 | Area | Responsibility |

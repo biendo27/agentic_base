@@ -21,11 +21,10 @@ class HomeController extends Notifier<HomeState> {
 
   Future<void> loadItems() async {
     state = const HomeState.loading();
-    final (items, failure) = await ref.read(getHomeItemsProvider)();
-    if (failure != null) {
-      state = HomeState.error(failure.message);
-    } else {
-      state = HomeState.loaded(items);
-    }
+    final result = await ref.read(getHomeItemsProvider)();
+    state = result.match(
+      (failure) => HomeState.error(failure.message),
+      HomeState.loaded,
+    );
   }
 }

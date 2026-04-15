@@ -1,7 +1,8 @@
 {{^is_riverpod}}
 import 'package:injectable/injectable.dart';
 {{/is_riverpod}}
-import 'package:{{project_name.snakeCase()}}/core/error/failures.dart';
+import 'package:{{project_name.snakeCase()}}/core/contracts/app_result.dart';
+import 'package:{{project_name.snakeCase()}}/core/error/error_handler.dart';
 import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/domain/entities/{{feature_name.snakeCase()}}_entity.dart';
 import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/domain/repositories/{{feature_name.snakeCase()}}_repository.dart';
 
@@ -10,13 +11,13 @@ import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()
 {{/is_riverpod}}
 class {{feature_name.pascalCase()}}RepositoryImpl implements {{feature_name.pascalCase()}}Repository {
   @override
-  Future<(List<{{feature_name.pascalCase()}}Entity>, Failure?)> getAll() async {
+  Future<AppResult<List<{{feature_name.pascalCase()}}Entity>>> getAll() async {
     try {
       // TODO(api): Replace with actual data source call.
       await Future<void>.delayed(const Duration(milliseconds: 300));
-      return (const <{{feature_name.pascalCase()}}Entity>[], null);
-    } on Exception catch (e) {
-      return (<{{feature_name.pascalCase()}}Entity>[], UnexpectedFailure(message: e.toString()));
+      return success(const <{{feature_name.pascalCase()}}Entity>[]);
+    } on Object catch (error) {
+      return failure(ErrorHandler.handle(error));
     }
   }
 }

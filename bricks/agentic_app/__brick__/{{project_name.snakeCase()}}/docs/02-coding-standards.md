@@ -48,6 +48,10 @@ Never manually edit:
 
 Run `make gen` after any model or annotation change.
 
+Keep `library` + `part` limited to codegen-required leaf files such as Freezed,
+JsonSerializable, auto_route, and injectable outputs. Repositories, use cases,
+pages, modules, and services stay as normal files with imports.
+
 ## Code Patterns
 
 ### Freezed State
@@ -58,6 +62,13 @@ sealed class HomeState with _$HomeState {
   const factory HomeState.loading() = _Loading;
   const factory HomeState.success(List<HomeItem> items) = _Success;
   const factory HomeState.failure(String message) = _Failure;
+}
+```
+
+### Data/Domain Boundary
+```dart
+abstract class HomeRepository {
+  Future<AppResult<List<HomeItem>>> getHomeItems();
 }
 ```
 
@@ -92,12 +103,11 @@ class HomeController extends Notifier<HomeState> {
 
   Future<void> loadItems() async {
     state = const HomeState.loading();
-    final (items, failure) = await ref.read(getHomeItemsProvider)();
-    if (failure != null) {
-      state = HomeState.error(failure.message);
-    } else {
-      state = HomeState.loaded(items);
-    }
+    final result = await ref.read(getHomeItemsProvider)();
+    state = result.match(
+      (failure) => HomeState.error(failure.message),
+      HomeState.loaded,
+    );
   }
 }
 ```
@@ -113,10 +123,12 @@ class HomeStore {
 
   Future<void> loadItems() async {
     runInAction(() => state.value = const HomeState.loading());
-    final (items, failure) = await _getHomeItems();
+    final result = await _getHomeItems();
     runInAction(() {
-      state.value =
-          failure != null ? HomeState.error(failure.message) : HomeState.loaded(items);
+      state.value = result.match(
+        (failure) => HomeState.error(failure.message),
+        HomeState.loaded,
+      );
     });
   }
 }

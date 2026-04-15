@@ -51,7 +51,11 @@ final class GeneratedProjectContract {
     'lib/app/app.dart',
     'lib/app/bootstrap.dart',
     'lib/app/flavors.dart',
+    'lib/app/locale/app_locale_contract.dart',
     'lib/app/i18n/translations.g.dart',
+    'lib/core/contracts/app_response.dart',
+    'lib/core/contracts/app_result.dart',
+    'lib/core/contracts/pagination.dart',
     'lib/main.dart',
     'lib/main_dev.dart',
     'lib/main_staging.dart',
@@ -81,6 +85,12 @@ final class GeneratedProjectContract {
     'tools/test.sh',
     'tools/verify.sh',
     'test/app_smoke_test.dart',
+  ];
+
+  static const requiredFeatureHostPaths = <String>[
+    'lib/core/contracts/app_result.dart',
+    'lib/core/error/error_handler.dart',
+    'lib/core/error/failures.dart',
   ];
 
   static const forbiddenFiles = <String>[
@@ -225,6 +235,37 @@ final class GeneratedProjectContract {
     validateNativeFlavorOutputs(projectDir);
     if (stateManagement != null) {
       validateStateOutput(projectDir, stateManagement: stateManagement);
+    }
+  }
+
+  static void validateFeatureHost(String projectDir, {bool simple = false}) {
+    if (simple) {
+      return;
+    }
+
+    for (final relativePath in requiredFeatureHostPaths) {
+      final type = FileSystemEntity.typeSync(
+        _resolveProjectPath(projectDir, relativePath),
+      );
+      if (type == FileSystemEntityType.notFound) {
+        throw ProjectGenerationException(
+          'Full feature scaffolds require the shared host file `$relativePath`.',
+        );
+      }
+    }
+
+    final pubspecFile = File(_resolveProjectPath(projectDir, 'pubspec.yaml'));
+    if (!pubspecFile.existsSync()) {
+      throw const ProjectGenerationException(
+        'Full feature scaffolds require `pubspec.yaml` in the host project.',
+      );
+    }
+
+    final pubspecContents = pubspecFile.readAsStringSync();
+    if (!pubspecContents.contains('fpdart:')) {
+      throw const ProjectGenerationException(
+        'Full feature scaffolds require the `fpdart` dependency in `pubspec.yaml`.',
+      );
     }
   }
 

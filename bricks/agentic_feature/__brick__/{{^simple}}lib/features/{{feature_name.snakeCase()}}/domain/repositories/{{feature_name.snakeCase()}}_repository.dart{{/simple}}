@@ -1,7 +1,7 @@
-import 'package:{{project_name.snakeCase()}}/core/error/failures.dart';
+import 'package:{{project_name.snakeCase()}}/core/contracts/app_result.dart';
 import 'package:{{project_name.snakeCase()}}/features/{{feature_name.snakeCase()}}/domain/entities/{{feature_name.snakeCase()}}_entity.dart';
 
 /// Repository contract for the {{feature_name.titleCase()}} feature.
 abstract class {{feature_name.pascalCase()}}Repository {
-  Future<(List<{{feature_name.pascalCase()}}Entity>, Failure?)> getAll();
+  Future<AppResult<List<{{feature_name.pascalCase()}}Entity>>> getAll();
 }

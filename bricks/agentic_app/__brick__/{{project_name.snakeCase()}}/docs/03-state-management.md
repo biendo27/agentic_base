@@ -46,12 +46,12 @@ class FeatureCubit extends Cubit<FeatureState> {
 Future<void> load() async {
   if (isClosed) return;
   emit(const FeatureState.loading());
-  try {
-    final result = await _useCase(params);
-    if (!isClosed) emit(FeatureState.success(result));
-  } catch (e) {
-    if (!isClosed) emit(FeatureState.failure(e.toString()));
-  }
+  final result = await _useCase(params);
+  if (isClosed) return;
+  result.match(
+    (failure) => emit(FeatureState.failure(failure.message)),
+    (data) => emit(FeatureState.success(data)),
+  );
 }
 ```
 

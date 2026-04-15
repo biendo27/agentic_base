@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/generators/feature_generator.dart';
+import 'package:agentic_base/src/generators/generated_project_contract.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
@@ -11,7 +12,11 @@ import 'package:path/path.dart' as p;
 ///
 /// Usage: `agentic_base feature <name>` or `agentic_base feature <name> --simple`
 class FeatureCommand extends Command<int> {
-  FeatureCommand({required AgenticLogger logger}) : _logger = logger {
+  FeatureCommand({
+    required AgenticLogger logger,
+    String Function()? projectPathProvider,
+  }) : _logger = logger,
+       _projectPathProvider = projectPathProvider {
     argParser.addFlag(
       'simple',
       abbr: 's',
@@ -21,6 +26,7 @@ class FeatureCommand extends Command<int> {
   }
 
   final AgenticLogger _logger;
+  final String Function()? _projectPathProvider;
 
   @override
   String get name => 'feature';
@@ -53,7 +59,7 @@ class FeatureCommand extends Command<int> {
       );
     }
 
-    final projectPath = Directory.current.path;
+    final projectPath = _projectPathProvider?.call() ?? Directory.current.path;
     final config = AgenticConfig(projectPath: projectPath);
 
     if (!config.exists) {
@@ -71,6 +77,19 @@ class FeatureCommand extends Command<int> {
     final projectName = metadata.projectName;
     final stateManagement = metadata.stateManagement;
     final simple = args['simple'] as bool;
+
+    if (!simple) {
+      try {
+        GeneratedProjectContract.validateFeatureHost(projectPath);
+      } on ProjectGenerationException catch (error) {
+        _logger
+          ..err('$error')
+          ..info(
+            'Run `agentic_base upgrade` to sync generator-owned surfaces, then retry `agentic_base feature $featureName`.',
+          );
+        return 1;
+      }
+    }
 
     _logger.header('Scaffolding feature: $featureName');
 

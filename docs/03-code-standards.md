@@ -45,6 +45,7 @@ Each command should:
 - keep command files thin where practical; orchestration should live in generators or helpers
 - `ProjectGenerator` owns create-flow orchestration
 - `FeatureGenerator` owns feature brick generation
+- `feature` must validate required host contracts before generating full features
 - `ScaffoldStateProfile` must keep cubit, riverpod, and mobx branches aligned
 - `InitProjectMetadataResolver` is the only place that should infer or repair project metadata from existing project files
 - every installable module implements `AgenticModule`
@@ -68,8 +69,12 @@ Each command should:
 - generated-project claims must be backed by actual template files or post-gen steps
 - generated app localization source belongs in `assets/i18n/**`
 - typed Slang output belongs in `lib/app/i18n/**`
+- generated app and feature data/domain boundaries should use `fpdart` `Either`
+  wrappers from the shared contract files, not tuple returns
 - generated apps must preserve state parity across `cubit`, `riverpod`, and `mobx`
 - generated apps must not keep duplicate root shell files such as `lib/app.dart` or `lib/flavors.dart`
+- `library` + `part` stays reserved for codegen-required leaf files; prefer normal
+  imports/exports for repositories, use cases, pages, services, and modules
 - when changing module integrations, update smoke tests and `GeneratedProjectContract` together
 
 ## Testing Standards

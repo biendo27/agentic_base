@@ -139,6 +139,36 @@ void main() {
           ),
           returnsNormally,
         );
+
+        final errorInterceptor =
+            File(
+              p.join(
+                appDir,
+                'lib/core/network/interceptors/error_interceptor.dart',
+              ),
+            ).readAsStringSync();
+        final errorHandler =
+            File(
+              p.join(appDir, 'lib/core/error/error_handler.dart'),
+            ).readAsStringSync();
+        final homeRepository =
+            File(
+              p.join(
+                appDir,
+                'lib/features/home/data/repositories/home_repository_impl.dart',
+              ),
+            ).readAsStringSync();
+
+        expect(errorInterceptor, contains('ErrorHandler.handle(err)'));
+        expect(errorInterceptor, contains('handler.next(mappedError);'));
+        expect(
+          errorHandler,
+          contains('error is DioException && error.error is AppFailure'),
+        );
+        expect(
+          homeRepository,
+          contains('return failure(ErrorHandler.handle(error));'),
+        );
       },
       skip:
           flutterAvailable

@@ -110,7 +110,7 @@ void main() {
 
   test('loads success state', () async {
     when(() => mockGetHomeItems()).thenAnswer(
-      (_) async => (fakeItems, null),
+      (_) async => success(fakeItems),
     );
 
     await container.read(homeControllerProvider.notifier).loadItems();
@@ -134,7 +134,7 @@ void main() {
 
   test('loads success state', () async {
     when(() => mockGetHomeItems()).thenAnswer(
-      (_) async => (fakeItems, null),
+      (_) async => success(fakeItems),
     );
 
     await store.loadItems();

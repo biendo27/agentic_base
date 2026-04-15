@@ -12,13 +12,12 @@ class HomeStore {
 
   Future<void> loadItems() async {
     runInAction(() => state.value = const HomeState.loading());
-    final (items, failure) = await _getHomeItems();
+    final result = await _getHomeItems();
     runInAction(() {
-      if (failure != null) {
-        state.value = HomeState.error(failure.message);
-      } else {
-        state.value = HomeState.loaded(items);
-      }
+      state.value = result.match(
+        (failure) => HomeState.error(failure.message),
+        HomeState.loaded,
+      );
     });
   }
 }

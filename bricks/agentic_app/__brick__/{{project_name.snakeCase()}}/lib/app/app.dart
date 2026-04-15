@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:{{project_name.snakeCase()}}/app/flavors.dart';
 import 'package:{{project_name.snakeCase()}}/app/i18n/translations.g.dart';
+import 'package:{{project_name.snakeCase()}}/app/locale/app_locale_contract.dart';
 import 'package:{{project_name.snakeCase()}}/core/router/app_router.dart';
 import 'package:{{project_name.snakeCase()}}/core/theme/app_theme.dart';
 
@@ -17,7 +18,7 @@ class App extends StatelessWidget {
             (context) => MaterialApp.router(
               title: FlavorConfig.instance.appName,
               locale: TranslationProvider.of(context).flutterLocale,
-              supportedLocales: AppLocaleUtils.supportedLocales,
+              supportedLocales: AppLocaleContract.supportedFlutterLocales,
               localizationsDelegates: GlobalMaterialLocalizations.delegates,
               theme: AppTheme.light,
               darkTheme: AppTheme.dark,

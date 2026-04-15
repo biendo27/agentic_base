@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/agent_ready_repo_contract.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/generators/feature_generator.dart';
@@ -219,6 +220,63 @@ void main() {
         throwsA(isA<ProjectGenerationException>()),
       );
     });
+
+    test(
+      'validateFeatureHost requires shared full-feature contracts but skips simple mode',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'generated-project-contract-feature-host-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        AgenticConfig.createInitial(
+          projectPath: tempDir.path,
+          projectName: 'demo_app',
+          org: 'com.example',
+          stateManagement: 'cubit',
+          platforms: const ['android', 'ios'],
+          flavors: const ['dev', 'staging', 'prod'],
+          toolVersion: 'test',
+        );
+        await File(
+          p.join(tempDir.path, 'pubspec.yaml'),
+        ).writeAsString(
+          'name: demo_app\ndependencies:\n  flutter:\n    sdk: flutter\n',
+        );
+        await File(
+          p.join(tempDir.path, 'lib/core/error/failures.dart'),
+        ).create(recursive: true);
+
+        expect(
+          () => GeneratedProjectContract.validateFeatureHost(tempDir.path),
+          throwsA(isA<ProjectGenerationException>()),
+        );
+        expect(
+          () => GeneratedProjectContract.validateFeatureHost(
+            tempDir.path,
+            simple: true,
+          ),
+          returnsNormally,
+        );
+
+        await File(
+          p.join(tempDir.path, 'lib/core/contracts/app_result.dart'),
+        ).create(recursive: true);
+        await File(
+          p.join(tempDir.path, 'lib/core/error/error_handler.dart'),
+        ).create(recursive: true);
+        await File(
+          p.join(tempDir.path, 'pubspec.yaml'),
+        ).writeAsString(
+          'name: demo_app\ndependencies:\n  flutter:\n    sdk: flutter\n  fpdart: ^1.1.1\n',
+        );
+
+        expect(
+          () => GeneratedProjectContract.validateFeatureHost(tempDir.path),
+          returnsNormally,
+        );
+      },
+    );
 
     test(
       'validate enforces Android flavor wiring when android output exists',
@@ -493,6 +551,24 @@ void main() {
         ).existsSync(),
         isFalse,
       );
+      final repository =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/data/repositories/user_profile_repository_impl.dart',
+            ),
+          ).readAsStringSync();
+      final controller =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/presentation/controller/user_profile_controller.dart',
+            ),
+          ).readAsStringSync();
+
+      expect(repository, contains('core/contracts/app_result.dart'));
+      expect(repository, contains('ErrorHandler.handle(error)'));
+      expect(controller, contains('result.match('));
     });
 
     test('generates mobx presentation files without cubit output', () async {
@@ -526,6 +602,83 @@ void main() {
         ).existsSync(),
         isFalse,
       );
+      final repository =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/data/repositories/user_profile_repository_impl.dart',
+            ),
+          ).readAsStringSync();
+      final store =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/presentation/store/user_profile_store.dart',
+            ),
+          ).readAsStringSync();
+
+      expect(repository, contains('core/contracts/app_result.dart'));
+      expect(repository, contains('ErrorHandler.handle(error)'));
+      expect(store, contains('result.match('));
+    });
+
+    test('generates shared app-result boundaries for full features', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'feature-generator-contracts-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await FeatureGenerator(logger: AgenticLogger()).generate(
+        featureName: 'user_profile',
+        projectPath: tempDir.path,
+        projectName: 'demo_app',
+        stateManagement: 'cubit',
+      );
+
+      final repository =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/domain/repositories/user_profile_repository.dart',
+            ),
+          ).readAsStringSync();
+      final useCase =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/domain/usecases/get_user_profile.dart',
+            ),
+          ).readAsStringSync();
+      final cubit =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/presentation/cubit/user_profile_cubit.dart',
+            ),
+          ).readAsStringSync();
+      final repositoryImpl =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/features/user_profile/data/repositories/user_profile_repository_impl.dart',
+            ),
+          ).readAsStringSync();
+
+      expect(repository, contains('core/contracts/app_result.dart'));
+      expect(
+        repository,
+        contains(
+          'Future<AppResult<List<UserProfileEntity>>> getAll();',
+        ),
+      );
+      expect(
+        useCase,
+        contains(
+          'Future<AppResult<List<UserProfileEntity>>> call() =>',
+        ),
+      );
+      expect(repositoryImpl, contains('ErrorHandler.handle(error)'));
+      expect(cubit, contains('result.match('));
     });
   });
 }

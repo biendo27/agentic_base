@@ -11,11 +11,10 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> loadItems() async {
     emit(const HomeState.loading());
-    final (items, failure) = await _getHomeItems();
-    if (failure != null) {
-      emit(HomeState.error(failure.message));
-    } else {
-      emit(HomeState.loaded(items));
-    }
+    final result = await _getHomeItems();
+    result.match(
+      (failure) => emit(HomeState.error(failure.message)),
+      (items) => emit(HomeState.loaded(items)),
+    );
   }
 }

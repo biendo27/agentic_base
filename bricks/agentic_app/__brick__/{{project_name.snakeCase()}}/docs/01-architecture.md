@@ -22,7 +22,7 @@ presentation -> domain <- data
 ## App Bootstrap
 
 1. `FlavorConfig.init(flavor)` resolves env-driven runtime values
-2. `bootstrap(() => App())` initializes bindings, locale, DI, and observers
+2. `bootstrap(() => App())` initializes bindings, locale through `AppLocaleContract`, DI, and observers
 3. `App` mounts `TranslationProvider` and `MaterialApp.router`
 4. `AppRouter` lands on the starter home route
 
@@ -67,6 +67,7 @@ Meaningful verify and release-preflight runs emit named gate outputs under `{{{e
 
 - Source translations live in `assets/i18n/<module>/<module>_<locale>.i18n.yaml`
 - `build_runner` + Slang generate typed APIs into `lib/app/i18n/translations.g.dart`
+- `lib/app/locale/app_locale_contract.dart` is the stable app-facing locale wrapper for runtime code
 - Starter namespaces:
   - `app`
   - `home`
