@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/flutter_toolchain_runtime.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:agentic_base/src/deploy/process_runner.dart';
 import 'package:agentic_base/src/generators/agentic_app_surface_synchronizer.dart';
@@ -24,6 +25,7 @@ class UpgradeCommand extends Command<int> {
     required AgenticLogger logger,
     ProcessRunner? processRunner,
     String Function()? projectPathProvider,
+    FlutterToolchainDetector? toolchainDetector,
     Future<void> Function({
       required String projectPath,
       required ProjectMetadata metadata,
@@ -32,11 +34,13 @@ class UpgradeCommand extends Command<int> {
   }) : _logger = logger,
        _processRunner = processRunner ?? runProcess,
        _projectPathProvider = projectPathProvider,
+       _toolchainDetector = toolchainDetector ?? detectFlutterToolchain,
        _surfaceSync = surfaceSync;
 
   final AgenticLogger _logger;
   final ProcessRunner _processRunner;
   final String Function()? _projectPathProvider;
+  final FlutterToolchainDetector _toolchainDetector;
   final Future<void> Function({
     required String projectPath,
     required ProjectMetadata metadata,
@@ -87,17 +91,31 @@ class UpgradeCommand extends Command<int> {
             ? metadata
             : metadata.copyWith(
               harness: metadata.harness.copyWith(
-                sdk: resolveFlutterSdkContract(
-                  projectPath: projectPath,
-                  manager: metadata.harness.sdk.manager,
-                ),
+                sdk: metadata.harness.sdk,
               ),
             );
+    final toolchain = resolveProjectFlutterToolchain(
+      projectPath: projectPath,
+      contract: effectiveMetadata.harness.sdk,
+      detector: _toolchainDetector,
+    );
+    final syncedMetadata = effectiveMetadata.copyWith(
+      harness: effectiveMetadata.harness.copyWith(sdk: toolchain.contract),
+      provenance: {
+        ...effectiveMetadata.provenance,
+        'harness.sdk.manager': MetadataProvenance.inferred,
+        'harness.sdk.channel':
+            toolchain.detected.channel == null
+                ? MetadataProvenance.defaulted
+                : MetadataProvenance.inferred,
+        'harness.sdk.version': MetadataProvenance.inferred,
+      },
+    );
 
     if (hasPinnedFlutterContract) {
-      final toolchainStatus = _validateFlutterContract(
-        projectPath,
-        metadata: effectiveMetadata,
+      final toolchainStatus = _validatePinnedFlutterContract(
+        metadata: metadata,
+        toolchain: toolchain,
       );
       if (toolchainStatus != 0) {
         return toolchainStatus;
@@ -109,7 +127,10 @@ class UpgradeCommand extends Command<int> {
     }
 
     // Run flutter pub upgrade.
-    final upgradeResult = await _runFlutterPubUpgrade(projectPath);
+    final upgradeResult = await _runFlutterPubUpgrade(
+      projectPath,
+      toolchain: toolchain,
+    );
     if (upgradeResult != 0) return upgradeResult;
 
     // Diff pubspec.lock for major-version bumps.
@@ -129,10 +150,10 @@ class UpgradeCommand extends Command<int> {
             return const AgenticAppSurfaceSynchronizer()
                 .syncUpgradeOwnedSurfaces(
                   projectPath: projectPath,
-                  metadata: effectiveMetadata,
+                  metadata: syncedMetadata,
                 );
           };
-      await sync(projectPath: projectPath, metadata: effectiveMetadata);
+      await sync(projectPath: projectPath, metadata: syncedMetadata);
       syncProgress.complete('Generator-owned repo assets synced');
     } on Exception catch (error) {
       syncProgress.fail('Generator-owned repo asset sync failed');
@@ -141,7 +162,7 @@ class UpgradeCommand extends Command<int> {
     }
 
     // Stamp current tool version into agentic.yaml.
-    _stampToolVersion(config, metadata: effectiveMetadata);
+    _stampToolVersion(config, metadata: syncedMetadata);
 
     _logger
       ..info('')
@@ -155,45 +176,39 @@ class UpgradeCommand extends Command<int> {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  int _validateFlutterContract(
-    String projectPath, {
+  int _validatePinnedFlutterContract({
     required ProjectMetadata metadata,
+    required ResolvedFlutterToolchain toolchain,
   }) {
     final declared = metadata.harness.sdk;
-    final detected = detectFlutterToolchain(
-      manager: declared.manager,
-      projectPath: projectPath,
-    );
-    if (!detected.available) {
-      _logger.err(
-        'Declared Flutter manager "${declared.manager.wireName}" is unavailable: '
-        '${detected.problem ?? detected.command}',
-      );
-      return 1;
-    }
-
-    if (!detected.matches(declared)) {
+    final actual = toolchain.contract;
+    if (actual.version != declared.version ||
+        actual.channel != declared.channel) {
       _logger.err(
         'Flutter toolchain mismatch. Declared '
         '${declared.version}/${declared.channel}, found '
-        '${detected.version ?? 'unknown'}/${detected.channel ?? 'unknown'}.',
+        '${actual.version}/${actual.channel}.',
       );
       return 1;
     }
 
     _logger.info(
-      'Flutter contract OK: ${declared.manager.wireName} ${declared.version}',
+      'Flutter contract OK: ${actual.manager.wireName} ${actual.version}',
     );
     return 0;
   }
 
   /// Run `flutter pub upgrade` and stream output to the user.
-  Future<int> _runFlutterPubUpgrade(String projectPath) async {
+  Future<int> _runFlutterPubUpgrade(
+    String projectPath, {
+    required ResolvedFlutterToolchain toolchain,
+  }) async {
     final progress = _logger.progress('Running flutter pub upgrade');
 
+    final command = toolchain.flutterCommand(['pub', 'upgrade']);
     final result = await _processRunner(
-      'flutter',
-      ['pub', 'upgrade'],
+      command.executable,
+      command.arguments,
       workingDirectory: projectPath,
     );
 

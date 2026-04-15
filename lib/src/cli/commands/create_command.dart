@@ -264,10 +264,7 @@ class CreateCommand extends Command<int> {
         ..info('')
         ..info('Next steps:')
         ..info('  cd $projectName')
-        ..info(
-          '  flutter run --flavor dev -t lib/main_dev.dart '
-          '--dart-define-from-file=env/dev.env.example',
-        );
+        ..info('  ./tools/run-dev.sh');
       return 0;
     } on Exception catch (e) {
       _logger.err('Failed to create project: $e');

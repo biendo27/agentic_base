@@ -2,7 +2,7 @@
 
 ## Overview
 
-`agentic_base` is a generator package, not an app runtime. The repo architecture centers on a command-line control plane that shells out to Flutter and Dart tooling, applies Mason templates, and mutates target-project files in a controlled way so generated repos have one canonical context contract and deterministic execution surfaces.
+`agentic_base` is a generator package, not an app runtime. The repo architecture centers on a command-line control plane that resolves a manager-aware Flutter/Dart toolchain, shells out through that resolved executable path, applies Mason templates, and mutates target-project files in a controlled way so generated repos have one canonical context contract and deterministic execution surfaces.
 
 ```mermaid
 flowchart LR
@@ -60,8 +60,9 @@ Files under `lib/src/generators/` own scaffold workflows:
 Files under `lib/src/config/` define repo-managed state:
 
 - `AgenticConfig` reads and writes `.info/agentic.yaml`
-- `ProjectMetadata`, `HarnessMetadata`, and `FlutterSdkContract` define the typed machine contract
+- `ProjectMetadata`, `HarnessMetadata`, and `FlutterSdkContract` define the typed machine contract, including preferred-vs-resolved SDK state
 - `InitProjectMetadataResolver` infers repair-time metadata from an existing Flutter repo
+- `resolveFlutterToolchain(...)` centralizes fallback order and command-shape resolution for Flutter and Dart subprocesses
 - `SpecParser` parses `feature.spec.yaml`
 - `StateConfig` maps supported state-management choices to dependencies
 
@@ -93,15 +94,16 @@ The app brick also carries generated-project documentation, thin agent adapters,
 
 1. user runs `agentic_base create <project>`
 2. CLI validates name, org, platforms, profile, traits, and toolchain input
-3. `ProjectGenerator` runs `flutter create`
-4. app brick overlays opinionated project files
-5. `.info/agentic.yaml` is written with one persisted machine-readable repo contract plus Harness Contract V1 metadata
-6. selected modules are installed
-7. `build_runner` runs for DI/router/model codegen
-8. duplicate root shell files and forbidden IDE artifacts are removed
-9. `dart run slang` materializes typed localization output from `build.yaml`
-10. generated `./tools/verify.sh` runs named gates and writes evidence bundles
-11. generated repos ship deterministic `tools/` entrypoints and thin adapters that point back to canonical docs
+3. `ProjectGenerator` resolves the actual executable toolchain from preferred manager -> inferred repo manager -> system fallback
+4. `ProjectGenerator` runs `flutter create` through the resolved toolchain
+5. app brick overlays opinionated project files
+6. `.info/agentic.yaml` is written with one persisted machine-readable repo contract plus Harness Contract V1 metadata
+7. selected modules are installed
+8. `build_runner` runs for DI/router/model codegen through the resolved toolchain
+9. duplicate root shell files and forbidden IDE artifacts are removed
+10. `dart run slang` materializes typed localization output from `build.yaml`
+11. generated `./tools/verify.sh` runs named gates and writes evidence bundles
+12. generated repos ship deterministic `tools/` entrypoints and thin adapters that point back to canonical docs
 
 ### Add Module Flow
 

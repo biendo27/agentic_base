@@ -129,10 +129,16 @@ class AgenticConfig {
             MetadataProvenance.defaulted,
         'harness.sdk.manager':
             provenance['harness.sdk.manager'] ?? MetadataProvenance.defaulted,
+        'harness.sdk.preferred_manager':
+            provenance['harness.sdk.preferred_manager'] ??
+            MetadataProvenance.defaulted,
         'harness.sdk.channel':
             provenance['harness.sdk.channel'] ?? MetadataProvenance.defaulted,
         'harness.sdk.version':
             provenance['harness.sdk.version'] ?? MetadataProvenance.defaulted,
+        'harness.sdk.preferred_version':
+            provenance['harness.sdk.preferred_version'] ??
+            MetadataProvenance.defaulted,
         'harness.sdk.policy':
             provenance['harness.sdk.policy'] ?? MetadataProvenance.defaulted,
         'created_at': MetadataProvenance.defaulted,

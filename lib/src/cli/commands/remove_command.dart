@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/cli/commands/gen_command.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/flutter_toolchain_runtime.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:agentic_base/src/deploy/process_runner.dart';
 import 'package:agentic_base/src/modules/module_integration_generator.dart';
@@ -21,13 +23,16 @@ class RemoveCommand extends Command<int> {
     required AgenticLogger logger,
     ProcessRunner? processRunner,
     String Function()? projectPathProvider,
+    FlutterToolchainDetector? toolchainDetector,
   }) : _logger = logger,
        _processRunner = processRunner ?? runProcess,
-       _projectPathProvider = projectPathProvider;
+       _projectPathProvider = projectPathProvider,
+       _toolchainDetector = toolchainDetector ?? detectFlutterToolchain;
 
   final AgenticLogger _logger;
   final ProcessRunner _processRunner;
   final String Function()? _projectPathProvider;
+  final FlutterToolchainDetector _toolchainDetector;
 
   @override
   String get name => 'remove';
@@ -98,6 +103,12 @@ class RemoveCommand extends Command<int> {
       return 1;
     }
 
+    final toolchain = resolveProjectFlutterToolchain(
+      projectPath: projectPath,
+      contract: metadata.harness.sdk,
+      detector: _toolchainDetector,
+    );
+
     final module = ModuleRegistry.findOrThrow(moduleName);
     final journal = ProjectMutationJournal();
     final ctx = ProjectContext(
@@ -133,10 +144,12 @@ class RemoveCommand extends Command<int> {
 
     // Run flutter pub get to reflect removed dependencies.
     final pubProgress = _logger.progress('Running flutter pub get');
-    final pubResult = await _processRunner('flutter', [
-      'pub',
-      'get',
-    ], workingDirectory: projectPath);
+    final pubCommand = toolchain.flutterCommand(['pub', 'get']);
+    final pubResult = await _processRunner(
+      pubCommand.executable,
+      pubCommand.arguments,
+      workingDirectory: projectPath,
+    );
     if (pubResult.exitCode != 0) {
       pubProgress.fail('flutter pub get failed');
       _logger.err(pubResult.stderr.toString());
@@ -148,6 +161,7 @@ class RemoveCommand extends Command<int> {
     final codegenResult = await runProjectCodeGeneration(
       logger: _logger,
       projectRoot: projectPath,
+      toolchain: toolchain,
       processRunner: _processRunner,
     );
     if (codegenResult != 0) {
@@ -160,10 +174,17 @@ class RemoveCommand extends Command<int> {
         toolVersion: AgenticBaseCliRunner.version,
         modules:
             metadata.modules.where((entry) => entry != moduleName).toList(),
+        harness: metadata.harness.copyWith(sdk: toolchain.contract),
         provenance: {
           ...metadata.provenance,
           'tool_version': MetadataProvenance.explicit,
           'modules': MetadataProvenance.explicit,
+          'harness.sdk.manager': MetadataProvenance.inferred,
+          'harness.sdk.channel':
+              toolchain.detected.channel == null
+                  ? MetadataProvenance.defaulted
+                  : MetadataProvenance.inferred,
+          'harness.sdk.version': MetadataProvenance.inferred,
         },
       ),
     );

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:agentic_base/src/cli/commands/add_command.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/deploy/process_runner.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
@@ -110,6 +111,95 @@ void main() {
         contains('return _config.fetchAndActivate();'),
       );
     });
+
+    test(
+      'returns cleanly for already-installed modules without toolchain resolution',
+      () async {
+        final metadata = AgenticConfig(projectPath: tempDir.path).readMetadata(
+          fallbackProjectName: 'demo_app',
+          fallbackToolVersion: 'test',
+        );
+        AgenticConfig(projectPath: tempDir.path).writeMetadata(
+          metadata.copyWith(modules: const ['analytics']),
+        );
+
+        final localRunner = CommandRunner<int>(
+          'agentic_base',
+          'test runner',
+        )..addCommand(
+          AddCommand(
+            logger: AgenticLogger(),
+            projectPathProvider: () => tempDir.path,
+            processRunner: _recordingProcessRunner(processCalls),
+            toolchainDetector: ({
+              required manager,
+              required projectPath,
+            }) {
+              fail(
+                'toolchain resolution should not run for already-installed modules',
+              );
+            },
+          ),
+        );
+
+        final exitCode = await localRunner.run(['add', 'analytics']);
+
+        expect(exitCode, equals(0));
+        expect(processCalls, isEmpty);
+      },
+    );
+
+    test('uses the resolved manager-aware toolchain commands', () async {
+      final config = AgenticConfig(projectPath: tempDir.path);
+      final metadata = config.readMetadata(
+        fallbackProjectName: 'demo_app',
+        fallbackToolVersion: 'test',
+      );
+      config.writeMetadata(
+        metadata.copyWith(
+          harness: metadata.harness.copyWith(
+            sdk: const FlutterSdkContract(
+              manager: FlutterSdkManager.system,
+              channel: 'stable',
+              version: '3.29.0',
+              policy: FlutterVersionPolicy.newestTested,
+              preferredManager: FlutterSdkManager.fvm,
+              preferredVersion: '3.29.0',
+            ),
+          ),
+        ),
+      );
+      processCalls = <String>[];
+      runner = CommandRunner<int>('agentic_base', 'test runner')..addCommand(
+        AddCommand(
+          logger: AgenticLogger(),
+          projectPathProvider: () => tempDir.path,
+          processRunner: _recordingProcessRunner(processCalls),
+          toolchainDetector: _recordingToolchainDetector,
+        ),
+      );
+
+      final exitCode = await runner.run(['add', 'analytics']);
+
+      expect(exitCode, equals(0));
+      expect(
+        processCalls,
+        equals([
+          'fvm flutter pub get @ ${tempDir.path}',
+          'fvm dart run build_runner build --delete-conflicting-outputs @ ${tempDir.path}',
+          'fvm dart format lib test @ ${tempDir.path}',
+        ]),
+      );
+      final restored = AgenticConfig(projectPath: tempDir.path).readMetadata(
+        fallbackProjectName: 'demo_app',
+        fallbackToolVersion: 'test',
+      );
+      expect(restored.harness.sdk.manager, FlutterSdkManager.fvm);
+      expect(
+        restored.harness.sdk.preferredManager,
+        FlutterSdkManager.fvm,
+      );
+    });
   });
 }
 
@@ -139,4 +229,18 @@ ProcessRunner _recordingProcessRunner(List<String> calls) {
     calls.add('$executable ${arguments.join(' ')} @ $workingDirectory');
     return ProcessResult(1, 0, '', '');
   };
+}
+
+DetectedFlutterToolchain _recordingToolchainDetector({
+  required FlutterSdkManager manager,
+  required String projectPath,
+}) {
+  return DetectedFlutterToolchain(
+    manager: manager,
+    version: manager == FlutterSdkManager.fvm ? '3.41.6' : null,
+    channel: 'stable',
+    available: manager == FlutterSdkManager.fvm,
+    command: manager.wireName,
+    problem: manager == FlutterSdkManager.fvm ? null : 'missing',
+  );
 }

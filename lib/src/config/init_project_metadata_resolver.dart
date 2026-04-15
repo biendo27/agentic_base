@@ -4,6 +4,7 @@ import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/flutter_toolchain_runtime.dart';
 import 'package:agentic_base/src/config/harness_metadata.dart';
 import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
@@ -12,6 +13,12 @@ import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 final class InitProjectMetadataResolver {
+  const InitProjectMetadataResolver({
+    FlutterToolchainDetector toolchainDetector = detectFlutterToolchain,
+  }) : _toolchainDetector = toolchainDetector;
+
+  final FlutterToolchainDetector _toolchainDetector;
+
   ProjectMetadata resolve({
     required String projectPath,
     required String pubspecContent,
@@ -148,15 +155,35 @@ final class InitProjectMetadataResolver {
               <String>[],
               MetadataProvenance.defaulted,
             );
-    final resolvedSdkContract = resolveFlutterSdkContract(
+    final preferredManager =
+        existingMetadata?.harness.sdk.preferredManager ??
+        existingMetadata?.harness.sdk.manager ??
+        inferredSdkManager;
+    final preferredVersion =
+        existingMetadata?.harness.sdk.preferredVersion ??
+        existingMetadata?.harness.sdk.version;
+    final resolvedToolchain = resolveFlutterToolchain(
       projectPath: projectPath,
-      manager: existingMetadata?.harness.sdk.manager ?? inferredSdkManager,
-      version: existingMetadata?.harness.sdk.version,
-      channel: existingMetadata?.harness.sdk.channel ?? defaultFlutterChannel,
+      preferredManager: preferredManager,
+      preferredVersion: preferredVersion,
+      preferredChannel:
+          existingMetadata?.harness.sdk.channel ?? defaultFlutterChannel,
       policy:
           existingMetadata?.harness.sdk.policy ??
           FlutterVersionPolicy.newestTested,
+      detector: _toolchainDetector,
     );
+    final resolvedSdkContract = resolvedToolchain.contract;
+    final preferredManagerProvenance =
+        existingMetadata?.provenance['harness.sdk.preferred_manager'] ??
+        existingMetadata?.provenance['harness.sdk.manager'] ??
+        (preferredManager == FlutterSdkManager.system
+            ? MetadataProvenance.defaulted
+            : MetadataProvenance.inferred);
+    final preferredVersionProvenance =
+        existingMetadata?.provenance['harness.sdk.preferred_version'] ??
+        existingMetadata?.provenance['harness.sdk.version'] ??
+        MetadataProvenance.inferred;
     final harness =
         existingMetadata?.harness.copyWith(
           capabilities: modules.value,
@@ -208,18 +235,14 @@ final class InitProjectMetadataResolver {
         'harness.eval.evidence_dir': MetadataProvenance.defaulted,
         'harness.eval.quality_dimensions': MetadataProvenance.defaulted,
         'harness.approvals.pause_on': MetadataProvenance.defaulted,
-        'harness.sdk.manager':
-            existingMetadata != null
-                ? MetadataProvenance.migrated
-                : MetadataProvenance.inferred,
+        'harness.sdk.manager': MetadataProvenance.inferred,
+        'harness.sdk.preferred_manager': preferredManagerProvenance,
         'harness.sdk.channel':
-            existingMetadata != null
-                ? MetadataProvenance.migrated
-                : MetadataProvenance.defaulted,
-        'harness.sdk.version':
-            existingMetadata?.harness.sdk.version != null
-                ? MetadataProvenance.migrated
+            resolvedToolchain.detected.channel == null
+                ? MetadataProvenance.defaulted
                 : MetadataProvenance.inferred,
+        'harness.sdk.version': MetadataProvenance.inferred,
+        'harness.sdk.preferred_version': preferredVersionProvenance,
         'harness.sdk.policy':
             existingMetadata != null
                 ? MetadataProvenance.migrated
