@@ -345,7 +345,10 @@ final class GeneratedProjectContract {
           projectDir,
           'lib/features/home/presentation/controller/home_controller.dart',
         );
-        _requirePath(projectDir, 'test/features/home/home_controller_test.dart');
+        _requirePath(
+          projectDir,
+          'test/features/home/home_controller_test.dart',
+        );
         _forbidPath(
           projectDir,
           'lib/features/home/presentation/cubit/home_cubit.dart',

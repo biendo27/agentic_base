@@ -60,11 +60,12 @@ Future<void> seedRequiredContractFiles(
       bootstrap: '// mobx bootstrap\n',
       injection: 'GetIt\n',
     ),
-    _ => throw ArgumentError.value(
-      stateManagement,
-      'stateManagement',
-      'Unsupported state management',
-    ),
+    _ =>
+      throw ArgumentError.value(
+        stateManagement,
+        'stateManagement',
+        'Unsupported state management',
+      ),
   };
   final seededContent = <String, String>{
     '.info/agentic.yaml': '''
@@ -354,34 +355,37 @@ void main() {
       );
     });
 
-    test('validateStateOutput requires only the active state test surface', () async {
-      final tempDir = await Directory.systemTemp.createTemp(
-        'generated-project-contract-state-cubit-',
-      );
-      addTearDown(() => tempDir.delete(recursive: true));
+    test(
+      'validateStateOutput requires only the active state test surface',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'generated-project-contract-state-cubit-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
 
-      await seedRequiredContractFiles(tempDir.path);
+        await seedRequiredContractFiles(tempDir.path);
 
-      expect(
-        () => GeneratedProjectContract.validate(
-          tempDir.path,
-          stateManagement: 'cubit',
-        ),
-        returnsNormally,
-      );
+        expect(
+          () => GeneratedProjectContract.validate(
+            tempDir.path,
+            stateManagement: 'cubit',
+          ),
+          returnsNormally,
+        );
 
-      await File(
-        p.join(tempDir.path, 'test/features/home/home_cubit_test.dart'),
-      ).delete();
+        await File(
+          p.join(tempDir.path, 'test/features/home/home_cubit_test.dart'),
+        ).delete();
 
-      expect(
-        () => GeneratedProjectContract.validate(
-          tempDir.path,
-          stateManagement: 'cubit',
-        ),
-        throwsA(isA<ProjectGenerationException>()),
-      );
-    });
+        expect(
+          () => GeneratedProjectContract.validate(
+            tempDir.path,
+            stateManagement: 'cubit',
+          ),
+          throwsA(isA<ProjectGenerationException>()),
+        );
+      },
+    );
 
     test(
       'validateFeatureHost requires shared full-feature contracts but skips simple mode',

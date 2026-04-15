@@ -57,7 +57,8 @@ void _expectStarterRuntimeSurfaces(
           'lib/features/home/data/repositories/home_repository_impl.dart',
         ),
       ).readAsStringSync();
-  final generatedPubspec = File(p.join(appDir, 'pubspec.yaml')).readAsStringSync();
+  final generatedPubspec =
+      File(p.join(appDir, 'pubspec.yaml')).readAsStringSync();
   final generatedTheme =
       File(
         p.join(appDir, 'lib/core/theme/app_theme.dart'),
@@ -132,8 +133,9 @@ void _expectStarterRuntimeSurfaces(
 
   if (stateManagement == 'cubit') {
     expect(
-      File(p.join(appDir, 'test/features/home/home_cubit_test.dart'))
-          .existsSync(),
+      File(
+        p.join(appDir, 'test/features/home/home_cubit_test.dart'),
+      ).existsSync(),
       isTrue,
     );
     expect(
@@ -143,8 +145,9 @@ void _expectStarterRuntimeSurfaces(
       isFalse,
     );
     expect(
-      File(p.join(appDir, 'test/features/home/home_store_test.dart'))
-          .existsSync(),
+      File(
+        p.join(appDir, 'test/features/home/home_store_test.dart'),
+      ).existsSync(),
       isFalse,
     );
     return;
@@ -158,24 +161,30 @@ void _expectStarterRuntimeSurfaces(
       isTrue,
     );
     expect(
-      File(p.join(appDir, 'test/features/home/home_cubit_test.dart'))
-          .existsSync(),
+      File(
+        p.join(appDir, 'test/features/home/home_cubit_test.dart'),
+      ).existsSync(),
       isFalse,
     );
     expect(
-      File(p.join(appDir, 'test/features/home/home_store_test.dart'))
-          .existsSync(),
+      File(
+        p.join(appDir, 'test/features/home/home_store_test.dart'),
+      ).existsSync(),
       isFalse,
     );
     return;
   }
 
   expect(
-    File(p.join(appDir, 'test/features/home/home_store_test.dart')).existsSync(),
+    File(
+      p.join(appDir, 'test/features/home/home_store_test.dart'),
+    ).existsSync(),
     isTrue,
   );
   expect(
-    File(p.join(appDir, 'test/features/home/home_cubit_test.dart')).existsSync(),
+    File(
+      p.join(appDir, 'test/features/home/home_cubit_test.dart'),
+    ).existsSync(),
     isFalse,
   );
   expect(
