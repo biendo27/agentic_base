@@ -8,7 +8,10 @@ This document defines the V1 SDK manager and version policy.
 
 Status:
 
-- implemented for `create`, `init`, `add`, `remove`, `gen`, and `upgrade`
+- implemented for `create`, `init`, `add`, `remove`, `gen`, `eval`, `doctor`,
+  and `upgrade`
+- preview-only `--dry-run` paths reuse the declared manager contract without
+  probing local toolchains or executing Flutter/Dart commands
 - `.info/agentic.yaml` now persists resolved `manager` / `version` plus manifest-facing `preferred_manager` / `preferred_version`
 
 ## Policy Summary
