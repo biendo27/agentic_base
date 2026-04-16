@@ -4,8 +4,6 @@
 
 The repo root is the real product root. `docs/` stores evergreen repo docs and `plans/` stores delivery artifacts.
 
-For a repomix-backed machine snapshot, see [`codebase-summary.md`](./codebase-summary.md).
-
 ## Top-Level Layout
 
 | Path | Purpose |
@@ -88,8 +86,11 @@ What is not present yet in this repo CI:
 
 - repo automation remains GitHub-hosted, but generated projects can now scaffold either GitHub or GitLab CI from one persisted provider contract
 - `deploy` resolves the target-project provider from `.info/agentic.yaml` and routes through `gh` or `glab`
+- preview-only `--dry-run` now spans the command surface, and previews no longer probe Flutter managers before printing the planned reads, writes, and commands
+- manager-aware command execution now resolves `flutter`/`dart` invocations through `system`, `fvm`, or `puro`, while `doctor` reports manager fallback as a contract mismatch instead of a healthy state
 - generated app smoke coverage now asserts analytics module DI wiring in the emitted `injection.config.dart`
 - generated app smoke coverage now exercises cubit, riverpod, and mobx starter apps
+- generated starter contracts now use Freezed-backed response/pagination/failure files, and the theme layer splits family selection from theme composition
 - `ProjectMutationJournal` keeps module mutations rollback-safe while `ModuleIntegrationGenerator` rewrites the live bootstrap seam
 - some command/orchestration files exceed the repo's 200 LOC target:
   - `init_command.dart`
