@@ -7,7 +7,7 @@
 - Primary profile: `{{app_profile}}` ({{app_profile_label}})
 - Support tier: `{{support_tier_label}}`
 - Evidence directory: `{{{evidence_dir}}}`
-- Human-readable context: `README.md` plus `docs/01-06`
+- Human-readable context: `README.md` plus `docs/01-07`
 - Thin adapters: `AGENTS.md`, `CLAUDE.md`
 - If adapters drift, follow `README.md` and `docs/`
 
@@ -87,5 +87,13 @@ Meaningful verify and release-preflight runs emit named gate outputs under `{{{e
 
 ## Shared Contracts
 
-- `AppFailure`, `AppResponse`, and pagination models use `freezed` for value semantics and exhaustive handling
+- Shared contracts live in:
+  - `lib/core/contracts/app_result.dart`
+  - `lib/core/contracts/app_response.dart`
+  - `lib/core/contracts/pagination.dart`
+  - `lib/core/contracts/localized_text.dart`
+- keep `lib/core/contracts` runtime-agnostic:
+  - invariants and value-object behavior stay on the contract class
+  - helpers that require explicit caller input are allowed on the class
+  - locale-, DI-, or runtime-aware convenience belongs in extensions or services outside raw contracts
 - `part` files stay scoped to those modeled leaf contracts instead of widening codegen across the app shell

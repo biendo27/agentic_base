@@ -8,6 +8,7 @@ const canonicalContextDocs = <String>[
   'docs/04-network-layer.md',
   'docs/05-theming-guide.md',
   'docs/06-testing-guide.md',
+  'docs/07-agentic-development-flow.md',
 ];
 
 const thinAdapterFiles = <String>['AGENTS.md', 'CLAUDE.md'];
@@ -15,6 +16,7 @@ const thinAdapterFiles = <String>['AGENTS.md', 'CLAUDE.md'];
 const deterministicExecutionScripts = <String, String>{
   'setup': './tools/setup.sh',
   'run': './tools/run-dev.sh',
+  'test': './tools/test.sh',
   'verify': './tools/verify.sh',
   'build': './tools/build.sh',
   'release_preflight': './tools/release-preflight.sh',

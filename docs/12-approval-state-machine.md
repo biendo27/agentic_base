@@ -6,11 +6,6 @@ Harness Contract V1 makes human approval boundaries explicit.
 
 The point is not to slow agents down. The point is to make the stopping conditions finite, inspectable, and non-negotiable.
 
-Status:
-
-- design target for future implementation waves
-- the state model below defines the approval contract to implement; current generated repos still use the simpler checkpoint language already present in `.info/agentic.yaml` and generated release scripts
-
 ## State Diagram
 
 ```mermaid
@@ -82,12 +77,12 @@ Agents must not:
 
 ## Output Contract
 
-The approval state should be visible in:
+The approval state is visible in:
 
 - evidence `summary.json`
 - release-preflight output
 - generated docs that explain release boundaries
-- future manifest approval metadata when implementation lands
+- manifest pause vocabulary through `harness.approvals.pause_on`
 
 ## References
 

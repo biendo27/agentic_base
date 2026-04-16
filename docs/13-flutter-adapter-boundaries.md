@@ -2,26 +2,21 @@
 
 ## Scope
 
-Harness Contract V1 stays Flutter-first, but it should not confuse Flutter-specific concerns with reusable harness concerns.
+Harness Contract V1 stays Flutter-first, but it must not confuse Flutter-specific concerns with reusable harness concerns.
 
 This document defines that split.
-
-Status:
-
-- design target for future implementation waves
-- current code already suggests this split, but the generator does not yet enforce the full boundary contract documented here
 
 ## Three Layers
 
 | Layer | Owns | Must Not Own |
 | --- | --- | --- |
 | Harness core | manifest contract, context contract, ownership model, support tiers, eval/evidence model, approval states | Flutter CLI semantics, Fastlane details, flavor tool specifics |
-| Flutter adapter | `flutter create`, SDK/tool detection, build and run commands, flavors, codegen, native readiness, Fastlane wrappers | product-profile policy, generic quality semantics, non-Flutter future abstractions |
+| Flutter adapter | `flutter create`, SDK/tool detection, build and run commands, flavors, codegen, native readiness, Fastlane wrappers | product-profile policy, generic quality semantics, non-Flutter abstractions |
 | Capability packs | auth, analytics, notifications, payments, and other opt-in integrations | global ownership rules, core approval boundaries, generic SDK policy |
 
 ## Harness Core Responsibilities
 
-Harness core should remain stable even if the runtime stack changes later:
+Harness core remains stable even if the runtime stack changes later:
 
 - `.info/agentic.yaml` contract semantics
 - canonical docs and thin adapter expectations
@@ -52,14 +47,14 @@ Capability packs own:
 - provider-specific manual platform steps
 - extra advisory or required gate hooks when the support tier allows them
 
-Capability packs should not create hidden alternative control planes.
+Capability packs must not create hidden alternative control planes.
 
 ## Boundary Rules
 
 1. Harness core may name a gate such as `native_readiness`, but only the Flutter adapter defines what that means for Flutter targets.
 2. Flutter adapter may expose commands like `./tools/build.sh`, but the command names remain part of the harness contract.
 3. Capability packs may require provider declarations, but provider names must stay inspectable in the manifest.
-4. Cross-stack extraction is future work. No current doc should imply a generic adapter kernel already exists.
+4. Cross-stack extraction remains future work. No current doc should imply a generic adapter kernel already exists.
 
 ## Leakage To Avoid
 

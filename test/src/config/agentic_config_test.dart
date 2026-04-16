@@ -115,6 +115,10 @@ void main() {
         (data['execution'] as Map<String, dynamic>)['verify'],
         equals('./tools/verify.sh'),
       );
+      expect(
+        (data['execution'] as Map<String, dynamic>)['test'],
+        equals('./tools/test.sh'),
+      );
     });
 
     test('writeMetadata round-trips typed metadata and provenance', () {

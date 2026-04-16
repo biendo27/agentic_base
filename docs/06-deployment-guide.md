@@ -130,6 +130,17 @@ Generated-project GitLab support does not mean this package repo itself runs on 
 
 GitLab production protection is still configured in GitLab project settings via protected environments. The scaffold keeps production deploy jobs manual, but GitLab UI policy must still be applied by the downstream repo owner.
 
+## Downstream Team Workflow
+
+Generated repos document classic Gitflow as a recommended default team workflow:
+
+- `feature/*` -> `develop`
+- `release/*` -> `main`
+- `hotfix/*` -> `main`
+- back-merge `release/*` and `hotfix/*` into `develop` after production promotion
+
+That guidance lives in generated `README.md`, `docs/07-agentic-development-flow.md`, `AGENTS.md`, and `CLAUDE.md`. It is not persisted in `.info/agentic.yaml`, and this wave does not add generated branch-guard automation for downstream repos.
+
 ## Repo GitHub Settings
 
 The repo-level GitHub settings target this merge policy:
