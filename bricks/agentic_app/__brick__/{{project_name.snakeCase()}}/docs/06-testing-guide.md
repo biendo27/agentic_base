@@ -31,6 +31,7 @@ Do not bypass these wrappers unless you are debugging the wrapper itself.
 test/
 ├── app_smoke_test.dart
 ├── core/contracts/
+│   ├── app_list_response_test.dart
 │   ├── app_response_test.dart
 │   ├── localized_text_test.dart
 │   └── pagination_test.dart
@@ -69,6 +70,7 @@ test('returns the starter dashboard checklist items', () async {
 
 The generated contract tests keep the shared model layer honest:
 
+- `app_list_response_test.dart` covers dedicated list-envelope parsing and serialization
 - `app_response_test.dart` covers response-envelope serialization and success semantics
 - `pagination_test.dart` covers request serialization, reserved-key protection, and pagination helpers
 - `localized_text_test.dart` covers runtime-agnostic locale lookup and fallback behavior

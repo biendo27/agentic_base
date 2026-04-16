@@ -32,6 +32,9 @@ presentation -> domain <- data
 - `StarterDetailPage` proves the ownership/localization/flavor checkpoints
 - `StarterSettingsPage` is the default route for theme-mode and locale preview
 - `StarterMonetizationPage` stays provider-neutral through `StarterMonetizationRepository`
+- `HomeRepositoryImpl` stays in-memory on day 0; the Dio seam is scaffolded
+  separately and only becomes active when a project switches to real remote
+  data
 
 ## Ownership Boundary
 
@@ -90,6 +93,7 @@ Meaningful verify and release-preflight runs emit named gate outputs under `{{{e
 - Shared contracts live in:
   - `lib/core/contracts/app_result.dart`
   - `lib/core/contracts/app_response.dart`
+  - `lib/core/contracts/app_list_response.dart`
   - `lib/core/contracts/pagination.dart`
   - `lib/core/contracts/localized_text.dart`
 - keep `lib/core/contracts` runtime-agnostic:
