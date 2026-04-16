@@ -178,6 +178,18 @@ dart analyze --fatal-infos
 dart test
 ```
 
+## Gitflow
+
+This repo now follows classic Gitflow:
+
+- `main`: production-ready history and release tags
+- `develop`: integration branch for ongoing work
+- `feature/*`: branch from `develop`, merge back into `develop`
+- `release/*`: branch from `develop`, merge into `main`, then back into `develop`
+- `hotfix/*`: branch from `main`, merge into `main`, then back into `develop`
+
+Repo automation now validates Gitflow PR routing and runs CI on pull requests into `main` and `develop`, plus pushes to `main`, `develop`, `release/*`, and `hotfix/*`.
+
 ## Notes
 
 - Root `docs/` is repo-level documentation for this package.

@@ -1,0 +1,50 @@
+name: Gitflow Guard
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  validate-pr-route:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Gitflow PR route
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          echo "Validating ${HEAD_REF} -> ${BASE_REF}"
+
+          case "${BASE_REF}" in
+            develop)
+              case "${HEAD_REF}" in
+                feature/*|release/*|hotfix/*)
+                  exit 0
+                  ;;
+                *)
+                  echo "::error title=Invalid Gitflow route::PRs into develop must come from feature/*, release/*, or hotfix/*."
+                  exit 1
+                  ;;
+              esac
+              ;;
+            main)
+              case "${HEAD_REF}" in
+                release/*|hotfix/*)
+                  exit 0
+                  ;;
+                *)
+                  echo "::error title=Invalid Gitflow route::PRs into main must come from release/* or hotfix/*."
+                  exit 1
+                  ;;
+              esac
+              ;;
+            *)
+              echo "::error title=Unsupported base branch::Only main and develop are valid protected targets."
+              exit 1
+              ;;
+          esac

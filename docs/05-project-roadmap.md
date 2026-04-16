@@ -35,6 +35,7 @@ Status:
 - Generated starter apps now ship a stronger Material 3 foundation with the exact default Figma palette, exact base typography and measurement tokens, `ThemeData.from(...)`, and internal adaptive helpers instead of ScreenUtil leftovers
 - The starter app now proves one day-0 journey: runtime diagnostics, detail navigation, settings, and a provider-neutral monetization screen
 - Verification no longer relies mainly on downstream boot smoke: generated apps now ship repository tests, state-runtime tests, a starter widget test, and the package smoke matrix retains only the heavy lanes that still prove unique behavior
+- Repo release hygiene now includes classic Gitflow branch roles, PR route validation, and CI coverage for `develop`, `release/*`, and `hotfix/*`
 - Docs and release claims aligned with shipped behavior
 - Remaining work is stabilization, release hygiene, and future generator polish
 
@@ -74,6 +75,7 @@ Key docs:
 - command docs, generated docs, adapters, and roadmap agree
 - generated verify/release-preflight evidence remains downloadable in downstream CI
 - `dart pub publish --dry-run` passes before publication
+- Gitflow PR routing and CI gates stay aligned with the documented branch model
 
 ## Open Questions
 

@@ -93,6 +93,15 @@ Each command should:
   - `dart test`
 - state-specific starter apps should be validated with `GeneratedProjectContract.validate(..., stateManagement: ...)`
 
+## Git Workflow Standards
+
+- use classic Gitflow branch roles: `main`, `develop`, `feature/*`, `release/*`, `hotfix/*`
+- route feature work into `develop`, not `main`
+- route production promotion through `release/*` or `hotfix/*`, not direct `develop -> main`
+- request review only after CI is green
+- keep `main` history release-oriented; use annotated tags for package releases
+- prefer squash merges so each merged branch lands as one auditable changeset
+
 ## Documentation Standards
 
 - root `docs/` is the repo-level source of truth
