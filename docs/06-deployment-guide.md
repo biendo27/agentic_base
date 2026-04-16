@@ -12,16 +12,35 @@ This document covers two separate surfaces:
 Current checked-in automation stays GitHub-hosted and lives in:
 
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
+- [`.github/workflows/gitflow-guard.yml`](../.github/workflows/gitflow-guard.yml)
 
-It runs on pushes and pull requests to `main` and does:
+The repo now follows classic Gitflow with `main` as the release branch and `develop` as the integration branch.
+
+Checked-in automation now runs on:
+
+- pull requests into `main`
+- pull requests into `develop`
+- pushes to `main`
+- pushes to `develop`
+- pushes to `release/*`
+- pushes to `hotfix/*`
+
+The CI workflow does:
 
 - `dart pub get`
 - `dart analyze --fatal-infos`
 - `dart format --set-exit-if-changed lib bin test`
 - `dart test`
-- generated-app smoke coverage for `--ci-provider github`
-- generated-app smoke coverage for `--ci-provider gitlab`
+- generated-app smoke coverage
 - a pinned macOS generated-app native gate that fresh-generates an app and runs `./tools/ci-check.sh`
+
+The Gitflow guard workflow fails PRs that do not follow these routes:
+
+- `feature/*` -> `develop`
+- `release/*` -> `main`
+- `hotfix/*` -> `main`
+
+Back-merges from `release/*` and `hotfix/*` into `develop` remain required after production merges. This is policy plus PR-route validation, not true branch protection, because GitHub branch protection is unavailable on the current private-repo plan.
 
 There is no checked-in pub.dev publish workflow in this repo today. Release automation focus remains on generated downstream repos.
 
@@ -52,7 +71,7 @@ Recommended manual publish sequence:
 1. update `version:` in `pubspec.yaml`
 2. run the local validation commands above
 3. run `dart pub publish`
-4. tag the release in git
+4. create an annotated release tag in the form `vX.Y.Z`
 
 This sequence is partly inference. The repo does not currently codify pub.dev publishing in scripts or workflows.
 
@@ -111,6 +130,24 @@ Generated-project GitLab support does not mean this package repo itself runs on 
 
 GitLab production protection is still configured in GitLab project settings via protected environments. The scaffold keeps production deploy jobs manual, but GitLab UI policy must still be applied by the downstream repo owner.
 
+## Repo GitHub Settings
+
+The repo-level GitHub settings target this merge policy:
+
+- squash merge enabled
+- merge commit disabled
+- rebase merge disabled
+- auto-delete merged branches enabled
+- auto-merge enabled for PRs after checks pass
+
+Server-side branch protection for `main` and `develop` is still blocked by the current GitHub private-repo plan. Once branch protection is available, require:
+
+- CI checks from `CI` and `Gitflow Guard`
+- pull request before merge
+- approval after checks pass
+- no direct pushes to `main`
+- no direct pushes to `develop`
+
 ## Harness Contract V1 Status
 
 The generated deployment and release surfaces now implement the Harness Contract V1 deployment-facing guarantees:
@@ -132,4 +169,5 @@ The contract details are documented in:
 
 - [`lib/src/cli/commands/deploy_command.dart`](../lib/src/cli/commands/deploy_command.dart)
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
+- [`.github/workflows/gitflow-guard.yml`](../.github/workflows/gitflow-guard.yml)
 - [`pubspec.yaml`](../pubspec.yaml)

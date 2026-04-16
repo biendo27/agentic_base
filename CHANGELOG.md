@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- classic Gitflow repo policy with documented `main`, `develop`, `feature/*`, `release/*`, and `hotfix/*` roles
+- PR route enforcement via `.github/workflows/gitflow-guard.yml`
+- `CODEOWNERS` and a pull request template to standardize review requests after CI passes
+
+### Changed
+
+- repo CI now runs for pull requests into `main` and `develop`, plus pushes to `main`, `develop`, `release/*`, and `hotfix/*`
+- deployment docs now record the repo merge strategy targets and the current GitHub branch-protection limitation for private repos on this plan
+
 ## [0.1.0] - 2026-04-09
 
 ### Added
