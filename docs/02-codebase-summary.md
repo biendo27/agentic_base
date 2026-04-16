@@ -9,7 +9,7 @@ The repo root is the real product root. `docs/` stores evergreen repo docs and `
 | Path | Purpose |
 | --- | --- |
 | [`README.md`](../README.md) | Package landing page and usage guide. |
-| [`docs/`](./) | Repo-level docs, architecture, roadmap, journals. |
+| [`docs/`](./) | Repo-level product, architecture, contract, and delivery docs. |
 | [`plans/`](../plans/) | Timestamped implementation plans and reports. |
 | [`.github/workflows/`](../.github/workflows/ci.yml) | Package CI automation. |
 
@@ -90,7 +90,7 @@ What is not present yet in this repo CI:
 - manager-aware command execution now resolves `flutter`/`dart` invocations through `system`, `fvm`, or `puro`, while `doctor` reports manager fallback as a contract mismatch instead of a healthy state
 - generated app smoke coverage now asserts analytics module DI wiring in the emitted `injection.config.dart`
 - generated app smoke coverage now exercises cubit, riverpod, and mobx starter apps
-- generated starter contracts now use Freezed-backed response/pagination/failure files, and the theme layer splits family selection from theme composition
+- generated starter contracts now use file-per-contract shared models for `AppResult`, response envelopes, pagination, and runtime-agnostic localized text, while the theme layer splits family selection from theme composition
 - `ProjectMutationJournal` keeps module mutations rollback-safe while `ModuleIntegrationGenerator` rewrites the live bootstrap seam
 - some command/orchestration files exceed the repo's 200 LOC target:
   - `init_command.dart`

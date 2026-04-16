@@ -71,6 +71,10 @@ Each command should:
 - typed Slang output belongs in `lib/app/i18n/**`
 - generated app and feature data/domain boundaries should use `fpdart` `Either`
   wrappers from the shared contract files, not tuple returns
+- keep `lib/core/contracts` runtime-agnostic:
+  - invariants and value behavior live on the contract class
+  - explicit-input helpers are allowed when they stay context-free
+  - locale-, DI-, or app-runtime-aware convenience belongs in extensions or services outside raw contracts
 - generated app theme assembly must use `ThemeData.from(...)` on top of an
   explicit Material 3 `ColorScheme` sourced from the owned design-kit tokens
 - generated app adaptive layout should use `BuildContextX` breakpoint helpers,

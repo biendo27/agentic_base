@@ -6,11 +6,6 @@ Harness Contract V1 requires a repo to prove trustworthiness through named gates
 
 `analyze + test` stays necessary. It stops being sufficient as the only story.
 
-Status:
-
-- design target for future implementation waves
-- until generator code lands, the gate ladder and evidence bundle below define the contract to earn, not a currently shipped generated-repo guarantee
-
 ## Eval Ladder
 
 | Level | Name | Purpose |
@@ -56,7 +51,7 @@ Advisory only:
 
 ## Evidence Bundle Contract
 
-Meaningful verify and release-preflight runs should emit a bundle under the contract once the implementation waves land:
+Meaningful verify and release-preflight runs emit a bundle under the contract:
 
 ```text
 artifacts/evidence/<run-kind>/<timestamp>-<run-id>/
@@ -81,7 +76,7 @@ artifacts/
 
 ### `summary.json`
 
-Must include:
+Includes:
 
 - run id
 - timestamp
@@ -119,7 +114,7 @@ V1 uses multiple internal dimensions instead of one public scalar:
 - `observability`
 - `ux_confidence`
 
-Each dimension should use discrete states:
+Each dimension uses discrete states:
 
 - `pass`
 - `risk`
@@ -143,7 +138,7 @@ CI may attach more artifacts, but it should not invent a second gate vocabulary.
 - evidence bundles must not capture secrets by default
 - screenshots, logs, and command outputs must be redactable
 - skipped gates must be explicit in the summary
-- a passed release-preflight still does not mean final production publish is approved
+- a passed release-preflight does not mean final production publish is approved
 
 ## References
 

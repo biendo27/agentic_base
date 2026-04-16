@@ -61,7 +61,7 @@ Manual setup is slow, inconsistent, and hard for coding agents to navigate.
 
 ## Non-Functional Requirements
 
-- generated projects should pass `dart analyze` and `flutter test` after bootstrap
+- generated projects should pass `dart analyze` and the generated manager-aware test/verify surfaces after bootstrap
 - commands should fail early on invalid args or missing project state
 - `init` should be non-destructive for existing projects, additive for generator-owned surfaces, and should fail rather than fabricate provenance or thin-adapter ownership
 - `create` should clean up partial output on failure

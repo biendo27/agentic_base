@@ -4,36 +4,32 @@
 
 Harness Contract V1 keeps `.info/agentic.yaml` as the single machine-readable source of truth.
 
-This document defines the additive schema shape needed for support tiers, evidence, approval, and SDK policy.
-
-Status:
-
-- design target for future generator changes
-- existing repos should not claim Harness Contract V1 until the generator writes the `harness` section and validators prove the required fields
+This document defines the additive schema shape used for support tiers, evidence, approvals, and SDK policy.
 
 ## Design Rules
 
 - keep one file: `.info/agentic.yaml`
 - keep current top-level metadata fields
-- add harness-specific fields under one stable `harness` section
-- never store secrets, tokens, or credentials in the manifest
-- keep config short; put explanations in docs
+- keep harness-specific fields under one stable `harness` section
+- never store secrets, tokens, credentials, or branch-policy rules in the manifest
+- keep config short; put narrative explanations in docs
 
 ## Current Baseline
 
-Today the manifest already stores:
+The manifest stores:
 
 - repo metadata such as project name, org, CI provider, platforms, flavors, state management, and modules
 - context pointers
 - execution surface names
 - approval checkpoints
 - ownership boundaries
+- harness profile, provider, evidence, approval, and SDK metadata
 
-That baseline should remain compatible.
+That baseline is the live V1 contract for generated and repaired repos.
 
-## Proposed V1 Shape
+## V1 Shape
 
-The example below is a downstream generated-repo manifest. Its `context.canonical_docs` values therefore use the generated app doc surface (`docs/01-06` inside the generated repo), not this package repo's own numbered docs.
+The example below is a downstream generated-repo manifest. Its `context.canonical_docs` values therefore use the generated app doc surface (`docs/01-07` inside the generated repo), not this package repo's numbered docs.
 
 ```yaml
 schema_version: 3
@@ -54,6 +50,12 @@ context:
   canonical_docs:
     - README.md
     - docs/01-architecture.md
+    - docs/02-coding-standards.md
+    - docs/03-state-management.md
+    - docs/04-network-layer.md
+    - docs/05-theming-guide.md
+    - docs/06-testing-guide.md
+    - docs/07-agentic-development-flow.md
   thin_adapters: [AGENTS.md, CLAUDE.md]
   state_runtime: cubit
   ci_provider: github
@@ -61,6 +63,7 @@ context:
 execution:
   setup: ./tools/setup.sh
   run: ./tools/run-dev.sh
+  test: ./tools/test.sh
   verify: ./tools/verify.sh
   build: ./tools/build.sh
   release_preflight: ./tools/release-preflight.sh
@@ -124,6 +127,7 @@ Derivation rules:
 - `primary_profile` is authoritative
 - support tier is derived from the support matrix for the declared `primary_profile`
 - the default eval pack is derived from the same profile plus enabled capabilities
+- Gitflow guidance stays in human-readable docs and thin adapters, not in `.info/agentic.yaml`
 - if future summary fields such as `support_tier` or `default_gate_pack` are emitted, validators must treat them as derived read models and reject drift
 
 ## Tier 2 Example
@@ -141,20 +145,20 @@ The important rule is that Tier 2 still records the profile honestly, but only t
 
 ## Migration Rules
 
-Migration from the current manifest should be additive:
+Migration from pre-V1 manifests stays additive:
 
 1. keep current top-level metadata fields unchanged
 2. keep current `context`, `execution`, `checkpoints`, and `ownership` sections
-3. add `harness` only when the generator and validators know how to read and write it
-4. existing repos without a validated `harness` section remain on the legacy scaffold contract and should not claim Harness Contract V1
-5. `contract_version: 1` should only be written once required V1 fields are present and validated
-6. inferred `primary_profile` is allowed only when the generator has enough evidence and records it as inferred provenance
-7. no provider claim should be written unless a capability/provider mapping is generator-owned
+3. let generator-owned `create`, `init`, and `upgrade` flows write or repair `harness`
+4. treat repos without a validated `harness` section as legacy until repair succeeds
+5. write `contract_version: 1` only when required V1 fields are present and validated
+6. allow inferred `primary_profile` only when provenance records the inference honestly
+7. do not write provider claims unless the capability/provider mapping is generator-owned
 8. treat missing new fields as absent or defaulted, not silently verified
 
 ## Validation Rules
 
-V1 validators should reject:
+V1 validators reject:
 
 - more than one `primary_profile`
 - unsupported profile names
