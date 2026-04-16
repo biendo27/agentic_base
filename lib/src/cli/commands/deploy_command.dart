@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/cli/dry_run.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/deploy/deploy_coordinator.dart';
@@ -28,7 +29,9 @@ class DeployCommand extends Command<int> {
        _deployAction = deployAction,
        _projectPathProvider = projectPathProvider,
        _processRunner = processRunner,
-       _delay = delay;
+       _delay = delay {
+    addDryRunFlag(argParser);
+  }
 
   final AgenticLogger _logger;
   final DeployAction? _deployAction;
@@ -50,6 +53,7 @@ class DeployCommand extends Command<int> {
   Future<int> run() async {
     final args = argResults!;
     final rest = args.rest;
+    final dryRun = isDryRunEnabled(args);
 
     if (rest.isEmpty) {
       throw UsageException(
@@ -89,6 +93,25 @@ class DeployCommand extends Command<int> {
         'Missing or invalid ci_provider in .info/agentic.yaml. '
         'Falling back to ${ciProvider.name}.',
       );
+    }
+
+    if (dryRun) {
+      final reporter =
+          DryRunReporter(
+              logger: _logger,
+              commandName: 'deploy',
+            )
+            ..read('$projectPath/.info/agentic.yaml')
+            ..note('would validate git cleanliness and branch tracking')
+            ..note(
+              'would validate ${ciProvider == CiProvider.gitlab ? 'glab' : 'gh'} authentication',
+            );
+      if (ciProvider == CiProvider.gitlab) {
+        reporter.remote('glab ci run + manual deploy jobs for `$env`');
+      } else {
+        reporter.remote('gh workflow run for `$env`');
+      }
+      return reporter.complete();
     }
 
     _logger.header('Deploy → $env');

@@ -161,6 +161,22 @@ void main() {
         FlutterSdkManager.fvm,
       );
     });
+
+    test(
+      'supports dry-run previews without mutating installed modules',
+      () async {
+        final original = AgenticConfig(projectPath: tempDir.path).read();
+
+        final exitCode = await runner.run(['remove', 'analytics', '--dry-run']);
+
+        expect(exitCode, equals(0));
+        expect(processCalls, isEmpty);
+        expect(
+          AgenticConfig(projectPath: tempDir.path).read(),
+          equals(original),
+        );
+      },
+    );
   });
 }
 

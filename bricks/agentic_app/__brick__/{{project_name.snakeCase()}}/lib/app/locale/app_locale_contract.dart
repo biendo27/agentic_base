@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:{{project_name.snakeCase()}}/app/i18n/translations.g.dart';
 
+// Keep this wrapper outside Slang output so runtime code depends on a
+// stable locale surface instead of generated file layout.
 final class AppSupportedLocale {
   const AppSupportedLocale({
     required this.appLocale,
@@ -19,9 +21,8 @@ final class AppLocaleContract {
 
   static const AppLocale fallbackLocale = AppLocale.en;
 
-  static List<AppSupportedLocale> get supported => AppLocale.values
-      .map(_toSupportedLocale)
-      .toList(growable: false);
+  static List<AppSupportedLocale> get supported =>
+      AppLocale.values.map(_toSupportedLocale).toList(growable: false);
 
   static List<Locale> get supportedFlutterLocales =>
       AppLocaleUtils.supportedLocales;
@@ -46,7 +47,8 @@ final class AppLocaleContract {
     );
   }
 
-  static Future<AppLocale> useDeviceLocale() => LocaleSettings.useDeviceLocale();
+  static Future<AppLocale> useDeviceLocale() =>
+      LocaleSettings.useDeviceLocale();
 
   static Future<void> setLocale(AppLocale locale) =>
       LocaleSettings.setLocale(locale);

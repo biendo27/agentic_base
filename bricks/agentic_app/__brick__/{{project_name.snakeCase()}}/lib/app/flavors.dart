@@ -1,5 +1,15 @@
 enum Flavor { dev, staging, prod }
 
+final class FlavorDefaults {
+  const FlavorDefaults({
+    required this.apiBaseUrl,
+    required this.appName,
+  });
+
+  final String apiBaseUrl;
+  final String appName;
+}
+
 class FlavorConfig {
   const FlavorConfig._({
     required this.flavor,
@@ -14,48 +24,33 @@ class FlavorConfig {
   static late FlavorConfig _instance;
   static FlavorConfig get instance => _instance;
 
-  static void init(Flavor flavor) {
-    const devUrl = String.fromEnvironment(
-      'API_BASE_URL',
-      defaultValue: 'https://dev.api.example.com',
-    );
-    const stagingUrl = String.fromEnvironment(
-      'API_BASE_URL',
-      defaultValue: 'https://staging.api.example.com',
-    );
-    const prodUrl = String.fromEnvironment(
-      'API_BASE_URL',
-      defaultValue: 'https://api.example.com',
-    );
-    const devName = String.fromEnvironment(
-      'APP_NAME',
-      defaultValue: '{{project_name.titleCase()}} Dev',
-    );
-    const stagingName = String.fromEnvironment(
-      'APP_NAME',
-      defaultValue: '{{project_name.titleCase()}} Staging',
-    );
-    const prodName = String.fromEnvironment(
-      'APP_NAME',
-      defaultValue: '{{project_name.titleCase()}}',
-    );
+  static const _apiBaseUrlKey = 'API_BASE_URL';
+  static const _appNameKey = 'APP_NAME';
+  static const _defaults = {
+    Flavor.dev: FlavorDefaults(
+      apiBaseUrl: 'https://dev.api.example.com',
+      appName: '{{project_name.titleCase()}} Dev',
+    ),
+    Flavor.staging: FlavorDefaults(
+      apiBaseUrl: 'https://staging.api.example.com',
+      appName: '{{project_name.titleCase()}} Staging',
+    ),
+    Flavor.prod: FlavorDefaults(
+      apiBaseUrl: 'https://api.example.com',
+      appName: '{{project_name.titleCase()}}',
+    ),
+  };
 
-    _instance = switch (flavor) {
-      Flavor.dev => const FlavorConfig._(
-        flavor: Flavor.dev,
-        apiBaseUrl: devUrl,
-        appName: devName,
-      ),
-      Flavor.staging => const FlavorConfig._(
-        flavor: Flavor.staging,
-        apiBaseUrl: stagingUrl,
-        appName: stagingName,
-      ),
-      Flavor.prod => const FlavorConfig._(
-        flavor: Flavor.prod,
-        apiBaseUrl: prodUrl,
-        appName: prodName,
-      ),
-    };
+  static void init(Flavor flavor) {
+    final defaults = _defaults[flavor]!;
+    _instance = FlavorConfig._(
+      flavor: flavor,
+      apiBaseUrl: _readStringEnv(_apiBaseUrlKey, defaults.apiBaseUrl),
+      appName: _readStringEnv(_appNameKey, defaults.appName),
+    );
+  }
+
+  static String _readStringEnv(String key, String fallback) {
+    return String.fromEnvironment(key, defaultValue: fallback);
   }
 }

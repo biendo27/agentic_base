@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:agentic_base/src/cli/cli_runner.dart';
+import 'package:agentic_base/src/cli/dry_run.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/generators/feature_generator.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
@@ -23,6 +24,7 @@ class FeatureCommand extends Command<int> {
       negatable: false,
       help: 'Generate a flat structure without domain layer.',
     );
+    addDryRunFlag(argParser);
   }
 
   final AgenticLogger _logger;
@@ -44,6 +46,7 @@ class FeatureCommand extends Command<int> {
   Future<int> run() async {
     final args = argResults!;
     final rest = args.rest;
+    final dryRun = isDryRunEnabled(args);
 
     if (rest.isEmpty) {
       throw UsageException('No feature name provided.', usage);
@@ -91,10 +94,21 @@ class FeatureCommand extends Command<int> {
       }
     }
 
-    _logger.header('Scaffolding feature: $featureName');
-
     try {
-      await FeatureGenerator(logger: _logger).generate(
+      final generator = FeatureGenerator(logger: _logger);
+      if (dryRun) {
+        await generator.previewGenerate(
+          featureName: featureName,
+          projectPath: projectPath,
+          projectName: projectName,
+          stateManagement: stateManagement,
+          simple: simple,
+        );
+        return 0;
+      }
+
+      _logger.header('Scaffolding feature: $featureName');
+      await generator.generate(
         featureName: featureName,
         projectPath: projectPath,
         projectName: projectName,

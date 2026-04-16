@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/cli/dry_run.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
+import 'package:agentic_base/src/config/flutter_toolchain_runtime.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
 
@@ -31,7 +33,9 @@ class BrickCommand extends Command<int> {
 // ---------------------------------------------------------------------------
 
 class _BrickAddSubcommand extends Command<int> {
-  _BrickAddSubcommand({required AgenticLogger logger}) : _logger = logger;
+  _BrickAddSubcommand({required AgenticLogger logger}) : _logger = logger {
+    addDryRunFlag(argParser);
+  }
 
   final AgenticLogger _logger;
 
@@ -46,6 +50,7 @@ class _BrickAddSubcommand extends Command<int> {
 
   @override
   Future<int> run() async {
+    final dryRun = isDryRunEnabled(argResults!);
     final rest = argResults!.rest;
     if (rest.isEmpty) {
       throw UsageException('No brick name provided.', usage);
@@ -70,10 +75,28 @@ class _BrickAddSubcommand extends Command<int> {
       return 1;
     }
 
+    _logger.header('Adding brick: $brickName');
+    if (dryRun) {
+      final reporter =
+          DryRunReporter(
+              logger: _logger,
+              commandName: 'brick add',
+            )
+            ..read('${Directory.current.path}/.info/agentic.yaml')
+            ..command(
+              ToolCommandSpec(
+                executable: 'mason',
+                arguments: ['add', brickName, '--global'],
+              ),
+              workingDirectory: Directory.current.path,
+              label: 'fetch brick from BrickHub',
+            )
+            ..write('${Directory.current.path}/.info/agentic.yaml');
+      return reporter.complete();
+    }
+
     // Check mason is available.
     if (!await _masonAvailable()) return 1;
-
-    _logger.header('Adding brick: $brickName');
 
     final progress = _logger.progress('Fetching $brickName from BrickHub');
     final result = await Process.run(
@@ -104,7 +127,9 @@ class _BrickAddSubcommand extends Command<int> {
 // ---------------------------------------------------------------------------
 
 class _BrickRemoveSubcommand extends Command<int> {
-  _BrickRemoveSubcommand({required AgenticLogger logger}) : _logger = logger;
+  _BrickRemoveSubcommand({required AgenticLogger logger}) : _logger = logger {
+    addDryRunFlag(argParser);
+  }
 
   final AgenticLogger _logger;
 
@@ -119,6 +144,7 @@ class _BrickRemoveSubcommand extends Command<int> {
 
   @override
   Future<int> run() async {
+    final dryRun = isDryRunEnabled(argResults!);
     final rest = argResults!.rest;
     if (rest.isEmpty) {
       throw UsageException('No brick name provided.', usage);
@@ -135,9 +161,26 @@ class _BrickRemoveSubcommand extends Command<int> {
       return 1;
     }
 
-    if (!await _masonAvailable()) return 1;
-
     _logger.header('Removing brick: $brickName');
+    if (dryRun) {
+      final reporter =
+          DryRunReporter(
+              logger: _logger,
+              commandName: 'brick remove',
+            )
+            ..read('${Directory.current.path}/.info/agentic.yaml')
+            ..command(
+              ToolCommandSpec(
+                executable: 'mason',
+                arguments: ['remove', brickName, '--global'],
+              ),
+              workingDirectory: Directory.current.path,
+            )
+            ..write('${Directory.current.path}/.info/agentic.yaml');
+      return reporter.complete();
+    }
+
+    if (!await _masonAvailable()) return 1;
 
     final progress = _logger.progress('Removing $brickName');
     final result = await Process.run(
@@ -166,7 +209,9 @@ class _BrickRemoveSubcommand extends Command<int> {
 // ---------------------------------------------------------------------------
 
 class _BrickListSubcommand extends Command<int> {
-  _BrickListSubcommand({required AgenticLogger logger}) : _logger = logger;
+  _BrickListSubcommand({required AgenticLogger logger}) : _logger = logger {
+    addDryRunFlag(argParser);
+  }
 
   final AgenticLogger _logger;
 
@@ -181,6 +226,7 @@ class _BrickListSubcommand extends Command<int> {
 
   @override
   Future<int> run() async {
+    final dryRun = isDryRunEnabled(argResults!);
     final config = AgenticConfig(projectPath: Directory.current.path);
     if (!config.exists) {
       _logger.err(
@@ -188,6 +234,17 @@ class _BrickListSubcommand extends Command<int> {
         'Run this command inside an agentic_base project.',
       );
       return 1;
+    }
+
+    if (dryRun) {
+      final reporter =
+          DryRunReporter(
+              logger: _logger,
+              commandName: 'brick list',
+            )
+            ..read('${Directory.current.path}/.info/agentic.yaml')
+            ..note('would print recorded community bricks only');
+      return reporter.complete();
     }
 
     final data = config.read();

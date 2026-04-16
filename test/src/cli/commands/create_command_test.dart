@@ -5,6 +5,7 @@ import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:agentic_base/src/generators/project_generator.dart';
+import 'package:agentic_base/src/modules/module_registry.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
 import 'package:mocktail/mocktail.dart';
@@ -15,6 +16,8 @@ class MockAgenticLogger extends Mock implements AgenticLogger {}
 class RecordingProjectGenerator extends ProjectGenerator {
   RecordingProjectGenerator() : super(logger: AgenticLogger());
 
+  bool previewInvoked = false;
+  bool generateInvoked = false;
   String? projectName;
   String? outputDirectory;
   String? org;
@@ -27,6 +30,26 @@ class RecordingProjectGenerator extends ProjectGenerator {
   String? flutterSdkVersion;
   List<String>? secondaryTraits;
   List<String>? modules;
+
+  @override
+  Future<void> previewGenerate({
+    required String projectName,
+    required String outputDirectory,
+    required String org,
+    required List<String> platforms,
+    required String stateManagement,
+    required List<String> flavors,
+    required CiProvider ciProvider,
+    required HarnessAppProfile appProfile,
+    required FlutterSdkManager flutterSdkManager,
+    String? flutterSdkVersion,
+    List<String> secondaryTraits = const [],
+    List<String> modules = const [],
+  }) async {
+    previewInvoked = true;
+    this.projectName = projectName;
+    this.outputDirectory = outputDirectory;
+  }
 
   @override
   Future<void> generate({
@@ -43,6 +66,7 @@ class RecordingProjectGenerator extends ProjectGenerator {
     List<String> secondaryTraits = const [],
     List<String> modules = const [],
   }) async {
+    generateInvoked = true;
     this.projectName = projectName;
     this.outputDirectory = outputDirectory;
     this.org = org;
@@ -94,6 +118,31 @@ void main() {
       expect(command.argParser.options.keys, contains('flutter-sdk-manager'));
       expect(command.argParser.options.keys, contains('flutter-version'));
       expect(command.argParser.options.keys, contains('no-interactive'));
+      expect(command.argParser.options.keys, contains('dry-run'));
+    });
+
+    test('uses preview mode for dry runs', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'create-command-dry-run-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      final exitCode = await runner.run([
+        'create',
+        'demo_app',
+        '--dry-run',
+        '--no-interactive',
+        '--output-dir',
+        tempDir.path,
+      ]);
+
+      expect(exitCode, equals(0));
+      expect(recordingGenerator.previewInvoked, isTrue);
+      expect(recordingGenerator.generateInvoked, isFalse);
+      expect(
+        recordingGenerator.outputDirectory,
+        endsWith('${Platform.pathSeparator}demo_app'),
+      );
     });
 
     test('state option defaults to cubit', () {
@@ -302,5 +351,33 @@ void main() {
         ).called(1);
       },
     );
+
+    test('rejects unknown modules before preview starts', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'create-command-invalid-modules-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      final exitCode = await runner.run([
+        'create',
+        'demo_app',
+        '--dry-run',
+        '--no-interactive',
+        '--output-dir',
+        tempDir.path,
+        '--modules',
+        'analytics,unknown_module',
+      ]);
+
+      expect(exitCode, equals(1));
+      expect(recordingGenerator.previewInvoked, isFalse);
+      expect(recordingGenerator.generateInvoked, isFalse);
+      verify(
+        () => mockLogger.err(
+          'Unknown module(s): unknown_module. '
+          'Available: ${ModuleRegistry.allNames.join(', ')}',
+        ),
+      ).called(1);
+    });
   });
 }

@@ -21,7 +21,7 @@ presentation -> domain <- data
 
 ## App Bootstrap
 
-1. `FlavorConfig.init(flavor)` resolves env-driven runtime values
+1. `FlavorConfig.init(flavor)` resolves shared build-time env keys against per-flavor defaults
 2. `bootstrap(() => App())` initializes bindings, locale through `AppLocaleContract`, DI, and observers
 3. `App` mounts `AppThemeScope`, `TranslationProvider`, and `MaterialApp.router`
 4. `AppRouter` lands on the starter home route
@@ -74,7 +74,18 @@ Meaningful verify and release-preflight runs emit named gate outputs under `{{{e
 
 - Source translations live in `assets/i18n/<module>/<module>_<locale>.i18n.yaml`
 - `build_runner` + Slang generate typed APIs into `lib/app/i18n/translations.g.dart`
-- `lib/app/locale/app_locale_contract.dart` is the stable app-facing locale wrapper for runtime code
+- `lib/app/locale/app_locale_contract.dart` stays outside generated Slang output so runtime code keeps one stable wrapper even if generated tree layout changes
 - Starter namespaces:
   - `app`
   - `home`
+
+## Theme Contract
+
+- `ThemeMode` remains the runtime preference surface
+- `AppThemeController` also tracks a theme family id, but v1 ships one bundled family only: `material-default`
+- `lib/core/theme/app_theme_family.dart` is the extension point for future branded families without rewriting `App`
+
+## Shared Contracts
+
+- `AppFailure`, `AppResponse`, and pagination models use `freezed` for value semantics and exhaustive handling
+- `part` files stay scoped to those modeled leaf contracts instead of widening codegen across the app shell

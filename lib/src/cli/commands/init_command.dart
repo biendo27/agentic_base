@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/cli/dry_run.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
@@ -31,6 +32,7 @@ class InitCommand extends Command<int> {
       help: 'CI provider: github or gitlab',
       allowed: supportedCiProviders,
     );
+    addDryRunFlag(argParser);
   }
 
   final AgenticLogger _logger;
@@ -48,6 +50,7 @@ class InitCommand extends Command<int> {
 
   @override
   Future<int> run() async {
+    final dryRun = isDryRunEnabled(argResults!);
     final projectPath = Directory.current.path;
 
     // Must be inside a Flutter project (pubspec.yaml must exist).
@@ -62,6 +65,33 @@ class InitCommand extends Command<int> {
 
     final config = AgenticConfig(projectPath: projectPath);
     final pubspecContent = pubspecFile.readAsStringSync();
+    if (dryRun) {
+      final reporter = DryRunReporter(
+        logger: _logger,
+        commandName: 'init',
+      )..read('$projectPath/pubspec.yaml');
+      if (config.exists) {
+        reporter.read('$projectPath/.info/agentic.yaml');
+      }
+      final explicitCiProvider = argResults!['ci-provider'] as String?;
+      reporter
+        ..note(
+          explicitCiProvider == null
+              ? 'would infer CI provider, state management, and harness metadata from the existing project'
+              : 'would use explicit ci-provider `${explicitCiProvider.trim()}`',
+        )
+        ..write('$projectPath/AGENTS.md')
+        ..write('$projectPath/CLAUDE.md')
+        ..write('$projectPath/README.md')
+        ..write('$projectPath/docs/**')
+        ..write('$projectPath/tools/**')
+        ..write('$projectPath/.info/agentic.yaml')
+        ..note(
+          'would validate the repaired project against the generated contract before persisting metadata',
+        );
+      return reporter.complete();
+    }
+
     final resolver = InitProjectMetadataResolver(
       toolchainDetector: _toolchainDetector,
     );

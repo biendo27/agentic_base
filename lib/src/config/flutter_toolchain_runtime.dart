@@ -46,39 +46,51 @@ final class ResolvedFlutterToolchain {
   final DetectedFlutterToolchain detected;
   final FlutterToolchainResolutionSource source;
 
-  ToolCommandSpec flutterCommand(List<String> arguments) {
-    return switch (contract.manager) {
-      FlutterSdkManager.system => ToolCommandSpec(
-        executable: 'flutter',
-        arguments: arguments,
-      ),
-      FlutterSdkManager.fvm => ToolCommandSpec(
-        executable: 'fvm',
-        arguments: ['flutter', ...arguments],
-      ),
-      FlutterSdkManager.puro => ToolCommandSpec(
-        executable: 'puro',
-        arguments: ['flutter', ...arguments],
-      ),
-    };
-  }
+  ToolCommandSpec flutterCommand(List<String> arguments) =>
+      flutterCommandForManager(contract.manager, arguments);
 
-  ToolCommandSpec dartCommand(List<String> arguments) {
-    return switch (contract.manager) {
-      FlutterSdkManager.system => ToolCommandSpec(
-        executable: 'dart',
-        arguments: arguments,
-      ),
-      FlutterSdkManager.fvm => ToolCommandSpec(
-        executable: 'fvm',
-        arguments: ['dart', ...arguments],
-      ),
-      FlutterSdkManager.puro => ToolCommandSpec(
-        executable: 'puro',
-        arguments: ['dart', ...arguments],
-      ),
-    };
-  }
+  ToolCommandSpec dartCommand(List<String> arguments) =>
+      dartCommandForManager(contract.manager, arguments);
+}
+
+ToolCommandSpec flutterCommandForManager(
+  FlutterSdkManager manager,
+  List<String> arguments,
+) {
+  return switch (manager) {
+    FlutterSdkManager.system => ToolCommandSpec(
+      executable: 'flutter',
+      arguments: arguments,
+    ),
+    FlutterSdkManager.fvm => ToolCommandSpec(
+      executable: 'fvm',
+      arguments: ['flutter', ...arguments],
+    ),
+    FlutterSdkManager.puro => ToolCommandSpec(
+      executable: 'puro',
+      arguments: ['flutter', ...arguments],
+    ),
+  };
+}
+
+ToolCommandSpec dartCommandForManager(
+  FlutterSdkManager manager,
+  List<String> arguments,
+) {
+  return switch (manager) {
+    FlutterSdkManager.system => ToolCommandSpec(
+      executable: 'dart',
+      arguments: arguments,
+    ),
+    FlutterSdkManager.fvm => ToolCommandSpec(
+      executable: 'fvm',
+      arguments: ['dart', ...arguments],
+    ),
+    FlutterSdkManager.puro => ToolCommandSpec(
+      executable: 'puro',
+      arguments: ['dart', ...arguments],
+    ),
+  };
 }
 
 ResolvedFlutterToolchain resolveFlutterToolchain({

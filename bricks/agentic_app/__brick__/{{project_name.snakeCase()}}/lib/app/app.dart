@@ -49,8 +49,12 @@ class _AppState extends State<App> {
                           AppLocaleContract.supportedFlutterLocales,
                       localizationsDelegates:
                           GlobalMaterialLocalizations.delegates,
-                      theme: AppTheme.light,
-                      darkTheme: AppTheme.dark,
+                      theme: AppTheme.light(
+                        familyId: _themeController.themeFamilyId,
+                      ),
+                      darkTheme: AppTheme.dark(
+                        familyId: _themeController.themeFamilyId,
+                      ),
                       themeMode: _themeController.themeMode,
                       routerConfig: _appRouter.config(),
                       debugShowCheckedModeBanner: false,

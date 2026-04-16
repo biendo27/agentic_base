@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/cli/dry_run.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/config/flutter_toolchain_runtime.dart';
@@ -69,7 +70,9 @@ class GenCommand extends Command<int> {
   }) : _logger = logger,
        _processRunner = processRunner ?? runProcess,
        _projectPathProvider = projectPathProvider,
-       _toolchainDetector = toolchainDetector ?? detectFlutterToolchain;
+       _toolchainDetector = toolchainDetector ?? detectFlutterToolchain {
+    addDryRunFlag(argParser);
+  }
 
   final AgenticLogger _logger;
   final ProcessRunner _processRunner;
@@ -85,6 +88,7 @@ class GenCommand extends Command<int> {
 
   @override
   Future<int> run() async {
+    final dryRun = isDryRunEnabled(argResults!);
     final projectRoot = _findProjectRoot(
       _projectPathProvider?.call() ?? Directory.current.path,
     );
@@ -100,6 +104,34 @@ class GenCommand extends Command<int> {
     final metadata = config.readMetadata(
       fallbackProjectName: p.basename(projectRoot),
     );
+    if (dryRun) {
+      final reporter =
+          DryRunReporter(
+              logger: _logger,
+              commandName: 'gen',
+            )
+            ..read('$projectRoot/.info/agentic.yaml')
+            ..toolchainContract(metadata.harness.sdk)
+            ..command(
+              dartCommandForManager(metadata.harness.sdk.preferredManager, [
+                'run',
+                'build_runner',
+                'build',
+                '--delete-conflicting-outputs',
+              ]),
+              workingDirectory: projectRoot,
+            )
+            ..command(
+              dartCommandForManager(metadata.harness.sdk.preferredManager, [
+                'format',
+                'lib',
+                'test',
+              ]),
+              workingDirectory: projectRoot,
+            );
+      return reporter.complete();
+    }
+
     final toolchain = resolveProjectFlutterToolchain(
       projectPath: projectRoot,
       contract: metadata.harness.sdk,

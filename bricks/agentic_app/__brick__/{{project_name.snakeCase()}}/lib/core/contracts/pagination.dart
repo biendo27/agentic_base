@@ -1,14 +1,18 @@
-final class PaginationRequest {
-  const PaginationRequest({
-    this.page = 1,
-    this.pageSize = 20,
-    this.cursor,
-  }) : assert(page > 0, 'page must be greater than zero'),
-       assert(pageSize > 0, 'pageSize must be greater than zero');
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  final int page;
-  final int pageSize;
-  final String? cursor;
+part 'pagination.freezed.dart';
+
+@Assert('page > 0', 'page must be greater than zero')
+@Assert('pageSize > 0', 'pageSize must be greater than zero')
+@freezed
+abstract class PaginationRequest with _$PaginationRequest {
+  const PaginationRequest._();
+
+  const factory PaginationRequest({
+    @Default(1) int page,
+    @Default(20) int pageSize,
+    String? cursor,
+  }) = _PaginationRequest;
 
   PaginationRequest nextPage({String? nextCursor}) {
     return PaginationRequest(
@@ -19,21 +23,19 @@ final class PaginationRequest {
   }
 }
 
-final class PaginatedResponse<T> {
-  const PaginatedResponse({
-    required this.items,
-    required this.page,
-    required this.pageSize,
-    this.totalItems,
-    this.nextCursor,
-  }) : assert(page > 0, 'page must be greater than zero'),
-       assert(pageSize > 0, 'pageSize must be greater than zero');
+@Assert('page > 0', 'page must be greater than zero')
+@Assert('pageSize > 0', 'pageSize must be greater than zero')
+@freezed
+abstract class PaginatedResponse<T> with _$PaginatedResponse<T> {
+  const PaginatedResponse._();
 
-  final List<T> items;
-  final int page;
-  final int pageSize;
-  final int? totalItems;
-  final String? nextCursor;
+  const factory PaginatedResponse({
+    required List<T> items,
+    required int page,
+    required int pageSize,
+    int? totalItems,
+    String? nextCursor,
+  }) = _PaginatedResponse<T>;
 
   bool get hasNextPage {
     if (nextCursor != null && nextCursor!.isNotEmpty) {

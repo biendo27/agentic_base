@@ -1,9 +1,11 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/cli/dry_run.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:agentic_base/src/generators/project_generator.dart';
+import 'package:agentic_base/src/modules/module_registry.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:agentic_base/src/tui/prompts.dart';
 import 'package:args/command_runner.dart';
@@ -79,6 +81,7 @@ class CreateCommand extends Command<int> {
         help: 'Skip prompts, use defaults for missing values',
         negatable: false,
       );
+    addDryRunFlag(argParser);
   }
 
   final AgenticLogger _logger;
@@ -97,6 +100,7 @@ class CreateCommand extends Command<int> {
   Future<int> run() async {
     final args = argResults!;
     final rest = args.rest;
+    final dryRun = isDryRunEnabled(args);
     if (rest.isEmpty) {
       throw UsageException('No project name provided.', usage);
     }
@@ -222,10 +226,38 @@ class CreateCommand extends Command<int> {
             ? requestedModules ?? <String>[]
             : requestedModules ?? prompts.promptModules(null);
 
-    _logger.header('Creating $projectName...');
+    final unknownModules =
+        modules.where((name) => ModuleRegistry.find(name) == null).toList();
+    if (unknownModules.isNotEmpty) {
+      _logger.err(
+        'Unknown module(s): ${unknownModules.join(', ')}. '
+        'Available: ${ModuleRegistry.allNames.join(', ')}',
+      );
+      return 1;
+    }
 
     try {
-      await _projectGeneratorBuilder(_logger).generate(
+      final generator = _projectGeneratorBuilder(_logger);
+      if (dryRun) {
+        await generator.previewGenerate(
+          projectName: projectName,
+          outputDirectory: outputDir,
+          org: org,
+          platforms: platforms,
+          stateManagement: state,
+          flavors: flavors,
+          ciProvider: ciProvider,
+          appProfile: appProfile,
+          flutterSdkManager: flutterSdkManager,
+          flutterSdkVersion: flutterVersion,
+          secondaryTraits: requestedTraits ?? const <String>[],
+          modules: modules,
+        );
+        return 0;
+      }
+
+      _logger.header('Creating $projectName...');
+      await generator.generate(
         projectName: projectName,
         outputDirectory: outputDir,
         org: org,
