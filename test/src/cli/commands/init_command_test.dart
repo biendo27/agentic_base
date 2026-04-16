@@ -67,6 +67,18 @@ void main() {
       expect(config['ci_provider'], equals('github'));
     });
 
+    test('supports dry-run previews without writing scaffold files', () async {
+      final exitCode = await runner.run(['init', '--dry-run']);
+
+      expect(exitCode, equals(0));
+      expect(
+        File(p.join(tempDir.path, '.info', 'agentic.yaml')).existsSync(),
+        isFalse,
+      );
+      expect(File(p.join(tempDir.path, 'README.md')).existsSync(), isFalse);
+      expect(Directory(p.join(tempDir.path, 'docs')).existsSync(), isFalse);
+    });
+
     test('materializes an honest agent-ready scaffold for init', () async {
       final exitCode = await runner.run(['init', '--ci-provider', 'github']);
 

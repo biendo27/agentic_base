@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:agentic_base/src/cli/cli_runner.dart';
+import 'package:agentic_base/src/cli/dry_run.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/config/flutter_toolchain_runtime.dart';
@@ -35,7 +36,9 @@ class UpgradeCommand extends Command<int> {
        _processRunner = processRunner ?? runProcess,
        _projectPathProvider = projectPathProvider,
        _toolchainDetector = toolchainDetector ?? detectFlutterToolchain,
-       _surfaceSync = surfaceSync;
+       _surfaceSync = surfaceSync {
+    addDryRunFlag(argParser);
+  }
 
   final AgenticLogger _logger;
   final ProcessRunner _processRunner;
@@ -59,6 +62,7 @@ class UpgradeCommand extends Command<int> {
 
   @override
   Future<int> run() async {
+    final dryRun = isDryRunEnabled(argResults!);
     final projectPath = _projectPathProvider?.call() ?? Directory.current.path;
 
     // Must be inside an agentic_base project.
@@ -74,8 +78,6 @@ class UpgradeCommand extends Command<int> {
     // Snapshot pubspec.lock BEFORE upgrade for diff.
     final lockFile = File(p.join(projectPath, 'pubspec.lock'));
     final snapshotBefore = _readLockVersions(lockFile);
-
-    _logger.header('Upgrading dependencies...');
 
     final metadata = config.readMetadata(
       fallbackProjectName: p.basename(projectPath),
@@ -94,6 +96,35 @@ class UpgradeCommand extends Command<int> {
                 sdk: metadata.harness.sdk,
               ),
             );
+
+    if (dryRun) {
+      final reporter =
+          DryRunReporter(
+              logger: _logger,
+              commandName: 'upgrade',
+            )
+            ..read('$projectPath/.info/agentic.yaml')
+            ..read('$projectPath/pubspec.lock')
+            ..toolchainContract(metadata.harness.sdk);
+      if (!hasPinnedFlutterContract) {
+        reporter.note(
+          'would adopt the locally resolved toolchain during real execution if no pinned contract exists',
+        );
+      }
+      reporter
+        ..command(
+          flutterCommandForManager(metadata.harness.sdk.preferredManager, [
+            'pub',
+            'upgrade',
+          ]),
+          workingDirectory: projectPath,
+        )
+        ..write('$projectPath/README.md and generator-owned surfaces')
+        ..write('$projectPath/.info/agentic.yaml');
+      return reporter.complete();
+    }
+
+    _logger.header('Upgrading dependencies...');
     final toolchain = resolveProjectFlutterToolchain(
       projectPath: projectPath,
       contract: effectiveMetadata.harness.sdk,

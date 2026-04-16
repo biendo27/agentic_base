@@ -14,6 +14,49 @@ class FeatureGenerator {
 
   final AgenticLogger _logger;
 
+  Future<void> previewGenerate({
+    required String featureName,
+    required String projectPath,
+    required String projectName,
+    required String stateManagement,
+    bool simple = false,
+  }) async {
+    final stateProfile = ScaffoldStateProfile.fromState(stateManagement);
+    final expectedStructure =
+        simple
+            ? <String>[
+              'lib/features/$featureName/${featureName}_page.dart',
+            ]
+            : <String>[
+              'lib/features/$featureName/$featureName.module.dart',
+              'lib/features/$featureName/$featureName.spec.yaml',
+              'lib/features/$featureName/data/**',
+              'lib/features/$featureName/domain/**',
+              'lib/features/$featureName/presentation/**',
+            ];
+
+    _logger
+      ..header('Dry run: feature $featureName')
+      ..info(
+        'Using state runtime `${stateProfile.name}` for package `$projectName`.',
+      )
+      ..info(
+        simple
+            ? '  - would scaffold the simple feature surface'
+            : '  - would validate the shared feature host before generation',
+      );
+    for (final path in expectedStructure) {
+      _logger.info('  - would create $path');
+    }
+    _logger
+      ..info(
+        simple
+            ? '  - would leave host routing for manual review'
+            : '  - would sync the host router and spec contract',
+      )
+      ..success('Dry run complete. No changes were made.');
+  }
+
   /// Generate feature files into [projectPath].
   ///
   /// - [featureName] must be snake_case.

@@ -72,6 +72,19 @@ void main() {
       expect(metadata.harness.sdk.manager, FlutterSdkManager.fvm);
       expect(metadata.harness.sdk.version, '3.41.6');
     });
+
+    test('supports dry-run previews without running build tooling', () async {
+      final metadataBefore = AgenticConfig(projectPath: tempDir.path).read();
+
+      final exitCode = await runner.run(['gen', '--dry-run']);
+
+      expect(exitCode, equals(0));
+      expect(processCalls, isEmpty);
+      expect(
+        AgenticConfig(projectPath: tempDir.path).read(),
+        equals(metadataBefore),
+      );
+    });
   });
 }
 

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:agentic_base/src/cli/cli_runner.dart';
 import 'package:agentic_base/src/cli/commands/gen_command.dart';
+import 'package:agentic_base/src/cli/dry_run.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
 import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/config/flutter_toolchain_runtime.dart';
@@ -30,7 +31,9 @@ class AddCommand extends Command<int> {
   }) : _logger = logger,
        _processRunner = processRunner ?? runProcess,
        _projectPathProvider = projectPathProvider,
-       _toolchainDetector = toolchainDetector ?? detectFlutterToolchain;
+       _toolchainDetector = toolchainDetector ?? detectFlutterToolchain {
+    addDryRunFlag(argParser);
+  }
 
   final AgenticLogger _logger;
   final ProcessRunner _processRunner;
@@ -50,6 +53,7 @@ class AddCommand extends Command<int> {
   Future<int> run() async {
     final args = argResults!;
     final rest = args.rest;
+    final dryRun = isDryRunEnabled(args);
 
     if (rest.isEmpty) {
       _logger
@@ -108,17 +112,53 @@ class AddCommand extends Command<int> {
       return 1;
     }
 
+    // Auto-install prerequisites.
+    final missing = ModuleRegistry.missingPrerequisites(
+      moduleName,
+      installed: installed,
+    );
+    if (dryRun) {
+      final reporter = DryRunReporter(logger: _logger, commandName: 'add');
+      final plannedModules = [...missing, moduleName];
+      reporter
+        ..read('$projectPath/.info/agentic.yaml')
+        ..note('would install modules: ${plannedModules.join(', ')}')
+        ..write('$projectPath/pubspec.yaml and module-owned files')
+        ..write('$projectPath/.info/agentic.yaml')
+        ..toolchainContract(metadata.harness.sdk)
+        ..command(
+          flutterCommandForManager(metadata.harness.sdk.preferredManager, [
+            'pub',
+            'get',
+          ]),
+          workingDirectory: projectPath,
+        )
+        ..command(
+          dartCommandForManager(metadata.harness.sdk.preferredManager, [
+            'run',
+            'build_runner',
+            'build',
+            '--delete-conflicting-outputs',
+          ]),
+          workingDirectory: projectPath,
+        )
+        ..command(
+          dartCommandForManager(metadata.harness.sdk.preferredManager, [
+            'format',
+            'lib',
+            'test',
+          ]),
+          workingDirectory: projectPath,
+        );
+      return reporter.complete();
+    }
+
     final toolchain = resolveProjectFlutterToolchain(
       projectPath: projectPath,
       contract: metadata.harness.sdk,
       detector: _toolchainDetector,
     );
 
-    // Auto-install prerequisites.
-    final missing = ModuleRegistry.missingPrerequisites(
-      moduleName,
-      installed: installed,
-    );
     final journal = ProjectMutationJournal();
     for (final prereq in missing) {
       _logger.info('Auto-installing prerequisite: $prereq');

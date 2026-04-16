@@ -1,15 +1,17 @@
-final class AppResponse<T> {
-  const AppResponse({
-    required this.data,
-    this.message,
-    this.statusCode,
-    this.metadata = const {},
-  });
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  final T data;
-  final String? message;
-  final int? statusCode;
-  final Map<String, Object?> metadata;
+part 'app_response.freezed.dart';
+
+@freezed
+abstract class AppResponse<T> with _$AppResponse<T> {
+  const AppResponse._();
+
+  const factory AppResponse({
+    required T data,
+    String? message,
+    int? statusCode,
+    @Default(<String, Object?>{}) Map<String, Object?> metadata,
+  }) = _AppResponse<T>;
 
   bool get isSuccess => statusCode == null || statusCode! < 400;
 }

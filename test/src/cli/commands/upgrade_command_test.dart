@@ -155,6 +155,18 @@ modules: []
       expect(restored.harness.sdk.manager, FlutterSdkManager.fvm);
       expect(restored.harness.sdk.version, '3.41.6');
     });
+
+    test('supports dry-run previews without running upgrades', () async {
+      final metadataBefore = AgenticConfig(projectPath: tempDir.path).read();
+
+      final exitCode = await runner.run(['upgrade', '--dry-run']);
+
+      expect(exitCode, equals(0));
+      expect(
+        AgenticConfig(projectPath: tempDir.path).read(),
+        equals(metadataBefore),
+      );
+    });
   });
 }
 

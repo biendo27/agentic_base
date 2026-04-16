@@ -26,6 +26,100 @@ class ProjectGenerator {
   final AgenticLogger _logger;
   final FlutterToolchainDetector _toolchainDetector;
 
+  Future<void> previewGenerate({
+    required String projectName,
+    required String outputDirectory,
+    required String org,
+    required List<String> platforms,
+    required String stateManagement,
+    required List<String> flavors,
+    required CiProvider ciProvider,
+    required HarnessAppProfile appProfile,
+    required FlutterSdkManager flutterSdkManager,
+    String? flutterSdkVersion,
+    List<String> secondaryTraits = const [],
+    List<String> modules = const [],
+  }) async {
+    final metadata = _buildMetadata(
+      projectName: projectName,
+      org: org,
+      platforms: platforms,
+      stateManagement: stateManagement,
+      flavors: flavors,
+      ciProvider: ciProvider,
+      appProfile: appProfile,
+      flutterSdkManager: flutterSdkManager,
+      flutterSdkVersion: flutterSdkVersion,
+      secondaryTraits: secondaryTraits,
+      modules: modules,
+    );
+    final preferredManager = metadata.harness.sdk.preferredManager;
+    final expandedModules = _expandedModuleInstallOrder(modules);
+    final flutterCreateCommand = flutterCommandForManager(preferredManager, [
+      'create',
+      '--org',
+      org,
+      '--platforms',
+      platforms.join(','),
+      '-e',
+      '--project-name',
+      projectName,
+      outputDirectory,
+    ]);
+    final flavorizrCommand = dartCommandForManager(preferredManager, [
+      'run',
+      'flutter_flavorizr',
+      '-f',
+    ]);
+    final pubGetCommand = flutterCommandForManager(preferredManager, [
+      'pub',
+      'get',
+    ]);
+
+    _logger
+      ..header('Dry run: create $projectName')
+      ..info(
+        'Using declared Flutter manager '
+        '"${preferredManager.wireName}" in preview mode '
+        '(no toolchain probing).',
+      )
+      ..info('  - would create Flutter project at $outputDirectory')
+      ..info('  - would run `$flutterCreateCommand`')
+      ..info('  - would overlay the agentic_app brick')
+      ..info('  - would write $outputDirectory/.info/agentic.yaml')
+      ..info(
+        '  - would persist CI provider `${ciProvider.name}` and flavors '
+        '`${flavors.join(', ')}`',
+      );
+
+    if (GeneratedProjectContract.requiresNativeFlavorization(platforms)) {
+      _logger.info('  - would run `$flavorizrCommand`');
+    }
+
+    if (expandedModules.isNotEmpty) {
+      _logger
+        ..info('  - would install modules: ${expandedModules.join(', ')}')
+        ..info('  - would run `$pubGetCommand` after module sync');
+    }
+
+    for (final command in [
+      dartCommandForManager(preferredManager, [
+        'run',
+        'build_runner',
+        'build',
+        '--delete-conflicting-outputs',
+      ]),
+      dartCommandForManager(preferredManager, ['fix', '--apply']),
+      dartCommandForManager(preferredManager, ['run', 'slang']),
+      dartCommandForManager(preferredManager, ['format', 'lib', 'test']),
+      const ToolCommandSpec(executable: 'bash', arguments: ['tools/verify.sh']),
+    ]) {
+      _logger.info('  - would run `$command');
+    }
+
+    _logger.success('Dry run complete. No changes were made.');
+  }
+
   /// Generate a new Flutter project with native scaffolding + templates.
   Future<void> generate({
     required String projectName,
@@ -48,52 +142,21 @@ class ProjectGenerator {
       detector: _toolchainDetector,
     );
     _logResolvedToolchain(toolchain);
-    final harness = HarnessMetadata.defaultFor(
-      appProfile: appProfile,
-      secondaryTraits: secondaryTraits,
-      capabilities: modules,
-      sdk: toolchain.contract,
-    );
-    final metadata = AgenticConfig.buildInitialMetadata(
+    final metadata = _buildMetadata(
       projectName: projectName,
       org: org,
-      ciProvider: ciProvider,
-      stateManagement: stateManagement,
       platforms: platforms,
+      stateManagement: stateManagement,
       flavors: flavors,
-      toolVersion: AgenticBaseCliRunner.version,
-      provenance: {
-        'tool_version': MetadataProvenance.explicit,
-        'project_name': MetadataProvenance.explicit,
-        'org': MetadataProvenance.explicit,
-        'ci_provider': MetadataProvenance.explicit,
-        'state_management': MetadataProvenance.explicit,
-        'platforms': MetadataProvenance.explicit,
-        'flavors': MetadataProvenance.explicit,
-        'modules': MetadataProvenance.defaulted,
-        'harness.contract_version': MetadataProvenance.defaulted,
-        'harness.app_profile.primary_profile': MetadataProvenance.explicit,
-        'harness.app_profile.secondary_traits': MetadataProvenance.explicit,
-        'harness.capabilities.enabled': MetadataProvenance.explicit,
-        'harness.providers': MetadataProvenance.defaulted,
-        'harness.eval.evidence_dir': MetadataProvenance.defaulted,
-        'harness.eval.quality_dimensions': MetadataProvenance.defaulted,
-        'harness.approvals.pause_on': MetadataProvenance.defaulted,
-        'harness.sdk.manager': MetadataProvenance.inferred,
-        'harness.sdk.preferred_manager': MetadataProvenance.explicit,
-        'harness.sdk.channel':
-            toolchain.detected.channel == null
-                ? MetadataProvenance.defaulted
-                : MetadataProvenance.inferred,
-        'harness.sdk.version': MetadataProvenance.inferred,
-        'harness.sdk.preferred_version':
-            flutterSdkVersion == null
-                ? MetadataProvenance.inferred
-                : MetadataProvenance.explicit,
-        'harness.sdk.policy': MetadataProvenance.defaulted,
-      },
+      ciProvider: ciProvider,
+      appProfile: appProfile,
+      flutterSdkManager: toolchain.contract.manager,
+      flutterSdkVersion: toolchain.contract.version,
+      secondaryTraits: secondaryTraits,
       modules: modules,
-      harness: harness,
+      preferredFlutterSdkManager: flutterSdkManager,
+      preferredFlutterSdkVersion: flutterSdkVersion,
+      detectedChannel: toolchain.detected.channel,
     );
 
     // Step 1: flutter create for native platform scaffolding
@@ -382,5 +445,100 @@ class ProjectGenerator {
         'is not active. Resolved ${toolchain.contract.version} instead.',
       );
     }
+  }
+
+  ProjectMetadata _buildMetadata({
+    required String projectName,
+    required String org,
+    required List<String> platforms,
+    required String stateManagement,
+    required List<String> flavors,
+    required CiProvider ciProvider,
+    required HarnessAppProfile appProfile,
+    required FlutterSdkManager flutterSdkManager,
+    String? flutterSdkVersion,
+    List<String> secondaryTraits = const [],
+    List<String> modules = const [],
+    FlutterSdkManager? preferredFlutterSdkManager,
+    String? preferredFlutterSdkVersion,
+    String? detectedChannel,
+  }) {
+    final sdkContract = FlutterSdkContract(
+      manager: flutterSdkManager,
+      channel: detectedChannel ?? defaultFlutterChannel,
+      version: flutterSdkVersion ?? newestTestedFlutterVersion,
+      policy: FlutterVersionPolicy.newestTested,
+      preferredManager: preferredFlutterSdkManager ?? flutterSdkManager,
+      preferredVersion:
+          preferredFlutterSdkVersion ??
+          flutterSdkVersion ??
+          newestTestedFlutterVersion,
+    );
+    final harness = HarnessMetadata.defaultFor(
+      appProfile: appProfile,
+      secondaryTraits: secondaryTraits,
+      capabilities: modules,
+      sdk: sdkContract,
+    );
+    return AgenticConfig.buildInitialMetadata(
+      projectName: projectName,
+      org: org,
+      ciProvider: ciProvider,
+      stateManagement: stateManagement,
+      platforms: platforms,
+      flavors: flavors,
+      toolVersion: AgenticBaseCliRunner.version,
+      provenance: {
+        'tool_version': MetadataProvenance.explicit,
+        'project_name': MetadataProvenance.explicit,
+        'org': MetadataProvenance.explicit,
+        'ci_provider': MetadataProvenance.explicit,
+        'state_management': MetadataProvenance.explicit,
+        'platforms': MetadataProvenance.explicit,
+        'flavors': MetadataProvenance.explicit,
+        'modules': MetadataProvenance.defaulted,
+        'harness.contract_version': MetadataProvenance.defaulted,
+        'harness.app_profile.primary_profile': MetadataProvenance.explicit,
+        'harness.app_profile.secondary_traits': MetadataProvenance.explicit,
+        'harness.capabilities.enabled': MetadataProvenance.explicit,
+        'harness.providers': MetadataProvenance.defaulted,
+        'harness.eval.evidence_dir': MetadataProvenance.defaulted,
+        'harness.eval.quality_dimensions': MetadataProvenance.defaulted,
+        'harness.approvals.pause_on': MetadataProvenance.defaulted,
+        'harness.sdk.manager': MetadataProvenance.inferred,
+        'harness.sdk.preferred_manager': MetadataProvenance.explicit,
+        'harness.sdk.channel':
+            detectedChannel == null
+                ? MetadataProvenance.defaulted
+                : MetadataProvenance.inferred,
+        'harness.sdk.version': MetadataProvenance.inferred,
+        'harness.sdk.preferred_version':
+            preferredFlutterSdkVersion == null
+                ? MetadataProvenance.inferred
+                : MetadataProvenance.explicit,
+        'harness.sdk.policy': MetadataProvenance.defaulted,
+      },
+      modules: modules,
+      harness: harness,
+    );
+  }
+
+  List<String> _expandedModuleInstallOrder(List<String> modules) {
+    final requestedModules = <String>[];
+    for (final name in modules) {
+      final missing = ModuleRegistry.missingPrerequisites(
+        name,
+        installed: requestedModules,
+      );
+      for (final prereq in missing) {
+        if (!requestedModules.contains(prereq)) {
+          requestedModules.add(prereq);
+        }
+      }
+      if (!requestedModules.contains(name)) {
+        requestedModules.add(name);
+      }
+    }
+    return requestedModules;
   }
 }

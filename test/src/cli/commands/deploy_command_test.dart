@@ -78,5 +78,14 @@ void main() {
         expect(recordedCiProvider, equals(CiProvider.github));
       },
     );
+
+    test('supports dry-run previews without calling deployAction', () async {
+      final exitCode = await runner.run(['deploy', 'prod', '--dry-run']);
+
+      expect(exitCode, equals(0));
+      expect(recordedProjectPath, isNull);
+      expect(recordedEnvironment, isNull);
+      expect(recordedCiProvider, isNull);
+    });
   });
 }

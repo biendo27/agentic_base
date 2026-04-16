@@ -1,28 +1,37 @@
 import 'dart:io';
 
+import 'package:agentic_base/src/cli/dry_run.dart';
 import 'package:agentic_base/src/config/agentic_config.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/flutter_toolchain_runtime.dart';
+import 'package:agentic_base/src/deploy/process_runner.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:args/command_runner.dart';
+import 'package:path/path.dart' as p;
 
-/// Runs Flutter/Dart tests for a specific feature or the entire project.
-///
-/// Usage:
-///   `agentic_base eval`                  — run all tests
-///   `agentic_base eval <feature>`        — run tests for a single feature
-///   `agentic_base eval --coverage`       — run all tests with coverage
-///   `agentic_base eval <feature> --coverage`
-///
-/// Must be executed inside an agentic_base project (checks .info/agentic.yaml).
+/// Runs Flutter tests for a specific feature or the entire project.
 class EvalCommand extends Command<int> {
-  EvalCommand({required AgenticLogger logger}) : _logger = logger {
+  EvalCommand({
+    required AgenticLogger logger,
+    ProcessRunner? processRunner,
+    String Function()? projectPathProvider,
+    FlutterToolchainDetector? toolchainDetector,
+  }) : _logger = logger,
+       _processRunner = processRunner ?? runProcess,
+       _projectPathProvider = projectPathProvider,
+       _toolchainDetector = toolchainDetector ?? detectFlutterToolchain {
     argParser.addFlag(
       'coverage',
       negatable: false,
       help: 'Collect and report test coverage.',
     );
+    addDryRunFlag(argParser);
   }
 
   final AgenticLogger _logger;
+  final ProcessRunner _processRunner;
+  final String Function()? _projectPathProvider;
+  final FlutterToolchainDetector _toolchainDetector;
 
   @override
   String get name => 'eval';
@@ -37,7 +46,9 @@ class EvalCommand extends Command<int> {
 
   @override
   Future<int> run() async {
-    final projectPath = Directory.current.path;
+    final args = argResults!;
+    final dryRun = isDryRunEnabled(args);
+    final projectPath = _projectPathProvider?.call() ?? Directory.current.path;
     final config = AgenticConfig(projectPath: projectPath);
 
     if (!config.exists) {
@@ -48,70 +59,65 @@ class EvalCommand extends Command<int> {
       return 1;
     }
 
-    final args = argResults!;
-    final rest = args.rest;
+    final metadata = config.readMetadata(
+      fallbackProjectName: p.basename(projectPath),
+    );
+    final featureName = args.rest.isNotEmpty ? args.rest.first : null;
     final withCoverage = args['coverage'] as bool;
-    final featureName = rest.isNotEmpty ? rest.first : null;
 
     if (featureName != null) {
-      return _runFeatureTests(
-        projectPath: projectPath,
-        featureName: featureName,
-        withCoverage: withCoverage,
-      );
+      final testDir = Directory('$projectPath/test/features/$featureName');
+      if (!testDir.existsSync()) {
+        _logger.err(
+          'No test directory found for feature "$featureName". '
+          'Expected: test/features/$featureName/',
+        );
+        return 1;
+      }
     }
 
-    return _runAllTests(projectPath: projectPath, withCoverage: withCoverage);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Internal runners
-  // ---------------------------------------------------------------------------
-
-  Future<int> _runFeatureTests({
-    required String projectPath,
-    required String featureName,
-    required bool withCoverage,
-  }) async {
-    final testDir = Directory('$projectPath/test/features/$featureName');
-
-    if (!testDir.existsSync()) {
-      _logger.err(
-        'No test directory found for feature "$featureName". '
-        'Expected: test/features/$featureName/',
-      );
-      return 1;
+    if (dryRun) {
+      final reporter =
+          DryRunReporter(
+              logger: _logger,
+              commandName: 'eval',
+            )
+            ..read('$projectPath/.info/agentic.yaml')
+            ..toolchainContract(metadata.harness.sdk)
+            ..command(
+              flutterCommandForManager(
+                metadata.harness.sdk.preferredManager,
+                _buildFlutterTestArgs(
+                  testPath:
+                      featureName == null ? null : 'test/features/$featureName',
+                  withCoverage: withCoverage,
+                ),
+              ),
+              workingDirectory: projectPath,
+            );
+      return reporter.complete();
     }
 
-    _logger.header('Eval: $featureName${withCoverage ? " (coverage)" : ""}');
-
-    return _executeTests(
+    final toolchain = resolveProjectFlutterToolchain(
       projectPath: projectPath,
-      flutterArgs: _buildFlutterTestArgs(
-        testPath: 'test/features/$featureName',
+      contract: metadata.harness.sdk,
+      detector: _toolchainDetector,
+    );
+    final command = toolchain.flutterCommand(
+      _buildFlutterTestArgs(
+        testPath: featureName == null ? null : 'test/features/$featureName',
         withCoverage: withCoverage,
       ),
     );
-  }
 
-  Future<int> _runAllTests({
-    required String projectPath,
-    required bool withCoverage,
-  }) async {
-    _logger.header('Eval: all tests${withCoverage ? " (coverage)" : ""}');
-
-    return _executeTests(
-      projectPath: projectPath,
-      flutterArgs: _buildFlutterTestArgs(
-        testPath: null,
-        withCoverage: withCoverage,
-      ),
+    _logger.header(
+      featureName == null
+          ? 'Eval: all tests${withCoverage ? " (coverage)" : ""}'
+          : 'Eval: $featureName${withCoverage ? " (coverage)" : ""}',
     );
-  }
 
-  // ---------------------------------------------------------------------------
-  // Helpers
-  // ---------------------------------------------------------------------------
+    return _executeTests(projectPath: projectPath, command: command);
+  }
 
   List<String> _buildFlutterTestArgs({
     required String? testPath,
@@ -124,71 +130,52 @@ class EvalCommand extends Command<int> {
 
   Future<int> _executeTests({
     required String projectPath,
-    required List<String> flutterArgs,
+    required ToolCommandSpec command,
   }) async {
-    final progress = _logger.progress(
-      'Running flutter ${flutterArgs.join(' ')}',
-    );
+    final progress = _logger.progress('Running $command');
 
     try {
-      final process = await Process.start(
-        'flutter',
-        flutterArgs,
+      final result = await _processRunner(
+        command.executable,
+        command.arguments,
         workingDirectory: projectPath,
       );
+      final output = '${result.stdout}'.trim();
+      final errOutput = '${result.stderr}'.trim();
 
-      // Buffer stdout/stderr; flutter test writes test results to stdout.
-      final stdoutBuffer = StringBuffer();
-      process.stdout
-          .transform(const SystemEncoding().decoder)
-          .listen(stdoutBuffer.write);
-
-      final stderrBuffer = StringBuffer();
-      process.stderr
-          .transform(const SystemEncoding().decoder)
-          .listen(stderrBuffer.write);
-
-      final exitCode = await process.exitCode;
-
-      if (exitCode == 0) {
+      if (result.exitCode == 0) {
         progress.complete('Tests passed');
       } else {
         progress.fail('Tests failed');
       }
 
-      final output = stdoutBuffer.toString().trim();
       if (output.isNotEmpty) {
         _logger
           ..info('')
           ..info(output);
       }
-
-      final errOutput = stderrBuffer.toString().trim();
       if (errOutput.isNotEmpty) {
         _logger.err(errOutput);
       }
 
-      _printSummary(output: output, exitCode: exitCode);
-
-      return exitCode == 0 ? 0 : 1;
-    } on ProcessException catch (e) {
-      progress.fail('Could not launch flutter');
-      _logger.err('flutter not found or not runnable: $e');
+      _printSummary(output: output, exitCode: result.exitCode);
+      return result.exitCode == 0 ? 0 : 1;
+    } on ProcessException catch (error) {
+      progress.fail('Could not launch ${command.executable}');
+      _logger.err('${command.executable} not found or not runnable: $error');
       return 1;
     }
   }
 
-  /// Parse and re-print a compact pass/fail summary line.
   void _printSummary({required String output, required int exitCode}) {
-    // flutter test emits: "00:01 +3: All tests passed!" or "00:01 +2 -1: ..."
     final summaryLine =
         output
             .split('\n')
             .lastWhere(
-              (l) =>
-                  l.contains('passed') ||
-                  l.contains('failed') ||
-                  l.contains('+'),
+              (line) =>
+                  line.contains('passed') ||
+                  line.contains('failed') ||
+                  line.contains('+'),
               orElse: () => '',
             )
             .trim();

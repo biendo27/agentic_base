@@ -201,6 +201,40 @@ void main() {
         FlutterSdkManager.fvm,
       );
     });
+
+    test(
+      'supports dry-run previews without spawning toolchain commands',
+      () async {
+        final original = AgenticConfig(projectPath: tempDir.path).read();
+        final localRunner = CommandRunner<int>('agentic_base', 'test runner')
+          ..addCommand(
+            AddCommand(
+              logger: AgenticLogger(),
+              projectPathProvider: () => tempDir.path,
+              processRunner: _recordingProcessRunner(processCalls),
+              toolchainDetector: ({
+                required manager,
+                required projectPath,
+              }) {
+                fail('toolchain resolution should be skipped during dry-run');
+              },
+            ),
+          );
+
+        final exitCode = await localRunner.run([
+          'add',
+          'analytics',
+          '--dry-run',
+        ]);
+
+        expect(exitCode, equals(0));
+        expect(processCalls, isEmpty);
+        expect(
+          AgenticConfig(projectPath: tempDir.path).read(),
+          equals(original),
+        );
+      },
+    );
   });
 }
 

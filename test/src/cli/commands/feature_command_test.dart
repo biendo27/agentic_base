@@ -43,6 +43,25 @@ void main() {
     );
 
     test(
+      'dry-run still fails when the shared host contract is missing',
+      () async {
+        final exitCode = await runner.run([
+          'feature',
+          'user_profile',
+          '--dry-run',
+        ]);
+
+        expect(exitCode, equals(1));
+        expect(
+          Directory(
+            p.join(tempDir.path, 'lib/features/user_profile'),
+          ).existsSync(),
+          isFalse,
+        );
+      },
+    );
+
+    test(
       'allows simple feature scaffolds without the full shared host contract',
       () async {
         final exitCode = await runner.run([

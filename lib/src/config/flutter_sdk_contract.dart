@@ -129,7 +129,8 @@ final class DetectedFlutterToolchain {
 
   bool matches(FlutterSdkContract contract) {
     return available &&
-        version == contract.version &&
+        manager == contract.preferredManager &&
+        version == contract.preferredVersion &&
         (channel == null || channel == contract.channel);
   }
 }

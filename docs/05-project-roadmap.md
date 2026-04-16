@@ -6,6 +6,8 @@ The original generator foundation is complete.
 
 Harness Contract V1 implementation is now landed in generator code, generated scripts, CI templates, validators, and regression tests.
 
+The current dry-run, toolchain-selection, and theme-contract wave has also landed in code; the remaining work is stabilization and release hygiene.
+
 ## Completed Phases
 
 | Phase | Status | Outcome |
@@ -27,6 +29,8 @@ Status:
 
 - Harness Contract V1 implementation complete
 - Shared app contracts now standardize generated starter and feature data/domain boundaries on `fpdart` while keeping presentation state APIs simple
+- CLI commands now have truthful preview-only `--dry-run` paths, and real execution uses manager-aware toolchain selection for `system`, `fvm`, and `puro`
+- Generated starter contracts now use Freezed-backed response and pagination models, and the theme layer splits controller state from family composition
 - Generated locale runtime wrapping now lives outside the Slang output tree so contract verification stays stable after regeneration
 - Generated starter apps now ship a stronger Material 3 foundation with the exact default Figma palette, exact base typography and measurement tokens, `ThemeData.from(...)`, and internal adaptive helpers instead of ScreenUtil leftovers
 - The starter app now proves one day-0 journey: runtime diagnostics, detail navigation, settings, and a provider-neutral monetization screen

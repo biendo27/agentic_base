@@ -9,11 +9,13 @@ Theme is defined in `lib/core/theme/`.
 
 ## File Structure
 
-```
+```text
 lib/core/theme/
-├── app_theme.dart          # ThemeData assembly (light + dark)
-├── color_schemes.dart      # ColorScheme for light and dark
-├── component_themes.dart   # Per-component overrides
+├── app_theme.dart          # ThemeData assembly from family id + brightness
+├── app_theme_family.dart   # Theme family registry (v1 ships one default family)
+├── color_schemes.dart      # ColorScheme for the default family
+├── component_themes.dart   # Theme composer entrypoint
+├── component_themes/       # Per-component overrides split by concern
 ├── typography.dart         # TextTheme with custom fonts
 ├── spacing.dart            # AppSpacing constants
 ├── radius.dart             # AppRadius constants
@@ -25,15 +27,22 @@ lib/core/theme/
 
 Colors are defined as `ColorScheme` objects in `color_schemes.dart`.
 The generator uses the exact light and dark values from the Material 3
-Figma `Color Modes` collection as the default palette.
+Figma `Color Modes` collection as the default family palette.
+
+## Theme Family vs Theme Mode
+
+- Theme family chooses the palette bundle, typography, extensions, and component-theme composer.
+- Theme mode chooses whether that family renders light, dark, or follows system.
+- The starter keeps one bundled family only: `material-default`.
+- `AppThemeController` stores both values so downstream apps can add another family later without rewiring the shell.
 
 Use semantic color tokens, not raw hex values in widgets:
 
 ```dart
-// Good — semantic
+// Good - semantic
 color: context.colorScheme.primary
 
-// Bad — hardcoded
+// Bad - hardcoded
 color: Color(0xFF6750A4)
 ```
 
@@ -107,12 +116,12 @@ context.appColors.info
 ```
 
 Add new values to `extensions/theme_extensions.dart` and register
-in `AppTheme.light` and `AppTheme.dark`.
+in the active `AppThemeFamily`.
 
 ## Dark Mode
 
-`AppTheme` exposes both `light` and `dark`.
-`AppThemeController` owns the active `ThemeMode` and is mounted through
-`AppThemeScope` in `App`.
+`AppTheme` builds `light` and `dark` `ThemeData` from the selected family id.
+`AppThemeController` owns the active `ThemeMode` and theme family id, and is
+mounted through `AppThemeScope` in `App`.
 `StarterSettingsPage` is the default surface for previewing system, light,
-and dark mode without adding product-specific preferences yet.
+and dark mode without adding product-specific preferences or a demo family switcher.

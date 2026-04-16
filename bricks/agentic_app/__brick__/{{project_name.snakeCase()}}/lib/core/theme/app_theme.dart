@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:{{project_name.snakeCase()}}/core/theme/color_schemes.dart';
-import 'package:{{project_name.snakeCase()}}/core/theme/component_themes.dart';
-import 'package:{{project_name.snakeCase()}}/core/theme/extensions/theme_extensions.dart';
-import 'package:{{project_name.snakeCase()}}/core/theme/typography.dart';
+import 'package:{{project_name.snakeCase()}}/core/theme/app_theme_family.dart';
 
 abstract class AppTheme {
-  static ThemeData get light =>
-      _buildTheme(AppColorSchemes.light, AppColors.light);
+  static ThemeData light({
+    String familyId = AppThemeFamilies.defaultFamilyId,
+  }) => _buildTheme(familyId: familyId, brightness: Brightness.light);
 
-  static ThemeData get dark =>
-      _buildTheme(AppColorSchemes.dark, AppColors.dark);
+  static ThemeData dark({
+    String familyId = AppThemeFamilies.defaultFamilyId,
+  }) => _buildTheme(familyId: familyId, brightness: Brightness.dark);
 
-  static ThemeData _buildTheme(ColorScheme colorScheme, AppColors colors) {
-    final textTheme = AppTypography.textTheme.apply(
+  static ThemeData _buildTheme({
+    required String familyId,
+    required Brightness brightness,
+  }) {
+    final family = AppThemeFamilies.resolve(familyId);
+    final colorScheme = family.colorSchemeFor(brightness);
+    final textTheme = family.textTheme.apply(
       bodyColor: colorScheme.onSurface,
       displayColor: colorScheme.onSurface,
     );
@@ -20,33 +24,12 @@ abstract class AppTheme {
       colorScheme: colorScheme,
       textTheme: textTheme,
       useMaterial3: true,
-    );
-
-    return baseTheme.copyWith(
+    ).copyWith(
       textTheme: textTheme,
       scaffoldBackgroundColor: colorScheme.surface,
-      extensions: [colors],
-      appBarTheme: AppComponentThemes.appBarTheme(colorScheme),
-      cardTheme: AppComponentThemes.cardTheme(colorScheme),
-      elevatedButtonTheme: AppComponentThemes.elevatedButtonTheme(colorScheme),
-      outlinedButtonTheme: AppComponentThemes.outlinedButtonTheme(colorScheme),
-      textButtonTheme: AppComponentThemes.textButtonTheme(colorScheme),
-      inputDecorationTheme: AppComponentThemes.inputDecorationTheme(
-        colorScheme,
-      ),
-      chipTheme: AppComponentThemes.chipTheme(colorScheme),
-      dialogTheme: AppComponentThemes.dialogTheme,
-      bottomNavigationBarTheme: AppComponentThemes.bottomNavTheme(colorScheme),
-      navigationBarTheme: AppComponentThemes.navigationBarTheme(colorScheme),
-      floatingActionButtonTheme: AppComponentThemes.fabTheme(colorScheme),
-      snackBarTheme: AppComponentThemes.snackBarTheme(colorScheme),
-      dividerTheme: AppComponentThemes.dividerTheme(colorScheme),
-      bottomSheetTheme: AppComponentThemes.bottomSheetTheme,
-      listTileTheme: AppComponentThemes.listTileTheme,
-      switchTheme: AppComponentThemes.switchTheme(colorScheme),
-      checkboxTheme: AppComponentThemes.checkboxTheme(colorScheme),
-      radioTheme: AppComponentThemes.radioTheme(colorScheme),
-      tabBarTheme: AppComponentThemes.tabBarTheme(colorScheme),
+      extensions: family.extensionsFor(brightness),
     );
+
+    return family.compose(baseTheme, colorScheme);
   }
 }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-`agentic_base` is a generator package, not an app runtime. The repo architecture centers on a command-line control plane that resolves a manager-aware Flutter/Dart toolchain, shells out through that resolved executable path, applies Mason templates, and mutates target-project files in a controlled way so generated repos have one canonical context contract and deterministic execution surfaces.
+`agentic_base` is a generator package, not an app runtime. The repo architecture centers on a command-line control plane that resolves a manager-aware Flutter/Dart toolchain, shells out through that resolved executable path, applies Mason templates, and mutates target-project files in a controlled way so generated repos have one canonical context contract and deterministic execution surfaces. Preview-only `--dry-run` paths now report the planned reads, writes, and commands without probing toolchains or mutating projects.
 
 ```mermaid
 flowchart LR
@@ -43,6 +43,7 @@ Files under `lib/src/cli/` define the user-facing contract:
 
 - `cli_runner.dart` wires the command catalog
 - command files validate input, choose the right workflow, and translate failures into exit codes
+- commands that touch external tools now expose truthful `--dry-run` previews instead of fake logging
 
 This layer should stay user-facing and thin, though some command files currently carry too much orchestration.
 
@@ -65,6 +66,7 @@ Files under `lib/src/config/` define repo-managed state:
 - `ProjectMetadata`, `HarnessMetadata`, and `FlutterSdkContract` define the typed machine contract, including preferred-vs-resolved SDK state
 - `InitProjectMetadataResolver` infers repair-time metadata from an existing Flutter repo
 - `resolveFlutterToolchain(...)` centralizes fallback order and command-shape resolution for Flutter and Dart subprocesses
+- dry-run previews reuse the declared manager contract and intentionally skip toolchain probing, while real execution still falls back through preferred, inferred, then system toolchains
 - `SpecParser` parses `feature.spec.yaml`
 - `StateConfig` maps supported state-management choices to dependencies
 
@@ -97,6 +99,10 @@ internal adaptive breakpoint helpers instead of ScreenUtil-style global
 scaling, a starter day-0 flow (dashboard, detail, settings, monetization),
 and a generated test matrix that proves repository seams, state runtime,
 starter widget surfaces, and app-shell boot behavior.
+Shared modeled contracts now use `freezed` for the response, pagination, and
+failure files, while the theme layer splits controller state from the family
+registry so the starter can grow into multiple theme families without
+rewiring the shell.
 
 ## Key Flows
 
@@ -141,7 +147,7 @@ starter widget surfaces, and app-shell boot behavior.
 1. user runs `agentic_base init` inside a Flutter project
 2. package infers state-management, org, platforms, flavors, CI provider, and toolchain defaults from project files
 3. the app brick is rendered to a temp project and generator-owned surfaces are copied into the existing repo additively
-4. helper files such as `Makefile` and `analysis_options.yaml` are added only if absent
+4. helper files such as the project makefile and `analysis_options.yaml` are added only if absent
 5. `.info/agentic.yaml` is written only after the repaired repo passes the shared agent-ready contract validator, including the harness manifest rules
 6. if validation fails, copied scaffold surfaces and repaired provider wrappers are rolled back before the command exits
 7. conflicting pre-existing thin adapters or provider surfaces cause `init` to fail instead of claiming a false contract

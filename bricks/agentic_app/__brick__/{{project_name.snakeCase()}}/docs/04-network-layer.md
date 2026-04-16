@@ -11,6 +11,10 @@ Shared boundary contracts live in:
 - `lib/core/contracts/app_response.dart`
 - `lib/core/contracts/pagination.dart`
 
+`AppFailure`, `AppResponse`, and the pagination models use `freezed` so
+repositories and state layers get value semantics without widening the
+shared runtime surface.
+
 ## Setup
 
 `ApiClient` is configured in `lib/core/network/api_client.dart`:
