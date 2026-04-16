@@ -48,11 +48,14 @@ final class GeneratedProjectContract {
     'docs/04-network-layer.md',
     'docs/05-theming-guide.md',
     'docs/06-testing-guide.md',
+    'docs/07-agentic-development-flow.md',
     'lib/app/app.dart',
     'lib/app/bootstrap.dart',
     'lib/app/flavors.dart',
     'lib/app/locale/app_locale_contract.dart',
     'lib/app/i18n/translations.g.dart',
+    'lib/core/contracts/app_list_response.dart',
+    'lib/core/contracts/localized_text.dart',
     'lib/core/contracts/app_response.dart',
     'lib/core/contracts/app_result.dart',
     'lib/core/contracts/pagination.dart',
@@ -85,6 +88,10 @@ final class GeneratedProjectContract {
     'tools/test.sh',
     'tools/verify.sh',
     'test/app_smoke_test.dart',
+    'test/core/contracts/app_list_response_test.dart',
+    'test/core/contracts/app_response_test.dart',
+    'test/core/contracts/localized_text_test.dart',
+    'test/core/contracts/pagination_test.dart',
     'test/features/home/data/repositories/demo_starter_monetization_repository_test.dart',
     'test/features/home/data/repositories/home_repository_impl_test.dart',
     'test/features/home/presentation/widgets/starter_action_card_test.dart',
@@ -236,6 +243,7 @@ final class GeneratedProjectContract {
       ciProvider: resolvedCiProvider,
     );
     _validateGeneratedReadme(projectDir);
+    _validateGeneratedDocs(projectDir);
     _validateThemeSurface(projectDir);
     validateNativeFlavorOutputs(projectDir);
     if (stateManagement != null) {
@@ -687,9 +695,12 @@ final class GeneratedProjectContract {
     final checkpoints = _requireYamlMap(config, 'checkpoints');
     final harness = _requireYamlMap(config, 'harness');
 
-    _requireYamlListValue(context, 'canonical_docs', 'docs/01-architecture.md');
-    _requireYamlListValue(context, 'thin_adapters', 'AGENTS.md');
-    _requireYamlListValue(context, 'thin_adapters', 'CLAUDE.md');
+    for (final doc in canonicalContextDocs) {
+      _requireYamlListValue(context, 'canonical_docs', doc);
+    }
+    for (final adapter in thinAdapterFiles) {
+      _requireYamlListValue(context, 'thin_adapters', adapter);
+    }
 
     final storedCiProvider = config['ci_provider'];
     if (storedCiProvider is! String) {
@@ -848,12 +859,15 @@ final class GeneratedProjectContract {
     _requireContent(agents, './tools/verify.sh');
     _requireContent(agents, 'Harness Contract: `v1`');
     _requireContent(agents, 'Evidence directory: `artifacts/evidence`');
-    _forbidContent(agents, 'Feature Workflow');
+    _requireContent(agents, 'docs/07-agentic-development-flow.md');
+    _requireContent(agents, 'Recommended default Gitflow');
 
     _requireContent(claude, 'Thin Claude adapter');
     _requireContent(claude, 'Machine contract: `.info/agentic.yaml`');
     _requireContent(claude, 'Harness Contract: `v1`');
     _requireContent(claude, 'Support tier:');
+    _requireContent(claude, 'docs/07-agentic-development-flow.md');
+    _requireContent(claude, 'Recommended default Gitflow');
   }
 
   static void _validateGeneratedReadme(String projectDir) {
@@ -863,11 +877,37 @@ final class GeneratedProjectContract {
     _requireContent(readme, 'Primary profile: `');
     _requireContent(readme, 'Support tier: `');
     _requireContent(readme, 'Evidence directory: `artifacts/evidence`');
+    _requireContent(readme, './tools/test.sh');
     _requireContent(readme, './tools/run-dev.sh');
+    _requireContent(readme, 'docs/07-agentic-development-flow.md');
+    _requireContent(readme, 'Recommended default Gitflow');
     _requireContent(
       readme,
       'final production store publish remains a human approval step',
     );
+  }
+
+  static void _validateGeneratedDocs(String projectDir) {
+    final testingGuide = _readRequiredFile(
+      projectDir,
+      'docs/06-testing-guide.md',
+    );
+    final workflowGuide = _readRequiredFile(
+      projectDir,
+      'docs/07-agentic-development-flow.md',
+    );
+
+    _requireContent(testingGuide, './tools/test.sh');
+    _requireContent(testingGuide, './tools/verify.sh');
+    _requireContent(testingGuide, 'make test');
+    _forbidContent(testingGuide, 'flutter test');
+
+    _requireContent(workflowGuide, '.info/agentic.yaml');
+    _requireContent(workflowGuide, './tools/verify.sh');
+    _requireContent(workflowGuide, 'Recommended default Gitflow');
+    _requireContent(workflowGuide, 'feature/*');
+    _requireContent(workflowGuide, 'release/*');
+    _requireContent(workflowGuide, 'hotfix/*');
   }
 
   static void _validateThemeSurface(String projectDir) {

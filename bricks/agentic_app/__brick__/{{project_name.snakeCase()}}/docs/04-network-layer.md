@@ -10,10 +10,14 @@ Shared boundary contracts live in:
 - `lib/core/contracts/app_result.dart`
 - `lib/core/contracts/app_response.dart`
 - `lib/core/contracts/pagination.dart`
+- `lib/core/contracts/localized_text.dart`
 
-`AppFailure`, `AppResponse`, and the pagination models use `freezed` so
-repositories and state layers get value semantics without widening the
-shared runtime surface.
+`AppFailure`, the response/pagination contracts, and `LocalizedText` keep the
+shared model layer inspectable and runtime-agnostic:
+
+- invariants live on the contract class
+- explicit-input helpers stay on the contract when they do not reach into app state
+- locale- or DI-aware convenience must stay outside raw contracts
 
 ## Setup
 
@@ -77,6 +81,10 @@ Transport failures are normalized by `ErrorHandler`, with
 `ErrorInterceptor` pre-populating typed failure payloads for HTTP-layer
 errors.
 The presentation runtime maps repository/use case results into state transitions.
+
+`AppResponse<T>` is the transport envelope shape when an API returns data plus
+metadata. `AppResult<T>` remains the repository/use-case boundary returned to
+the rest of the app.
 
 ## Environment URLs
 

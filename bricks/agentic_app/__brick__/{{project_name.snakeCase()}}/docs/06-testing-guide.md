@@ -14,11 +14,26 @@ The primary verification surface is `./tools/verify.sh`. It runs the same local 
 Use `./tools/release-preflight.sh` before any upload-oriented release command.
 Inspect evidence under `{{{evidence_dir}}}` for `summary.json`, gate check files, and logs.
 
+## Manager-Aware Test Surface
+
+Use the generated wrappers first:
+
+- `./tools/test.sh` runs the manager-aware test command declared by `.info/agentic.yaml`
+- `./tools/test.sh <path-or-args>` passes extra test arguments through to the resolved Flutter runtime
+- `make test` is the shortest full-suite entrypoint
+- `./tools/verify.sh` is the pre-review gate, not just another test command
+
+Do not bypass these wrappers unless you are debugging the wrapper itself.
+
 ## Generated Test Matrix
 
 ```text
 test/
 ├── app_smoke_test.dart
+├── core/contracts/
+│   ├── app_response_test.dart
+│   ├── localized_text_test.dart
+│   └── pagination_test.dart
 ├── features/home/
 │   ├── data/repositories/demo_starter_monetization_repository_test.dart
 │   ├── data/repositories/home_repository_impl_test.dart
@@ -49,6 +64,14 @@ test('returns the starter dashboard checklist items', () async {
   );
 });
 ```
+
+## Shared Contract Tests
+
+The generated contract tests keep the shared model layer honest:
+
+- `app_response_test.dart` covers response-envelope serialization and success semantics
+- `pagination_test.dart` covers request serialization, reserved-key protection, and pagination helpers
+- `localized_text_test.dart` covers runtime-agnostic locale lookup and fallback behavior
 
 ## State Runtime Tests
 
@@ -120,20 +143,21 @@ testWidgets('renders the starter CTA and reacts to taps', (tester) async {
 ## Running Tests
 
 ```bash
-./tools/verify.sh                     # full local verify ladder
-flutter test                          # all tests
-flutter test test/features/home/      # single feature
-flutter test --coverage               # with coverage
-genhtml coverage/lcov.info -o coverage/html  # HTML report
+./tools/test.sh
+./tools/test.sh test/features/home/
+./tools/test.sh --coverage
+./tools/verify.sh
+make test
+make verify
 ```
-
-Or use: `make verify` / `make test`
 
 ## Coverage Target
 
 Aim for >80% coverage on:
-- All presentation controllers/stores
-- All use cases
-- Critical utility functions
+
+- presentation controllers/stores
+- use cases
+- critical utility functions
+- shared contracts that carry parsing or boundary rules
 
 Generated files (`*.g.dart`, `*.freezed.dart`) are excluded from coverage.

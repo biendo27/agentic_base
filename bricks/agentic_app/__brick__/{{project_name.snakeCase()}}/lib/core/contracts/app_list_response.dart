@@ -1,50 +1,50 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'app_response.freezed.dart';
+part 'app_list_response.freezed.dart';
 
 @freezed
-abstract class AppResponse<T> with _$AppResponse<T> {
-  const AppResponse._();
+abstract class AppListResponse<T> with _$AppListResponse<T> {
+  const AppListResponse._();
 
-  const factory AppResponse({
+  const factory AppListResponse({
     @Default(true) bool success,
     String? message,
     String? code,
     int? statusCode,
-    T? data,
+    required List<T> data,
     @Default(<String, Object?>{}) Map<String, Object?> metadata,
-  }) = _AppResponse<T>;
+  }) = _AppListResponse<T>;
 
-  factory AppResponse.fromJson(
+  factory AppListResponse.fromJson(
     Map<String, Object?> json,
-    T? Function(Object? json) fromJsonT,
+    T Function(Object? json) fromJsonItem,
   ) {
     final statusCode = _readInt(json['status_code'] ?? json['statusCode']);
     final metadata = _readObjectMap(json['metadata']);
     final successValue = json['success'] ?? json['status'];
 
-    return AppResponse<T>(
+    return AppListResponse<T>(
       success: _readSuccess(successValue, statusCode),
       message: _readString(json['message']),
       code: _readString(json['code']),
       statusCode: statusCode,
-      data: json.containsKey('data') ? fromJsonT(json['data']) : null,
+      data: _readItemList(json['data'], fromJsonItem),
       metadata: metadata,
     );
   }
 }
 
-extension AppResponseX<T> on AppResponse<T> {
+extension AppListResponseX<T> on AppListResponse<T> {
   bool get isSuccess => success && (statusCode == null || statusCode! < 400);
-  bool get hasData => data != null;
+  bool get hasData => data.isNotEmpty;
 
-  Map<String, Object?> toJson(Object? Function(T value) toJsonT) {
+  Map<String, Object?> toJson(Object? Function(T value) toJsonItem) {
     return <String, Object?>{
       'success': success,
       if (message != null) 'message': message,
       if (code != null) 'code': code,
       if (statusCode != null) 'status_code': statusCode,
-      if (data case final value?) 'data': toJsonT(value),
+      'data': data.map(toJsonItem).toList(growable: false),
       if (metadata.isNotEmpty) 'metadata': metadata,
     };
   }
@@ -88,4 +88,18 @@ Map<String, Object?> _readObjectMap(Object? value) {
   return value.map((key, entry) {
     return MapEntry(key.toString(), entry);
   });
+}
+
+List<T> _readItemList<T>(
+  Object? value,
+  T Function(Object? json) fromJsonItem,
+) {
+  if (value == null) {
+    return <T>[];
+  }
+  if (value is! List<Object?>) {
+    throw const FormatException('AppListResponse data must be a JSON list.');
+  }
+
+  return value.map(fromJsonItem).toList(growable: false);
 }

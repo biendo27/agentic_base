@@ -63,6 +63,9 @@ void _expectStarterRuntimeSurfaces(
       File(
         p.join(appDir, 'lib/core/theme/app_theme.dart'),
       ).readAsStringSync();
+  final generatedReadme = File(p.join(appDir, 'README.md')).readAsStringSync();
+  final agentsAdapter = File(p.join(appDir, 'AGENTS.md')).readAsStringSync();
+  final claudeAdapter = File(p.join(appDir, 'CLAUDE.md')).readAsStringSync();
   final contextExtensions =
       File(
         p.join(appDir, 'lib/core/extensions/context_extensions.dart'),
@@ -70,6 +73,22 @@ void _expectStarterRuntimeSurfaces(
   final themingGuide =
       File(
         p.join(appDir, 'docs/05-theming-guide.md'),
+      ).readAsStringSync();
+  final testingGuide =
+      File(
+        p.join(appDir, 'docs/06-testing-guide.md'),
+      ).readAsStringSync();
+  final workflowGuide =
+      File(
+        p.join(appDir, 'docs/07-agentic-development-flow.md'),
+      ).readAsStringSync();
+  final appListResponseContract =
+      File(
+        p.join(appDir, 'lib/core/contracts/app_list_response.dart'),
+      ).readAsStringSync();
+  final localizedTextContract =
+      File(
+        p.join(appDir, 'lib/core/contracts/localized_text.dart'),
       ).readAsStringSync();
 
   expect(errorInterceptor, contains('ErrorHandler.handle(err)'));
@@ -85,8 +104,25 @@ void _expectStarterRuntimeSurfaces(
   expect(generatedPubspec, isNot(contains('flutter_screenutil:')));
   expect(generatedTheme, contains('ThemeData.from('));
   expect(generatedTheme, isNot(contains('ColorScheme.fromSeed(')));
+  expect(generatedReadme, contains('./tools/test.sh'));
+  expect(
+    generatedReadme,
+    contains('docs/07-agentic-development-flow.md'),
+  );
+  expect(generatedReadme, contains('Recommended default Gitflow'));
+  expect(agentsAdapter, contains('docs/07-agentic-development-flow.md'));
+  expect(agentsAdapter, contains('Recommended default Gitflow'));
+  expect(claudeAdapter, contains('docs/07-agentic-development-flow.md'));
+  expect(claudeAdapter, contains('Recommended default Gitflow'));
   expect(contextExtensions, contains('adaptivePagePadding'));
   expect(themingGuide, contains('BuildContextX'));
+  expect(testingGuide, contains('./tools/test.sh'));
+  expect(testingGuide, contains('make test'));
+  expect(testingGuide, isNot(contains('flutter test')));
+  expect(workflowGuide, contains('.info/agentic.yaml'));
+  expect(workflowGuide, contains('Recommended default Gitflow'));
+  expect(appListResponseContract, contains('abstract class AppListResponse'));
+  expect(localizedTextContract, contains('abstract class LocalizedText'));
   expect(
     File(
       p.join(appDir, 'lib/core/theme/color_schemes.dart'),
@@ -102,6 +138,42 @@ void _expectStarterRuntimeSurfaces(
       p.join(appDir, 'lib/core/responsive/app_screen_util_init.dart'),
     ).existsSync(),
     isFalse,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'test/core/contracts/app_list_response_test.dart',
+      ),
+    ).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'test/core/contracts/app_response_test.dart',
+      ),
+    ).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'test/core/contracts/localized_text_test.dart',
+      ),
+    ).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'test/core/contracts/pagination_test.dart',
+      ),
+    ).existsSync(),
+    isTrue,
   );
   expect(
     File(

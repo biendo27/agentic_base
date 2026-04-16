@@ -10,7 +10,7 @@ Thin Claude adapter for `{{project_name.titleCase()}}`.
 - Support tier: `{{support_tier_label}}`
 - Evidence directory: `{{{evidence_dir}}}`
 - Declared Flutter toolchain: `{{flutter_sdk_manager}}` / `{{flutter_sdk_channel}}` / `{{flutter_sdk_version}}`
-- Human-readable context: `README.md` plus `docs/01-06`
+- Human-readable context: `README.md` plus `docs/01-07`
 - State runtime: `{{state_display_name}}`
 - CI provider: `{{ci_provider}}`
 
@@ -18,10 +18,21 @@ Thin Claude adapter for `{{project_name.titleCase()}}`.
 
 - `./tools/setup.sh`
 - `./tools/run-dev.sh`
+- `./tools/test.sh`
 - `./tools/verify.sh`
 - `./tools/build.sh <dev|staging|prod> [apk|appbundle|ipa|all]`
 - `./tools/release-preflight.sh <dev|staging|prod> <target>`
 - `./tools/release.sh <dev|staging|prod> <target>`
+
+## Recommended Default Gitflow
+
+Recommended default Gitflow:
+
+- `feature/*` -> `develop`
+- `release/*` -> `main`
+- `hotfix/*` -> `main`
+
+See `docs/07-agentic-development-flow.md` for the full workflow and back-merge rule.
 
 ## Boundaries
 

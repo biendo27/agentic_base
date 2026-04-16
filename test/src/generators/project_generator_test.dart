@@ -95,6 +95,7 @@ ${thinAdapterFiles.map((doc) => '    - $doc').join('\n')}
 execution:
   setup: ./tools/setup.sh
   run: ./tools/run-dev.sh
+  test: ./tools/test.sh
   verify: ./tools/verify.sh
   build: ./tools/build.sh
   release_preflight: ./tools/release-preflight.sh
@@ -138,11 +139,15 @@ harness:
     policy: newest_tested
 ''',
     'AGENTS.md':
-        'Thin adapter\n./tools/verify.sh\nHarness Contract: `v1`\nEvidence directory: `artifacts/evidence`\n',
+        'Thin adapter\n./tools/verify.sh\ndocs/07-agentic-development-flow.md\nHarness Contract: `v1`\nEvidence directory: `artifacts/evidence`\nRecommended default Gitflow\n',
     'CLAUDE.md':
-        'Thin Claude adapter\nMachine contract: `.info/agentic.yaml`\nHarness Contract: `v1`\nSupport tier:\n',
+        'Thin Claude adapter\nMachine contract: `.info/agentic.yaml`\nHarness Contract: `v1`\nSupport tier:\ndocs/07-agentic-development-flow.md\nRecommended default Gitflow\n',
     'README.md':
-        'An agent-ready Flutter repository\nPrimary profile: `consumer-app`\nSupport tier: `Tier 1`\nEvidence directory: `artifacts/evidence`\n./tools/run-dev.sh\nfinal production store publish remains a human approval step\n',
+        'An agent-ready Flutter repository\nPrimary profile: `consumer-app`\nSupport tier: `Tier 1`\nEvidence directory: `artifacts/evidence`\n./tools/test.sh\n./tools/run-dev.sh\ndocs/07-agentic-development-flow.md\nRecommended default Gitflow\nfinal production store publish remains a human approval step\n',
+    'docs/06-testing-guide.md':
+        './tools/test.sh\n./tools/verify.sh\nmake test\n',
+    'docs/07-agentic-development-flow.md':
+        '.info/agentic.yaml\n./tools/verify.sh\nRecommended default Gitflow\nfeature/*\nrelease/*\nhotfix/*\n',
     'tools/_common.sh': 'summary.json\n',
     'lib/app/bootstrap.dart': stateSurface.bootstrap,
     'lib/core/di/injection.dart': stateSurface.injection,
