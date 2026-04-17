@@ -72,9 +72,11 @@ Each command should:
 - generated app and feature data/domain boundaries should use `fpdart` `Either`
   wrappers from the shared contract files, not tuple returns
 - keep `lib/core/contracts` runtime-agnostic:
-  - invariants and value behavior live on the contract class
-  - explicit-input helpers are allowed when they stay context-free
+  - raw data shape, defaults, and invariants that define the transport contract stay on the contract class
+  - pure convenience, serialization, and formatting helpers may stay in extensions when they depend only on the contract value and keep the contract model smaller
   - locale-, DI-, or app-runtime-aware convenience belongs in extensions or services outside raw contracts
+- prefer extension-oriented helpers for shared contract ergonomics; move logic into services only when it needs locale, DI, or app runtime state
+- keep shared contract tests aligned with the raw-model boundary, not with convenience methods that could move between extensions and services later
 - generated app theme assembly must use `ThemeData.from(...)` on top of an
   explicit Material 3 `ColorScheme` sourced from the owned design-kit tokens
 - generated app adaptive layout should use `BuildContextX` breakpoint helpers,

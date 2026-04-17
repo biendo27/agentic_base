@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - repo CI now runs for pull requests into `main` and `develop`, plus pushes to `main`, `develop`, `release/*`, and `hotfix/*`
 - deployment docs now record the repo merge strategy targets and the current GitHub branch-protection limitation for private repos on this plan
+- shared contract guidance now prefers extension-based ergonomics for raw contract models, keeping locale/DI/runtime behavior outside the transport contract
+- generated smoke verification now uses a dedicated `app-shell-smoke` tag so the slow canary is not duplicated in the generic test pass
+- smoke policy now distinguishes a fast blocking lane from a slow blocking canary for harness, verify, evidence, and native-surface changes
 
 ## [0.1.0] - 2026-04-09
 

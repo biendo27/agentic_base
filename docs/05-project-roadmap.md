@@ -35,6 +35,7 @@ Status:
 - Generated starter apps now ship a stronger Material 3 foundation with the exact default Figma palette, exact base typography and measurement tokens, `ThemeData.from(...)`, and internal adaptive helpers instead of ScreenUtil leftovers
 - The starter app now proves one day-0 journey: runtime diagnostics, detail navigation, settings, and a provider-neutral monetization screen
 - Verification no longer relies mainly on downstream boot smoke: generated apps now ship repository tests, state-runtime tests, a starter widget test, and the package smoke matrix retains only the heavy lanes that still prove unique behavior
+- Smoke verification is now split into a fast blocking lane and a slow blocking canary; the generic test pass excludes the dedicated `app-shell-smoke` gate so the canary is not duplicated
 - Repo release hygiene now includes classic Gitflow branch roles, PR route validation, and CI coverage for `develop`, `release/*`, and `hotfix/*`
 - Docs, generated workflow guidance, and release claims aligned with shipped behavior
 - Remaining work is stabilization, release hygiene, and future generator polish
