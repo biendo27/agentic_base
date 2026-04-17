@@ -1,7 +1,11 @@
 import 'dart:io';
 
 import 'package:agentic_base/src/config/ci_provider.dart';
+import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
+import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
+import 'package:agentic_base/src/generators/project_generator.dart';
+import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
@@ -14,6 +18,63 @@ bool _isFlutterAvailable() {
 }
 
 String get _dartExecutable => Platform.resolvedExecutable;
+
+Future<String> _generateStarterApp({
+  required String repoRoot,
+  required Directory tempDir,
+  required String appName,
+  String stateManagement = 'cubit',
+  CiProvider ciProvider = CiProvider.github,
+  List<String> modules = const [],
+  bool runVerify = false,
+}) async {
+  final appDir = p.join(tempDir.path, appName);
+  if (runVerify) {
+    final result = await Process.run(_dartExecutable, [
+      'run',
+      'bin/agentic_base.dart',
+      'create',
+      appName,
+      '--no-interactive',
+      '--output-dir',
+      tempDir.path,
+      '--ci-provider',
+      ciProvider.name,
+      '--state',
+      stateManagement,
+      if (modules.isNotEmpty) ...['--modules', modules.join(',')],
+    ], workingDirectory: repoRoot);
+
+    expect(
+      result.exitCode,
+      equals(0),
+      reason: '${result.stdout}\n${result.stderr}',
+    );
+    return appDir;
+  }
+
+  final previousCurrent = Directory.current.path;
+  Directory.current = repoRoot;
+  try {
+    await ProjectGenerator(logger: AgenticLogger()).generate(
+      projectName: appName,
+      outputDirectory: appDir,
+      org: 'com.example',
+      platforms: const ['android', 'ios', 'web'],
+      stateManagement: stateManagement,
+      flavors: GeneratedProjectContract.generatedFlavors,
+      ciProvider: ciProvider,
+      appProfile: HarnessAppProfile.consumerApp,
+      flutterSdkManager: FlutterSdkManager.system,
+      modules: modules,
+      runVerify: false,
+    );
+  } finally {
+    Directory.current = previousCurrent;
+  }
+
+  return appDir;
+}
 
 Directory _latestEvidenceRunDirectory(String appDir, String runKind) {
   final runRoot = Directory(p.join(appDir, 'artifacts', 'evidence', runKind));
@@ -274,7 +335,7 @@ void main() {
   final repoRoot = Directory.current.path;
   const smokeTimeout = Timeout(Duration(minutes: 6));
   test(
-    'create command generates a cubit github starter app that matches the ownership contract',
+    'slow verify canary stays blocking for harness, verify, evidence, and native-surface changes',
     () async {
       final tempDir = await Directory.systemTemp.createTemp(
         'agentic-base-smoke-github-',
@@ -282,27 +343,12 @@ void main() {
       addTearDown(() => tempDir.delete(recursive: true));
 
       const appName = 'smoke_github_app';
-      final result = await Process.run(_dartExecutable, [
-        'run',
-        'bin/agentic_base.dart',
-        'create',
-        appName,
-        '--no-interactive',
-        '--output-dir',
-        tempDir.path,
-        '--ci-provider',
-        'github',
-        '--state',
-        'cubit',
-      ], workingDirectory: repoRoot);
-
-      expect(
-        result.exitCode,
-        equals(0),
-        reason: '${result.stdout}\n${result.stderr}',
+      final appDir = await _generateStarterApp(
+        repoRoot: repoRoot,
+        tempDir: tempDir,
+        appName: appName,
+        runVerify: true,
       );
-
-      final appDir = p.join(tempDir.path, appName);
       expect(Directory(appDir).existsSync(), isTrue);
       expect(
         () => GeneratedProjectContract.validate(
@@ -325,6 +371,7 @@ void main() {
       expect(verifySummary, contains('"app-shell-smoke"'));
       _expectStarterRuntimeSurfaces(appDir, stateManagement: 'cubit');
     },
+    tags: const ['slow-canary'],
     skip:
         flutterAvailable
             ? false
@@ -341,28 +388,13 @@ void main() {
         );
         addTearDown(() => tempDir.delete(recursive: true));
 
-        final appName = 'smoke_${stateManagement}_app';
-        final result = await Process.run(_dartExecutable, [
-          'run',
-          'bin/agentic_base.dart',
-          'create',
-          appName,
-          '--no-interactive',
-          '--output-dir',
-          tempDir.path,
-          '--ci-provider',
-          'github',
-          '--state',
-          stateManagement,
-        ], workingDirectory: repoRoot);
-
-        expect(
-          result.exitCode,
-          equals(0),
-          reason: '${result.stdout}\n${result.stderr}',
+        final appDir = await _generateStarterApp(
+          repoRoot: repoRoot,
+          tempDir: tempDir,
+          appName: 'smoke_${stateManagement}_app',
+          stateManagement: stateManagement,
         );
 
-        final appDir = p.join(tempDir.path, appName);
         expect(
           () => GeneratedProjectContract.validate(
             appDir,
@@ -393,25 +425,12 @@ void main() {
       addTearDown(() => tempDir.delete(recursive: true));
 
       const appName = 'smoke_analytics_app';
-      final result = await Process.run(_dartExecutable, [
-        'run',
-        'bin/agentic_base.dart',
-        'create',
-        appName,
-        '--no-interactive',
-        '--output-dir',
-        tempDir.path,
-        '--modules',
-        'analytics',
-      ], workingDirectory: repoRoot);
-
-      expect(
-        result.exitCode,
-        equals(0),
-        reason: '${result.stdout}\n${result.stderr}',
+      final appDir = await _generateStarterApp(
+        repoRoot: repoRoot,
+        tempDir: tempDir,
+        appName: appName,
+        modules: const ['analytics'],
       );
-
-      final appDir = p.join(tempDir.path, appName);
       final analyticsImpl =
           File(
             p.join(
@@ -485,26 +504,12 @@ void main() {
       );
       addTearDown(() => tempDir.delete(recursive: true));
 
-      const appName = 'smoke_notifications_app';
-      final result = await Process.run(_dartExecutable, [
-        'run',
-        'bin/agentic_base.dart',
-        'create',
-        appName,
-        '--no-interactive',
-        '--output-dir',
-        tempDir.path,
-        '--modules',
-        'notifications',
-      ], workingDirectory: repoRoot);
-
-      expect(
-        result.exitCode,
-        equals(0),
-        reason: '${result.stdout}\n${result.stderr}',
+      final appDir = await _generateStarterApp(
+        repoRoot: repoRoot,
+        tempDir: tempDir,
+        appName: 'smoke_notifications_app',
+        modules: const ['notifications'],
       );
-
-      final appDir = p.join(tempDir.path, appName);
       final registrations =
           File(
             p.join(appDir, 'lib/app/modules/module_registrations.dart'),
@@ -549,24 +554,11 @@ void main() {
       );
       addTearDown(() => tempDir.delete(recursive: true));
 
-      const appName = 'smoke_release_contract_app';
-      final createResult = await Process.run(_dartExecutable, [
-        'run',
-        'bin/agentic_base.dart',
-        'create',
-        appName,
-        '--no-interactive',
-        '--output-dir',
-        tempDir.path,
-      ], workingDirectory: repoRoot);
-
-      expect(
-        createResult.exitCode,
-        equals(0),
-        reason: '${createResult.stdout}\n${createResult.stderr}',
+      final appDir = await _generateStarterApp(
+        repoRoot: repoRoot,
+        tempDir: tempDir,
+        appName: 'smoke_release_contract_app',
       );
-
-      final appDir = p.join(tempDir.path, appName);
       final fakeBinDir = Directory(p.join(tempDir.path, 'fake-bin'))
         ..createSync(recursive: true);
       final bundleScript = File(p.join(fakeBinDir.path, 'bundle'))

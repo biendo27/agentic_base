@@ -244,6 +244,8 @@ final class GeneratedProjectContract {
     );
     _validateGeneratedReadme(projectDir);
     _validateGeneratedDocs(projectDir);
+    _validateGeneratedContractModelSurface(projectDir);
+    _validateGeneratedVerifySurface(projectDir);
     _validateThemeSurface(projectDir);
     validateNativeFlavorOutputs(projectDir);
     if (stateManagement != null) {
@@ -900,6 +902,7 @@ final class GeneratedProjectContract {
     _requireContent(testingGuide, './tools/test.sh');
     _requireContent(testingGuide, './tools/verify.sh');
     _requireContent(testingGuide, 'make test');
+    _requireContent(testingGuide, 'app-shell-smoke');
     _forbidContent(testingGuide, 'flutter test');
 
     _requireContent(workflowGuide, '.info/agentic.yaml');
@@ -908,6 +911,60 @@ final class GeneratedProjectContract {
     _requireContent(workflowGuide, 'feature/*');
     _requireContent(workflowGuide, 'release/*');
     _requireContent(workflowGuide, 'hotfix/*');
+  }
+
+  static void _validateGeneratedContractModelSurface(String projectDir) {
+    final codingStandards = _readRequiredFile(
+      projectDir,
+      'docs/02-coding-standards.md',
+    );
+
+    _requireContent(
+      codingStandards,
+      'raw data shape, defaults, and invariants that define the transport contract stay on the contract class',
+    );
+    _requireContent(
+      codingStandards,
+      'pure convenience, serialization, and formatting helpers may stay in extensions',
+    );
+    _forbidContent(
+      codingStandards,
+      'invariants and value behavior live on the contract class',
+    );
+
+    _requireContent(
+      _readRequiredFile(projectDir, 'lib/core/contracts/app_response.dart'),
+      'extension AppResponseX',
+    );
+    _requireContent(
+      _readRequiredFile(
+        projectDir,
+        'lib/core/contracts/app_list_response.dart',
+      ),
+      'extension AppListResponseX',
+    );
+    _requireContent(
+      _readRequiredFile(projectDir, 'lib/core/contracts/localized_text.dart'),
+      'extension LocalizedTextX',
+    );
+    final pagination = _readRequiredFile(
+      projectDir,
+      'lib/core/contracts/pagination.dart',
+    );
+    _requireContent(pagination, 'extension PaginationRequestX');
+    _requireContent(pagination, 'extension PaginatedResponseX');
+  }
+
+  static void _validateGeneratedVerifySurface(String projectDir) {
+    final verifyScript = _readRequiredFile(projectDir, 'tools/verify.sh');
+    final appSmokeTest = _readRequiredFile(
+      projectDir,
+      'test/app_smoke_test.dart',
+    );
+
+    _requireContent(verifyScript, '--exclude-tags app-smoke');
+    _requireContent(verifyScript, 'test/app_smoke_test.dart');
+    _requireContent(appSmokeTest, 'app-smoke');
   }
 
   static void _validateThemeSurface(String projectDir) {

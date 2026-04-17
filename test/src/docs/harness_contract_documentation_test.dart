@@ -62,4 +62,55 @@ void main() {
       contains('PRs into main must come from release/* or hotfix/*.'),
     );
   });
+
+  test(
+    'root and generated coding standards agree on extension-safe contract helpers',
+    () {
+      const files = <String>[
+        'docs/03-code-standards.md',
+        'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/docs/02-coding-standards.md',
+      ];
+
+      for (final file in files) {
+        final contents = _readRepoFile(file);
+        expect(
+          contents,
+          contains(
+            'raw data shape, defaults, and invariants that define the transport contract stay on the contract class',
+          ),
+        );
+        expect(
+          contents,
+          contains(
+            'pure convenience, serialization, and formatting helpers may stay in extensions',
+          ),
+        );
+        expect(
+          contents,
+          isNot(
+            contains(
+              'invariants and value behavior live on the contract class',
+            ),
+          ),
+        );
+      }
+    },
+  );
+
+  test('generated verify surface keeps app smoke as a dedicated tagged gate', () {
+    final testingGuide = _readRepoFile(
+      'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/docs/06-testing-guide.md',
+    );
+    final verifyScript = _readRepoFile(
+      'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/tools/verify.sh',
+    );
+    final appSmokeTest = _readRepoFile(
+      'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/test/app_smoke_test.dart',
+    );
+
+    expect(testingGuide, contains('app-shell-smoke'));
+    expect(verifyScript, contains('--exclude-tags app-smoke'));
+    expect(verifyScript, contains('test/app_smoke_test.dart'));
+    expect(appSmokeTest, contains('app-smoke'));
+  });
 }
