@@ -29,7 +29,7 @@ NEXT_REQUIRED_HUMAN_ACTION="none"
 APPROVAL_STATE="Draft"
 QUALITY_CORRECTNESS="not_run"
 QUALITY_RELEASE_READINESS="not_run"
-QUALITY_OBSERVABILITY="not_run"
+QUALITY_EVIDENCE_QUALITY="not_run"
 QUALITY_UX_CONFIDENCE="not_run"
 EXECUTED_GATES=()
 EXECUTED_GATE_STATES=()
@@ -231,7 +231,7 @@ start_evidence_run() {
   EXECUTED_GATE_STATES=()
   QUALITY_CORRECTNESS="not_run"
   QUALITY_RELEASE_READINESS="not_run"
-  QUALITY_OBSERVABILITY="not_run"
+  QUALITY_EVIDENCE_QUALITY="not_run"
   QUALITY_UX_CONFIDENCE="not_run"
   NEXT_REQUIRED_HUMAN_ACTION="none"
   GATE_STATE_OVERRIDE=""
@@ -270,8 +270,8 @@ update_quality_state() {
     release_readiness)
       QUALITY_RELEASE_READINESS="$state"
       ;;
-    observability)
-      QUALITY_OBSERVABILITY="$state"
+    evidence_quality)
+      QUALITY_EVIDENCE_QUALITY="$state"
       ;;
     ux_confidence)
       QUALITY_UX_CONFIDENCE="$state"
@@ -337,7 +337,7 @@ skip_gate() {
   local reason="$3"
   record_gate_state "$gate" "skipped"
   write_check_file "$gate" "skipped" "" "$reason"
-  if [[ "$dimension" == "observability" && "$QUALITY_OBSERVABILITY" == "not_run" ]]; then
+  if [[ "$dimension" == "evidence_quality" && "$QUALITY_EVIDENCE_QUALITY" == "not_run" ]]; then
     update_quality_state "$dimension" "risk"
   fi
 }
@@ -381,7 +381,7 @@ executed_gates_json() {
 
 finalize_evidence_run() {
   local exit_code="${1:-0}"
-  QUALITY_OBSERVABILITY="pass"
+  QUALITY_EVIDENCE_QUALITY="pass"
   cat > "$RUN_SUMMARY_PATH" <<EOF
 {
   "run_id": "$(json_escape "$RUN_ID")",
@@ -396,7 +396,7 @@ finalize_evidence_run() {
   "quality_dimensions": {
     "correctness": "$(json_escape "$QUALITY_CORRECTNESS")",
     "release_readiness": "$(json_escape "$QUALITY_RELEASE_READINESS")",
-    "observability": "$(json_escape "$QUALITY_OBSERVABILITY")",
+    "evidence_quality": "$(json_escape "$QUALITY_EVIDENCE_QUALITY")",
     "ux_confidence": "$(json_escape "$QUALITY_UX_CONFIDENCE")"
   },
   "next_required_human_action": "$(json_escape "$NEXT_REQUIRED_HUMAN_ACTION")"

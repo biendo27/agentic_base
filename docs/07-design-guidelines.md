@@ -9,18 +9,18 @@ This repository is a generator package, so these guidelines apply mainly to the 
 Generated apps should bias toward:
 
 - clear, explicit project structure
-- Material 3 defaults instead of ad hoc widget styling
+- a trustworthy accessible commerce direction built on Material 3 instead of ad hoc widget styling
 - theme tokens centralized in app/core theme files
 - predictable feature boundaries that AI agents can navigate
 
 ## Template-Level Rules
 
 - keep app-wide theming in shared app/core theme files, not scattered across features
-- generated starter themes should default to the explicit Material 3 design-kit tokens, not a derived seed palette
+- generated starter themes should default to the bundled `trustworthy-commerce` family: bright neutral surfaces, blue primary, orange accent, readable slate text, and restrained motion
 - keep reusable UI primitives in shared locations; keep feature-specific widgets inside the feature
 - prefer generated docs and clear file names over hidden conventions
-- keep starter surfaces honest: app shell, flavor diagnostics, router, localization, settings, and the provider-neutral monetization seam should all be visible in the default home flow
-- keep the starter monetization route polished, but do not present the demo adapter as a real billing integration
+- keep starter surfaces honest: app shell, flavor diagnostics, router, localization, settings preview, lifecycle/config signals, and starter commerce seams should all be visible in the default home flow
+- keep the starter monetization route polished, but separate payments, entitlement, and consent responsibilities instead of presenting a fake full billing product
 - keep full generated features visibly spec-driven in UI copy, while `agentic_base feature --simple` remains the intentionally lighter-weight leaf scaffold
 
 ## Feature UI Boundaries
@@ -61,9 +61,9 @@ Keep those docs aligned with the actual template output whenever the app brick c
 
 What is verified here:
 
-- the app brick ships explicit Material 3 default tokens from the supplied Figma kit
+- the app brick ships one bundled `trustworthy-commerce` family and typography via Lexend plus Source Sans 3
 - the generator no longer exposes a create-time color override for the default theme
-- the default starter journey now includes dashboard, detail, settings, and monetization surfaces
+- the default starter journey now includes dashboard, detail, settings, and monetization surfaces with explicit profile-aware signal cards
 - the package README positions generated apps around Clean Architecture
 - the generated app template includes a theming guide in its own `docs/`
 

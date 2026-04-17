@@ -55,11 +55,14 @@ final class GeneratedProjectContract {
     'lib/app/flavors.dart',
     'lib/app/locale/app_locale_contract.dart',
     'lib/app/i18n/translations.g.dart',
+    'lib/core/commerce/entitlement_service.dart',
     'lib/core/contracts/app_list_response.dart',
     'lib/core/contracts/localized_text.dart',
     'lib/core/contracts/app_response.dart',
     'lib/core/contracts/app_result.dart',
     'lib/core/contracts/pagination.dart',
+    'lib/core/privacy/consent_service.dart',
+    'lib/core/starter/starter_runtime_profile.dart',
     'lib/main.dart',
     'lib/main_dev.dart',
     'lib/main_staging.dart',
@@ -96,6 +99,9 @@ final class GeneratedProjectContract {
     'test/features/home/data/repositories/demo_starter_monetization_repository_test.dart',
     'test/features/home/data/repositories/home_repository_impl_test.dart',
     'test/features/home/presentation/widgets/starter_action_card_test.dart',
+    'test/features/home/presentation/widgets/starter_journey_signal_card_test.dart',
+    'test/features/home/presentation/widgets/starter_monetization_overview_card_test.dart',
+    'test/features/home/presentation/widgets/starter_settings_preview_card_test.dart',
   ];
 
   static const requiredFeatureHostPaths = <String>[
@@ -820,10 +826,21 @@ final class GeneratedProjectContract {
       );
     }
     final qualityDimensions = eval['quality_dimensions'];
-    if (qualityDimensions is! YamlList ||
-        qualityDimensions.length != defaultHarnessQualityDimensions.length) {
+    if (qualityDimensions is! YamlList) {
       throw const ProjectGenerationException(
         'Harness eval quality dimensions are missing or incomplete.',
+      );
+    }
+    final resolvedQualityDimensions =
+        qualityDimensions.map((value) => value.toString()).toList();
+    if (resolvedQualityDimensions.length !=
+            defaultHarnessQualityDimensions.length ||
+        !_listsEqual(
+          resolvedQualityDimensions,
+          defaultHarnessQualityDimensions,
+        )) {
+      throw const ProjectGenerationException(
+        'Harness eval quality dimensions drifted from the canonical contract.',
       );
     }
 
@@ -831,8 +848,18 @@ final class GeneratedProjectContract {
     for (final pause in requiredHumanApprovalPauses) {
       _requireYamlListValue(approvals, 'pause_on', pause);
     }
+    if (_containsSecretLikeValue(approvals)) {
+      throw const ProjectGenerationException(
+        'Harness approvals must stay declarative and secret-free.',
+      );
+    }
 
     final sdk = _requireYamlMap(harness, 'sdk');
+    if (_containsSecretLikeValue(sdk)) {
+      throw const ProjectGenerationException(
+        'Harness SDK metadata must stay declarative and secret-free.',
+      );
+    }
     final manager = sdk['manager']?.toString();
     if (!FlutterSdkManager.values
         .map((value) => value.wireName)
@@ -871,6 +898,18 @@ final class GeneratedProjectContract {
     _requireContent(claude, 'Support tier:');
     _requireContent(claude, 'docs/07-agentic-development-flow.md');
     _requireContent(claude, 'Recommended default Gitflow');
+  }
+
+  static bool _listsEqual(List<String> left, List<String> right) {
+    if (left.length != right.length) {
+      return false;
+    }
+    for (var index = 0; index < left.length; index++) {
+      if (left[index] != right[index]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   static void _validateGeneratedReadme(String projectDir) {
@@ -957,6 +996,7 @@ final class GeneratedProjectContract {
   }
 
   static void _validateGeneratedVerifySurface(String projectDir) {
+    final config = _readRequiredYamlMap(projectDir, '.info/agentic.yaml');
     final dartTestConfig = _readRequiredFile(projectDir, 'dart_test.yaml');
     final verifyScript = _readRequiredFile(projectDir, 'tools/verify.sh');
     final appSmokeTest = _readRequiredFile(
@@ -968,6 +1008,49 @@ final class GeneratedProjectContract {
     _requireContent(verifyScript, '--exclude-tags app-smoke');
     _requireContent(verifyScript, 'test/app_smoke_test.dart');
     _requireContent(appSmokeTest, 'app-smoke');
+
+    final harness = _requireYamlMap(config, 'harness');
+    final appProfile = _requireYamlMap(harness, 'app_profile');
+    final primaryProfile = appProfile['primary_profile']?.toString();
+    final capabilities =
+        (_requireYamlMap(harness, 'capabilities')['enabled'] as YamlList)
+            .map((value) => value.toString())
+            .toSet();
+
+    switch (primaryProfile) {
+      case 'consumer-app':
+        _requireContent(verifyScript, 'starter-journey');
+        _requireContent(
+          verifyScript,
+          'test/features/home/presentation/widgets/starter_journey_signal_card_test.dart',
+        );
+      case 'internal-business-app':
+        _requireContent(verifyScript, 'starter-settings');
+        _requireContent(
+          verifyScript,
+          'test/features/home/presentation/widgets/starter_settings_preview_card_test.dart',
+        );
+      case 'subscription-commerce-app':
+        if (capabilities.any(
+          (capability) => const {
+            'payments',
+            'remote_config',
+            'feature_flags',
+            'ads',
+          }.contains(capability),
+        )) {
+          _requireContent(verifyScript, 'starter-commerce');
+          _requireContent(
+            verifyScript,
+            'test/features/home/presentation/widgets/starter_monetization_overview_card_test.dart',
+          );
+        }
+      case 'content-community-app':
+      case 'offline-first-field-app':
+        _requireContent(verifyScript, 'profile-advisory');
+      case null:
+        break;
+    }
   }
 
   static void _validateThemeSurface(String projectDir) {
@@ -980,6 +1063,10 @@ final class GeneratedProjectContract {
       projectDir,
       'lib/core/theme/color_schemes.dart',
     );
+    final typography = _readRequiredFile(
+      projectDir,
+      'lib/core/theme/typography.dart',
+    );
     final contextExtensions = _readRequiredFile(
       projectDir,
       'lib/core/extensions/context_extensions.dart',
@@ -990,11 +1077,14 @@ final class GeneratedProjectContract {
     );
 
     _forbidContent(pubspec, 'flutter_screenutil:');
+    _requireContent(pubspec, 'google_fonts:');
     _requireContent(appTheme, 'ThemeData.from(');
     _requireContent(colorSchemes, 'static const light = ColorScheme(');
     _requireContent(colorSchemes, 'static const dark = ColorScheme(');
     _requireContent(colorSchemes, 'primaryFixed:');
     _forbidContent(colorSchemes, 'ColorScheme.fromSeed(');
+    _requireContent(typography, 'GoogleFonts.lexendTextTheme');
+    _requireContent(typography, 'GoogleFonts.sourceSans3TextTheme');
     _requireContent(contextExtensions, 'adaptivePagePadding');
     _requireContent(themingGuide, 'BuildContextX');
     _forbidPath(projectDir, 'lib/core/responsive/app_screen_util_init.dart');
@@ -1202,6 +1292,29 @@ final class GeneratedProjectContract {
       '(secret|token|apikey|api_key|-----BEGIN|AIza|AKIA|sk_live|sk_test)',
       caseSensitive: false,
     ).hasMatch(value);
+  }
+
+  static bool _containsSecretLikeValue(dynamic value) {
+    if (value is String) {
+      return _looksLikeSecret(value);
+    }
+    if (value is YamlMap) {
+      for (final entry in value.entries) {
+        if (_containsSecretLikeValue(entry.value)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    if (value is YamlList) {
+      for (final entry in value) {
+        if (_containsSecretLikeValue(entry)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    return false;
   }
 
   static String _resolveProjectPath(String projectDir, String relativePath) {

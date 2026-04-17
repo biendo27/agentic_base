@@ -36,6 +36,8 @@ Every repo that claims Harness Contract V1 declares:
 
 Support tier and default gate expectations are derived from the static matrix for that profile. They are summary views, not independent sources of truth.
 
+Service-matrix policy is separate from support-tier policy. The canonical thin-base versus golden-path split lives in [`docs/15-default-app-service-matrix.md`](./15-default-app-service-matrix.md).
+
 `secondary_traits` describe modifiers such as:
 
 - `offline-first`
@@ -69,6 +71,12 @@ Tier 2 means the profile gets:
 - additional profile-specific checks documented as advisory until proven and tested
 
 Tier 2 must not silently inherit Tier 1 profile claims.
+
+## Default V1 Golden Path
+
+`subscription-commerce-app` is the canonical V1 golden path for the active rollout.
+
+That decision means it receives the strongest preset, starter-runtime, and gate hardening work. It does not make other supported profiles invalid, and it does not widen the thin base by itself.
 
 ## V1 Tier Assignment
 

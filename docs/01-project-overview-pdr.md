@@ -49,7 +49,7 @@ Manual setup is slow, inconsistent, and hard for coding agents to navigate.
 | Area | Verified behavior |
 | --- | --- |
 | CLI runtime | `AgenticBaseCliRunner` registers 11 commands plus top-level `--version`. |
-| Project creation | `create` runs `flutter create`, overlays the `agentic_app` brick, writes `.info/agentic.yaml` including Harness Contract V1 metadata, optionally installs modules, then runs codegen, lint fixes, and generated-project verification. |
+| Project creation | `create` runs `flutter create`, overlays the `agentic_app` brick, writes `.info/agentic.yaml` including Harness Contract V1 metadata, resolves the default `subscription-commerce-app` preset when modules are not explicitly overridden, renders profile-aware starter seams and verify policy, optionally installs modules, then runs codegen, lint fixes, and generated-project verification. |
 | Feature scaffolding | `feature` applies the `agentic_feature` brick into an initialized project using the selected state profile. |
 | State parity | `cubit`, `riverpod`, and `mobx` all scaffold matching app and feature output with no foreign runtime leftovers. |
 | Module management | `add` and `remove` use `ModuleRegistry`, `ModuleInstaller`, `ProjectMutationJournal`, and `ModuleIntegrationGenerator` to mutate `pubspec.yaml`, write files, refresh bootstrap/provider registries, and update `.info/agentic.yaml`. |
@@ -89,6 +89,7 @@ The shipped V1 contract includes:
 - named eval gates plus evidence bundles
 - explicit human pause states for product direction, credential setup, and final production publish
 - declared Flutter SDK manager/version policy with `doctor` and `upgrade` enforcement hooks
+- a shipped default-product contract in [`docs/15-default-app-service-matrix.md`](./15-default-app-service-matrix.md), with preset resolution, starter-runtime shaping, and verify behavior now enforced in generator-owned code
 
 Still explicitly out of scope:
 
@@ -102,7 +103,7 @@ Still explicitly out of scope:
 - the product boundary is stated in finite contract docs instead of vague "agent-ready" language
 - command, generator, brick, module, metadata, and test responsibilities are easy to locate
 - deployment docs do not imply automation that is not actually present
-- roadmap reflects completed generator hardening plus shipped Harness Contract V1 behavior
+- roadmap reflects completed generator hardening plus the shipped profile-execution rollout for the default V1 lane
 
 ## References
 

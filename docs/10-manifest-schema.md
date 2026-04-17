@@ -31,6 +31,8 @@ That baseline is the live V1 contract for generated and repaired repos.
 
 The example below is a downstream generated-repo manifest. Its `context.canonical_docs` values therefore use the generated app doc surface (`docs/01-07` inside the generated repo), not this package repo's numbered docs.
 
+The example uses the frozen V1 golden-path contract target from [`docs/15-default-app-service-matrix.md`](./15-default-app-service-matrix.md). That freeze guides rollout work; derived fields still stay derived and must not be treated as independent truth.
+
 ```yaml
 schema_version: 3
 project_kind: agent_ready_flutter_repo
@@ -83,19 +85,19 @@ ownership:
 harness:
   contract_version: 1
   app_profile:
-    primary_profile: consumer-app
-    secondary_traits: [multi-locale]
+    primary_profile: subscription-commerce-app
+    secondary_traits: []
   capabilities:
-    enabled: [auth, analytics]
+    enabled: [analytics, payments]
   providers:
-    auth: firebase_auth
     analytics: firebase_analytics
+    payments: in_app_purchase
   eval:
     evidence_dir: artifacts/evidence
     quality_dimensions:
       - correctness
       - release_readiness
-      - observability
+      - evidence_quality
       - ux_confidence
   approvals:
     pause_on:
@@ -119,6 +121,7 @@ harness:
 | `harness.capabilities.enabled` | Capabilities the repo expects the generator to own or wire. |
 | `harness.providers` | Selected provider implementation for each relevant capability. |
 | `harness.eval.evidence_dir` | Canonical output directory for verify and release evidence bundles. |
+| `harness.eval.quality_dimensions` | Named internal quality states. `evidence_quality` covers run-evidence completeness and inspectability, not agent telemetry. |
 | `harness.approvals.pause_on` | Named human approval interrupts. |
 | `harness.sdk.*` | Declared Flutter toolchain manager and tested version contract. |
 

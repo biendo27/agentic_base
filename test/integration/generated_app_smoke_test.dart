@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:agentic_base/src/config/ci_provider.dart';
@@ -17,42 +18,16 @@ bool _isFlutterAvailable() {
   }
 }
 
-String get _dartExecutable => Platform.resolvedExecutable;
-
 Future<String> _generateStarterApp({
   required String repoRoot,
   required Directory tempDir,
   required String appName,
   String stateManagement = 'cubit',
   CiProvider ciProvider = CiProvider.github,
-  List<String> modules = const [],
-  bool runVerify = false,
+  HarnessAppProfile appProfile = HarnessAppProfile.consumerApp,
+  List<String>? modules,
 }) async {
   final appDir = p.join(tempDir.path, appName);
-  if (runVerify) {
-    final result = await Process.run(_dartExecutable, [
-      'run',
-      'bin/agentic_base.dart',
-      'create',
-      appName,
-      '--no-interactive',
-      '--output-dir',
-      tempDir.path,
-      '--ci-provider',
-      ciProvider.name,
-      '--state',
-      stateManagement,
-      if (modules.isNotEmpty) ...['--modules', modules.join(',')],
-    ], workingDirectory: repoRoot);
-
-    expect(
-      result.exitCode,
-      equals(0),
-      reason: '${result.stdout}\n${result.stderr}',
-    );
-    return appDir;
-  }
-
   final previousCurrent = Directory.current.path;
   Directory.current = repoRoot;
   try {
@@ -64,7 +39,7 @@ Future<String> _generateStarterApp({
       stateManagement: stateManagement,
       flavors: GeneratedProjectContract.generatedFlavors,
       ciProvider: ciProvider,
-      appProfile: HarnessAppProfile.consumerApp,
+      appProfile: appProfile,
       flutterSdkManager: FlutterSdkManager.system,
       modules: modules,
       runVerify: false,
@@ -74,6 +49,53 @@ Future<String> _generateStarterApp({
   }
 
   return appDir;
+}
+
+Future<void> _runGeneratedVerify(String appDir) async {
+  final process = await Process.start(
+    'bash',
+    ['tools/verify.sh'],
+    workingDirectory: appDir,
+    environment: {
+      ...Platform.environment,
+      'AGENTIC_VERIFY_FAST': '1',
+      'AGENTIC_SKIP_NATIVE_READINESS': '1',
+    },
+  );
+
+  final stdoutBuffer = StringBuffer();
+  final stderrBuffer = StringBuffer();
+  final stdoutDone = process.stdout.transform(utf8.decoder).forEach((chunk) {
+    stdoutBuffer.write(chunk);
+    stdout.write(chunk);
+  });
+  final stderrDone = process.stderr.transform(utf8.decoder).forEach((chunk) {
+    stderrBuffer.write(chunk);
+    stderr.write(chunk);
+  });
+  final exitCode = await process.exitCode;
+  await Future.wait([stdoutDone, stderrDone]);
+
+  var failureDetails = '$stdoutBuffer\n$stderrBuffer'.trim();
+  if (exitCode != 0) {
+    final verifyRoot = Directory(
+      p.join(appDir, 'artifacts', 'evidence', 'verify'),
+    );
+    if (verifyRoot.existsSync()) {
+      final verifyRun = _latestEvidenceRunDirectory(appDir, 'verify');
+      final verifyLog = File(p.join(verifyRun.path, 'logs', 'verify.log'));
+      if (verifyLog.existsSync()) {
+        failureDetails =
+            '$failureDetails\n${verifyLog.readAsStringSync()}'.trim();
+      }
+    }
+  }
+
+  expect(
+    exitCode,
+    equals(0),
+    reason: failureDetails,
+  );
 }
 
 Directory _latestEvidenceRunDirectory(String appDir, String runKind) {
@@ -124,6 +146,10 @@ void _expectStarterRuntimeSurfaces(
       File(
         p.join(appDir, 'lib/core/theme/app_theme.dart'),
       ).readAsStringSync();
+  final generatedTypography =
+      File(
+        p.join(appDir, 'lib/core/theme/typography.dart'),
+      ).readAsStringSync();
   final generatedReadme = File(p.join(appDir, 'README.md')).readAsStringSync();
   final agentsAdapter = File(p.join(appDir, 'AGENTS.md')).readAsStringSync();
   final claudeAdapter = File(p.join(appDir, 'CLAUDE.md')).readAsStringSync();
@@ -134,6 +160,18 @@ void _expectStarterRuntimeSurfaces(
   final themingGuide =
       File(
         p.join(appDir, 'docs/05-theming-guide.md'),
+      ).readAsStringSync();
+  final starterRuntimeProfile =
+      File(
+        p.join(appDir, 'lib/core/starter/starter_runtime_profile.dart'),
+      ).readAsStringSync();
+  final consentService =
+      File(
+        p.join(appDir, 'lib/core/privacy/consent_service.dart'),
+      ).readAsStringSync();
+  final entitlementService =
+      File(
+        p.join(appDir, 'lib/core/commerce/entitlement_service.dart'),
       ).readAsStringSync();
   final testingGuide =
       File(
@@ -163,8 +201,11 @@ void _expectStarterRuntimeSurfaces(
     contains('return failure(ErrorHandler.handle(error));'),
   );
   expect(generatedPubspec, isNot(contains('flutter_screenutil:')));
+  expect(generatedPubspec, contains('google_fonts:'));
   expect(generatedTheme, contains('ThemeData.from('));
   expect(generatedTheme, isNot(contains('ColorScheme.fromSeed(')));
+  expect(generatedTypography, contains('GoogleFonts.lexendTextTheme'));
+  expect(generatedTypography, contains('GoogleFonts.sourceSans3TextTheme'));
   expect(generatedReadme, contains('./tools/test.sh'));
   expect(
     generatedReadme,
@@ -177,6 +218,10 @@ void _expectStarterRuntimeSurfaces(
   expect(claudeAdapter, contains('Recommended default Gitflow'));
   expect(contextExtensions, contains('adaptivePagePadding'));
   expect(themingGuide, contains('BuildContextX'));
+  expect(themingGuide, contains('trustworthy-commerce'));
+  expect(starterRuntimeProfile, contains('requiredGatePack'));
+  expect(consentService, contains('ConsentService'));
+  expect(entitlementService, contains('EntitlementService'));
   expect(testingGuide, contains('./tools/test.sh'));
   expect(testingGuide, contains('make test'));
   expect(testingGuide, isNot(contains('flutter test')));
@@ -232,6 +277,33 @@ void _expectStarterRuntimeSurfaces(
       p.join(
         appDir,
         'test/core/contracts/pagination_test.dart',
+      ),
+    ).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'test/features/home/presentation/widgets/starter_journey_signal_card_test.dart',
+      ),
+    ).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'test/features/home/presentation/widgets/starter_settings_preview_card_test.dart',
+      ),
+    ).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'test/features/home/presentation/widgets/starter_monetization_overview_card_test.dart',
       ),
     ).existsSync(),
     isTrue,
@@ -334,8 +406,11 @@ void main() {
   // stable repo root once for all smoke subprocesses.
   final repoRoot = Directory.current.path;
   const smokeTimeout = Timeout(Duration(minutes: 6));
+  // The default subscription-commerce lane now installs and verifies a larger
+  // golden-path surface than the other starter smoke cases.
+  const slowVerifyCanaryTimeout = Timeout(Duration(minutes: 15));
   test(
-    'slow verify canary stays blocking for harness, verify, evidence, and native-surface changes',
+    'slow verify canary stays blocking for harness, verify, evidence, and profile-surface changes',
     () async {
       final tempDir = await Directory.systemTemp.createTemp(
         'agentic-base-smoke-github-',
@@ -347,8 +422,9 @@ void main() {
         repoRoot: repoRoot,
         tempDir: tempDir,
         appName: appName,
-        runVerify: true,
+        appProfile: HarnessAppProfile.subscriptionCommerceApp,
       );
+      await _runGeneratedVerify(appDir);
       expect(Directory(appDir).existsSync(), isTrue);
       expect(
         () => GeneratedProjectContract.validate(
@@ -369,6 +445,7 @@ void main() {
       expect(verifySummary, contains('"derived_gate_expectation_id"'));
       expect(verifySummary, contains('"unit-widget"'));
       expect(verifySummary, contains('"app-shell-smoke"'));
+      expect(verifySummary, contains('"starter-commerce"'));
       _expectStarterRuntimeSurfaces(appDir, stateManagement: 'cubit');
     },
     tags: const ['slow-canary'],
@@ -376,7 +453,7 @@ void main() {
         flutterAvailable
             ? false
             : 'Flutter SDK is required for smoke generation.',
-    timeout: smokeTimeout,
+    timeout: slowVerifyCanaryTimeout,
   );
 
   for (final stateManagement in ['riverpod', 'mobx']) {

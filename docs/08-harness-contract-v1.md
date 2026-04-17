@@ -97,6 +97,16 @@ The V1 contract stays intentionally small:
 - approvals
 - SDK/version policy
 
+## Current Rollout Freeze
+
+The active profile-execution rollout freezes three product-policy rules without pretending later phases are already complete:
+
+- `subscription-commerce-app` is the canonical V1 golden path
+- thin base stays separate from profile-owned default-on capability packs
+- `evidence_quality` means run-evidence quality, not richer agent telemetry
+
+[`docs/15-default-app-service-matrix.md`](./15-default-app-service-matrix.md) is the canonical reference for that freeze.
+
 If a clause cannot fit inside that shape, it belongs in supporting docs rather than widening the manifest indefinitely.
 
 ## Legacy Migration Rule

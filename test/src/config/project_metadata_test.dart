@@ -35,7 +35,7 @@ void main() {
               'quality_dimensions': [
                 'correctness',
                 'release_readiness',
-                'observability',
+                'evidence_quality',
                 'ux_confidence',
               ],
             },
@@ -99,6 +99,42 @@ void main() {
       expect(
         metadata.harness.providers['analytics'],
         equals('firebase_analytics'),
+      );
+    });
+
+    test('normalizes stale quality dimensions to the canonical set', () {
+      final metadata = ProjectMetadata.fromConfigMap(
+        <String, dynamic>{
+          'tool_version': '0.1.0',
+          'project_name': 'legacy_app',
+          'org': 'com.example',
+          'ci_provider': 'github',
+          'state_management': 'cubit',
+          'platforms': ['android'],
+          'flavors': ['dev', 'staging', 'prod'],
+          'modules': const <String>[],
+          'harness': <String, dynamic>{
+            'eval': <String, dynamic>{
+              'evidence_dir': 'artifacts/evidence',
+              'quality_dimensions': [
+                'correctness',
+                'release_readiness',
+                'observability',
+                'ux_confidence',
+              ],
+            },
+          },
+        },
+      );
+
+      expect(
+        metadata.harness.eval.qualityDimensions,
+        equals(const [
+          'correctness',
+          'release_readiness',
+          'evidence_quality',
+          'ux_confidence',
+        ]),
       );
     });
 

@@ -3,6 +3,7 @@ import 'dart:isolate';
 
 import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/config/harness_profile.dart';
+import 'package:agentic_base/src/config/profile_preset.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:agentic_base/src/config/scaffold_state_profile.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
@@ -47,6 +48,10 @@ final class AgenticAppSurfaceSynchronizer {
     final stateProfile = ScaffoldStateProfile.fromState(
       metadata.stateManagement,
     );
+    final profileRuntime = resolveProfileRuntime(
+      appProfile: metadata.harness.appProfile,
+      capabilities: metadata.harness.capabilities,
+    );
     final appIdBase = GeneratedProjectContract.buildAppIdBase(
       org: metadata.org,
       projectName: metadata.projectName,
@@ -74,11 +79,40 @@ final class AgenticAppSurfaceSynchronizer {
         'app_profile_summary': metadata.harness.appProfile.profileSummary,
         'support_tier_label': metadata.harness.supportTier.label,
         'support_tier_summary': metadata.harness.supportTier.contractSummary,
-        'required_gate_pack': metadata.harness.supportTier.requiredGatePack,
+        'required_gate_pack': profileRuntime.requiredGatePack,
         'secondary_traits_csv':
             metadata.harness.secondaryTraits.isEmpty
                 ? 'none'
                 : metadata.harness.secondaryTraits.join(', '),
+        'starter_analytics_enabled': profileRuntime.analyticsEnabled,
+        'starter_crashlytics_enabled': profileRuntime.crashlyticsEnabled,
+        'starter_remote_config_enabled': profileRuntime.remoteConfigEnabled,
+        'starter_feature_flags_enabled': profileRuntime.featureFlagsEnabled,
+        'starter_payments_enabled': profileRuntime.paymentsEnabled,
+        'starter_entitlement_enabled': profileRuntime.entitlementSeamEnabled,
+        'starter_consent_enabled': profileRuntime.consentSeamEnabled,
+        'starter_ads_enabled': profileRuntime.adsEnabled,
+        'starter_notifications_enabled': profileRuntime.notificationsEnabled,
+        'starter_deep_links_enabled': profileRuntime.deepLinksEnabled,
+        'starter_in_app_review_enabled': profileRuntime.inAppReviewEnabled,
+        'starter_app_update_enabled': profileRuntime.appUpdateEnabled,
+        'starter_commerce_enabled': profileRuntime.commerceStarterEnabled,
+        'starter_config_enabled': profileRuntime.configStarterEnabled,
+        'starter_lifecycle_enabled': profileRuntime.lifecycleStarterEnabled,
+        'has_required_profile_verify_gate':
+            profileRuntime.requiredVerifyGate != null,
+        'required_profile_verify_gate_id':
+            profileRuntime.requiredVerifyGate?.id ?? '',
+        'required_profile_verify_gate_label':
+            profileRuntime.requiredVerifyGate?.label ?? '',
+        'required_profile_verify_gate_dimension':
+            profileRuntime.requiredVerifyGate?.dimension ?? '',
+        'required_profile_verify_gate_test_path':
+            profileRuntime.requiredVerifyGate?.testPath ?? '',
+        'has_advisory_profile_verify_gate':
+            profileRuntime.advisoryGateLabel != null,
+        'advisory_profile_verify_gate_label':
+            profileRuntime.advisoryGateLabel ?? '',
         'evidence_dir': metadata.harness.eval.evidenceDir,
         'flutter_sdk_manager': metadata.harness.sdk.manager.wireName,
         'flutter_sdk_channel': metadata.harness.sdk.channel,
