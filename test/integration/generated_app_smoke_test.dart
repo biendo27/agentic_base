@@ -85,8 +85,8 @@ Future<void> _runGeneratedVerify(String appDir) async {
       final verifyRun = _latestEvidenceRunDirectory(appDir, 'verify');
       final verifyLog = File(p.join(verifyRun.path, 'logs', 'verify.log'));
       if (verifyLog.existsSync()) {
-        failureDetails = '$failureDetails\n${verifyLog.readAsStringSync()}'
-            .trim();
+        failureDetails =
+            '$failureDetails\n${verifyLog.readAsStringSync()}'.trim();
       }
     }
   }

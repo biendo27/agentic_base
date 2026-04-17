@@ -224,8 +224,7 @@ class CreateCommand extends Command<int> {
     final modules =
         noInteractive
             ? (hasExplicitModuleOverride
-                ? _normalizeCsvOption(args['modules'] as String?) ??
-                    <String>[]
+                ? _normalizeCsvOption(args['modules'] as String?) ?? <String>[]
                 : null)
             : prompts.promptModules(
               hasExplicitModuleOverride ? args['modules'] as String? : null,

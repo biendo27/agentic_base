@@ -71,8 +71,7 @@ final class ResolvedProfileRuntime {
       entitlementSeamEnabled ||
       consentSeamEnabled ||
       adsEnabled;
-  bool get configStarterEnabled =>
-      remoteConfigEnabled || featureFlagsEnabled;
+  bool get configStarterEnabled => remoteConfigEnabled || featureFlagsEnabled;
   bool get lifecycleStarterEnabled =>
       notificationsEnabled ||
       deepLinksEnabled ||

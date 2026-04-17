@@ -11,52 +11,56 @@ import 'package:test/test.dart';
 
 void main() {
   group('profile gate contract rendering', () {
-    test('subscription-commerce renders the required starter commerce gate', () async {
-      final tempDir = await Directory.systemTemp.createTemp(
-        'profile-gate-contract-subscription-',
-      );
-      addTearDown(() => tempDir.delete(recursive: true));
+    test(
+      'subscription-commerce renders the required starter commerce gate',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'profile-gate-contract-subscription-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
 
-      final preset = resolveProfilePreset(
-        appProfile: HarnessAppProfile.subscriptionCommerceApp,
-      );
-      final outputDirectory = p.join(tempDir.path, 'demo_app');
+        final preset = resolveProfilePreset(
+          appProfile: HarnessAppProfile.subscriptionCommerceApp,
+        );
+        final outputDirectory = p.join(tempDir.path, 'demo_app');
 
-      await const AgenticAppSurfaceSynchronizer().overlay(
-        outputDirectory: outputDirectory,
-        metadata: AgenticConfig.buildInitialMetadata(
-          projectName: 'demo_app',
-          org: 'com.example',
-          stateManagement: 'cubit',
-          platforms: const ['android', 'ios', 'web'],
-          flavors: const ['dev', 'staging', 'prod'],
-          toolVersion: 'test',
-          modules: preset.effectiveModules,
-          harness: HarnessMetadata.defaultFor(
-            appProfile: HarnessAppProfile.subscriptionCommerceApp,
-            capabilities: preset.effectiveModules,
-            providers: preset.providers,
-            sdk: const FlutterSdkContract(
-              manager: FlutterSdkManager.system,
-              channel: 'stable',
-              version: '3.41.6',
-              policy: FlutterVersionPolicy.newestTested,
+        await const AgenticAppSurfaceSynchronizer().overlay(
+          outputDirectory: outputDirectory,
+          metadata: AgenticConfig.buildInitialMetadata(
+            projectName: 'demo_app',
+            org: 'com.example',
+            stateManagement: 'cubit',
+            platforms: const ['android', 'ios', 'web'],
+            flavors: const ['dev', 'staging', 'prod'],
+            toolVersion: 'test',
+            modules: preset.effectiveModules,
+            harness: HarnessMetadata.defaultFor(
+              appProfile: HarnessAppProfile.subscriptionCommerceApp,
+              capabilities: preset.effectiveModules,
+              providers: preset.providers,
+              sdk: const FlutterSdkContract(
+                manager: FlutterSdkManager.system,
+                channel: 'stable',
+                version: '3.41.6',
+                policy: FlutterVersionPolicy.newestTested,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      final verifyScript = File(
-        p.join(outputDirectory, 'tools', 'verify.sh'),
-      ).readAsStringSync();
-      expect(verifyScript, contains('starter-commerce'));
-      expect(
-        verifyScript,
-        contains(
-          'test/features/home/presentation/widgets/starter_monetization_overview_card_test.dart',
-        ),
-      );
-    });
+        final verifyScript =
+            File(
+              p.join(outputDirectory, 'tools', 'verify.sh'),
+            ).readAsStringSync();
+        expect(verifyScript, contains('starter-commerce'));
+        expect(
+          verifyScript,
+          contains(
+            'test/features/home/presentation/widgets/starter_monetization_overview_card_test.dart',
+          ),
+        );
+      },
+    );
 
     test('tier2 profiles render advisory-only starter checks', () async {
       final tempDir = await Directory.systemTemp.createTemp(
@@ -87,9 +91,10 @@ void main() {
         ),
       );
 
-      final verifyScript = File(
-        p.join(outputDirectory, 'tools', 'verify.sh'),
-      ).readAsStringSync();
+      final verifyScript =
+          File(
+            p.join(outputDirectory, 'tools', 'verify.sh'),
+          ).readAsStringSync();
       expect(verifyScript, contains('profile-advisory'));
       expect(verifyScript, isNot(contains('starter-commerce')));
     });

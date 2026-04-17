@@ -243,10 +243,10 @@ void main() {
           'gitlab',
         ]);
 
-      expect(exitCode, equals(0));
-      expect(recordingGenerator.ciProvider, equals(CiProvider.gitlab));
-    },
-  );
+        expect(exitCode, equals(0));
+        expect(recordingGenerator.ciProvider, equals(CiProvider.gitlab));
+      },
+    );
 
     test(
       'keeps module resolution deferred when the caller does not override it',
