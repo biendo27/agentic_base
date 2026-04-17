@@ -152,6 +152,7 @@ harness:
         './tools/test.sh\n./tools/verify.sh\nmake test\napp-shell-smoke\n',
     'docs/07-agentic-development-flow.md':
         '.info/agentic.yaml\n./tools/verify.sh\nRecommended default Gitflow\nfeature/*\nrelease/*\nhotfix/*\n',
+    'dart_test.yaml': 'tags:\n  app-smoke:\n',
     'tools/_common.sh': 'summary.json\n',
     'lib/core/contracts/app_response.dart':
         'abstract class AppResponse<T>\nextension AppResponseX<T> on AppResponse<T> {}\n',

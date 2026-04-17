@@ -97,20 +97,29 @@ void main() {
     },
   );
 
-  test('generated verify surface keeps app smoke as a dedicated tagged gate', () {
-    final testingGuide = _readRepoFile(
-      'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/docs/06-testing-guide.md',
-    );
-    final verifyScript = _readRepoFile(
-      'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/tools/verify.sh',
-    );
-    final appSmokeTest = _readRepoFile(
-      'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/test/app_smoke_test.dart',
-    );
+  test(
+    'repo and generated verify surfaces declare their custom test tags',
+    () {
+      final rootDartTestConfig = _readRepoFile('dart_test.yaml');
+      final generatedDartTestConfig = _readRepoFile(
+        'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/dart_test.yaml',
+      );
+      final testingGuide = _readRepoFile(
+        'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/docs/06-testing-guide.md',
+      );
+      final verifyScript = _readRepoFile(
+        'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/tools/verify.sh',
+      );
+      final appSmokeTest = _readRepoFile(
+        'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/test/app_smoke_test.dart',
+      );
 
-    expect(testingGuide, contains('app-shell-smoke'));
-    expect(verifyScript, contains('--exclude-tags app-smoke'));
-    expect(verifyScript, contains('test/app_smoke_test.dart'));
-    expect(appSmokeTest, contains('app-smoke'));
-  });
+      expect(rootDartTestConfig, contains('slow-canary'));
+      expect(generatedDartTestConfig, contains('app-smoke'));
+      expect(testingGuide, contains('app-shell-smoke'));
+      expect(verifyScript, contains('--exclude-tags app-smoke'));
+      expect(verifyScript, contains('test/app_smoke_test.dart'));
+      expect(appSmokeTest, contains('app-smoke'));
+    },
+  );
 }

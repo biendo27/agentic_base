@@ -34,6 +34,7 @@ final class GeneratedProjectContract {
     'README.md',
     'Makefile',
     'build.yaml',
+    'dart_test.yaml',
     'flavorizr.yaml',
     'assets/i18n/app/app_en.i18n.yaml',
     'assets/i18n/app/app_vi.i18n.yaml',
@@ -956,12 +957,14 @@ final class GeneratedProjectContract {
   }
 
   static void _validateGeneratedVerifySurface(String projectDir) {
+    final dartTestConfig = _readRequiredFile(projectDir, 'dart_test.yaml');
     final verifyScript = _readRequiredFile(projectDir, 'tools/verify.sh');
     final appSmokeTest = _readRequiredFile(
       projectDir,
       'test/app_smoke_test.dart',
     );
 
+    _requireContent(dartTestConfig, 'app-smoke');
     _requireContent(verifyScript, '--exclude-tags app-smoke');
     _requireContent(verifyScript, 'test/app_smoke_test.dart');
     _requireContent(appSmokeTest, 'app-smoke');
