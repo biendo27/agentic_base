@@ -144,17 +144,34 @@ harness:
         'Thin Claude adapter\nMachine contract: `.info/agentic.yaml`\nHarness Contract: `v1`\nSupport tier:\ndocs/07-agentic-development-flow.md\nRecommended default Gitflow\n',
     'README.md':
         'An agent-ready Flutter repository\nPrimary profile: `consumer-app`\nSupport tier: `Tier 1`\nEvidence directory: `artifacts/evidence`\n./tools/test.sh\n./tools/run-dev.sh\ndocs/07-agentic-development-flow.md\nRecommended default Gitflow\nfinal production store publish remains a human approval step\n',
+    'docs/02-coding-standards.md':
+        'raw data shape, defaults, and invariants that define the transport contract stay on the contract class\n'
+        'pure convenience, serialization, and formatting helpers may stay in extensions when they depend only on the contract value and keep the Freezed model smaller\n'
+        'locale-, DI-, or app-runtime-aware convenience belongs in extensions or services outside raw contracts\n',
     'docs/06-testing-guide.md':
-        './tools/test.sh\n./tools/verify.sh\nmake test\n',
+        './tools/test.sh\n./tools/verify.sh\nmake test\napp-shell-smoke\n',
     'docs/07-agentic-development-flow.md':
         '.info/agentic.yaml\n./tools/verify.sh\nRecommended default Gitflow\nfeature/*\nrelease/*\nhotfix/*\n',
+    'dart_test.yaml': 'tags:\n  app-smoke:\n',
     'tools/_common.sh': 'summary.json\n',
+    'lib/core/contracts/app_response.dart':
+        'abstract class AppResponse<T>\nextension AppResponseX<T> on AppResponse<T> {}\n',
+    'lib/core/contracts/app_list_response.dart':
+        'abstract class AppListResponse<T>\nextension AppListResponseX<T> on AppListResponse<T> {}\n',
+    'lib/core/contracts/localized_text.dart':
+        'abstract class LocalizedText\nextension LocalizedTextX on LocalizedText {}\n',
+    'lib/core/contracts/pagination.dart':
+        'extension PaginationRequestX<T extends JsonRequestFilter> on PaginationRequest<T> {}\n'
+        'extension PaginatedResponseX<T> on PaginatedResponse<T> {}\n',
     'lib/app/bootstrap.dart': stateSurface.bootstrap,
     'lib/core/di/injection.dart': stateSurface.injection,
     stateSurface.presentationPath: 'ok',
     'tools/release-preflight.sh': 'credential-setup\nUploadReady\n',
     'tools/release.sh': 'AwaitingFinalPublishApproval\n',
-    'tools/verify.sh': 'app-shell-smoke\n',
+    'tools/verify.sh':
+        '--exclude-tags app-smoke\napp-shell-smoke\ntest/app_smoke_test.dart\n',
+    'test/app_smoke_test.dart':
+        "group('app shell smoke', tags: const ['app-smoke'], () {})\n",
     'pubspec.yaml': stateSurface.pubspec,
     stateSurface.testPath: 'ok',
     'lib/core/theme/app_theme.dart': 'ThemeData.from(\n',
@@ -359,6 +376,65 @@ void main() {
         throwsA(isA<ProjectGenerationException>()),
       );
     });
+
+    test('validate rejects stale generated contract helper guidance', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-helper-policy-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+      await File(
+        p.join(tempDir.path, 'docs/02-coding-standards.md'),
+      ).writeAsString(
+        'invariants and value behavior live on the contract class\n',
+      );
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test(
+      'validate rejects testing guides that reintroduce bare flutter test',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'generated-project-contract-testing-guide-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        await seedRequiredContractFiles(tempDir.path);
+        await File(
+          p.join(tempDir.path, 'docs/06-testing-guide.md'),
+        ).writeAsString('./tools/test.sh\nflutter test\n');
+
+        expect(
+          () => GeneratedProjectContract.validate(tempDir.path),
+          throwsA(isA<ProjectGenerationException>()),
+        );
+      },
+    );
+
+    test(
+      'validate rejects verify surfaces that double-run app smoke without tag separation',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'generated-project-contract-verify-surface-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        await seedRequiredContractFiles(tempDir.path);
+        await File(
+          p.join(tempDir.path, 'tools/verify.sh'),
+        ).writeAsString('app-shell-smoke\ntest/app_smoke_test.dart\n');
+
+        expect(
+          () => GeneratedProjectContract.validate(tempDir.path),
+          throwsA(isA<ProjectGenerationException>()),
+        );
+      },
+    );
 
     test(
       'validateStateOutput requires only the active state test surface',

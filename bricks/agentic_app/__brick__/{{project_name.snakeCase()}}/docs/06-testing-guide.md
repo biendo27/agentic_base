@@ -7,8 +7,8 @@ The primary verification surface is `./tools/verify.sh`. It runs the same local 
 1. validate the contract surface
 2. validate the declared Flutter toolchain
 3. regenerate typed outputs and run static analysis
-4. run unit and widget tests
-5. run the starter app-shell smoke test
+4. run unit and widget tests while excluding the dedicated app-shell smoke tag
+5. run the dedicated starter app-shell smoke test once
 6. run native readiness checks where the host can support them
 
 Use `./tools/release-preflight.sh` before any upload-oriented release command.
@@ -22,6 +22,7 @@ Use the generated wrappers first:
 - `./tools/test.sh <path-or-args>` passes extra test arguments through to the resolved Flutter runtime
 - `make test` is the shortest full-suite entrypoint
 - `./tools/verify.sh` is the pre-review gate, not just another test command
+- `test/app_smoke_test.dart` stays on the dedicated `app-shell-smoke` gate so verify avoids duplicate Flutter startup cost inside the broader suite
 
 Do not bypass these wrappers unless you are debugging the wrapper itself.
 

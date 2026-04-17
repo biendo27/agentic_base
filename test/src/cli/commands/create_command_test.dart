@@ -65,6 +65,7 @@ class RecordingProjectGenerator extends ProjectGenerator {
     String? flutterSdkVersion,
     List<String> secondaryTraits = const [],
     List<String> modules = const [],
+    bool runVerify = true,
   }) async {
     generateInvoked = true;
     this.projectName = projectName;

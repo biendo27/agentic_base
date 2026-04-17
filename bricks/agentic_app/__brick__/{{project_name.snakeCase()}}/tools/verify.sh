@@ -66,7 +66,7 @@ if ! run_gate "static" "correctness" "[3/6] Refreshing generated outputs and run
   exit 1
 fi
 
-if ! run_gate "unit-widget" "correctness" "[4/6] Running unit and widget tests..." run_flutter test; then
+if ! run_gate "unit-widget" "correctness" "[4/6] Running unit and widget tests..." run_flutter test --exclude-tags app-smoke; then
   RUN_EXIT_CODE=1
   exit 1
 fi

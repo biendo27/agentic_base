@@ -134,6 +134,7 @@ class ProjectGenerator {
     String? flutterSdkVersion,
     List<String> secondaryTraits = const [],
     List<String> modules = const [],
+    bool runVerify = true,
   }) async {
     final toolchain = resolveFlutterToolchain(
       projectPath: Directory.current.path,
@@ -258,7 +259,13 @@ class ProjectGenerator {
     );
 
     // Step 12: Verify — analyze + test
-    await _verify(outputDirectory);
+    if (runVerify) {
+      await _verify(outputDirectory);
+    } else {
+      _logger.detail(
+        'Skipping generated verify step because the caller manages smoke coverage.',
+      );
+    }
   }
 
   /// Install selected modules into the generated project.
