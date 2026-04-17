@@ -4,9 +4,11 @@
 
 The original generator foundation is complete.
 
-Harness Contract V1 implementation is now landed in generator code, generated scripts, CI templates, validators, and regression tests.
+Harness Contract V1 implementation is landed in generator code, generated scripts, CI templates, validators, and regression tests.
 
-The current dry-run, toolchain-selection, and theme-contract wave has also landed in code; the remaining work is stabilization and release hygiene.
+The profile-execution rollout is also complete: `subscription-commerce-app` is now the shipped CLI default, preset resolution drives starter seams and verify policy from one source of truth, the default starter theme is the trustworthy-commerce family, and the default payment seam is store-native via `in_app_purchase`.
+
+Validation is green on `dart analyze --fatal-infos`, the doc and generator-focused tests, shell syntax checks, the generated-app smoke regression, and the full `dart test` suite.
 
 ## Completed Phases
 
@@ -20,25 +22,30 @@ The current dry-run, toolchain-selection, and theme-contract wave has also lande
 | 6. Multi-State & Bricks | Completed | State options and brick-based scaffolding in place. |
 | 7. Polish & Publish | Completed | Initial package polish and pubspec metadata present. |
 | 8. Harness Contract V1 | Completed | Typed harness manifest, support tiers, evidence outputs, approval states, and SDK policy enforcement shipped. |
+| 9. Contract-Freeze Slice 1 | Completed | Default app service matrix added; `observability` renamed to `evidence_quality`; validator and manifest parser now enforce canonical quality dimensions. |
+| 10. Profile Execution Golden Path | Completed | Profile presets, profile-aware verify gates, trustworthy-commerce starter UI, migration docs, and generated-app regression coverage shipped. |
 
 ## Active Milestone
 
-### Milestone: Contract Rollout Stabilization
+### Milestone: Profile Execution Rollout
 
 Status:
 
+- Complete
 - Harness Contract V1 implementation complete
 - Shared app contracts now standardize generated starter and feature data/domain boundaries on `fpdart` while keeping presentation state APIs simple
 - CLI commands now have truthful preview-only `--dry-run` paths, and real execution uses manager-aware toolchain selection for `system`, `fvm`, and `puro`
 - Generated starter contracts now use Freezed-backed response and pagination models, and the theme layer splits controller state from family composition
 - Generated locale runtime wrapping now lives outside the Slang output tree so contract verification stays stable after regeneration
-- Generated starter apps now ship a stronger Material 3 foundation with the exact default Figma palette, exact base typography and measurement tokens, `ThemeData.from(...)`, and internal adaptive helpers instead of ScreenUtil leftovers
-- The starter app now proves one day-0 journey: runtime diagnostics, detail navigation, settings, and a provider-neutral monetization screen
+- Generated starter apps now ship the trustworthy-commerce family: bright neutral surfaces, blue primary, orange accent, Lexend headings, Source Sans 3 body copy, and `google_fonts` as part of the brick contract
+- The starter app now proves one day-0 journey with profile-aware dashboard signals, settings preview, lifecycle/config seams, and separated payments, entitlement, consent, and ads starter seams
 - Verification no longer relies mainly on downstream boot smoke: generated apps now ship repository tests, state-runtime tests, a starter widget test, and the package smoke matrix retains only the heavy lanes that still prove unique behavior
 - Smoke verification is now split into a fast blocking lane and a slow blocking canary; the generic test pass excludes the dedicated `app-shell-smoke` gate so the canary is not duplicated
+- The full contract-freeze slice is complete: default app service matrix docs landed, `evidence_quality` is canonical, preset resolution drives create output, profile-aware verify gates are rendered from generator policy, and migration guidance exists for older generated repos
+- The default lane now uses store-native `in_app_purchase` instead of the earlier provider-neutral monetization demo
 - Repo release hygiene now includes classic Gitflow branch roles, PR route validation, and CI coverage for `develop`, `release/*`, and `hotfix/*`
-- Docs, generated workflow guidance, and release claims aligned with shipped behavior
-- Remaining work is stabilization, release hygiene, and future generator polish
+- Docs, generated workflow guidance, and release claims align with shipped behavior
+- Remaining work is future generator polish and release automation, not this rollout
 
 Defined outputs:
 
@@ -57,14 +64,16 @@ Key docs:
 - [`docs/12-approval-state-machine.md`](./12-approval-state-machine.md)
 - [`docs/13-flutter-adapter-boundaries.md`](./13-flutter-adapter-boundaries.md)
 - [`docs/14-sdk-and-version-policy.md`](./14-sdk-and-version-policy.md)
+- [`docs/15-default-app-service-matrix.md`](./15-default-app-service-matrix.md)
+- [`docs/16-profile-rollout-migration-guide.md`](./16-profile-rollout-migration-guide.md)
 
 ## Next Waves
 
 | Wave | Goal | Entry Gate | Exit Gate |
 | --- | --- | --- | --- |
-| 1 | Stabilize Harness Contract V1 | current suite green | no contract drift across create/init/upgrade/docs |
-| 2 | Reduce command/orchestration file size | contract stable | large command files split without behavior regressions |
-| 3 | Improve package release hygiene | stabilized docs/tests | publish flow is scripted or explicitly documented end to end |
+| 1 | Reduce command/orchestration file size | profile rollout complete | large command files split without behavior regressions |
+| 2 | Improve package release hygiene | stabilized docs/tests | publish flow is scripted or explicitly documented end to end |
+| 3 | Grow non-default profile coverage | rollout stable | more Tier 1 and Tier 2 profile packs are mechanically proven, not just documented |
 
 ## Release Gates
 

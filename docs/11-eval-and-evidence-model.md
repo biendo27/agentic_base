@@ -82,8 +82,8 @@ Includes:
 - timestamp
 - repo manifest snapshot reference
 - derived gate expectation id
-- executed gates
-- pass, fail, blocked, or skipped state per gate
+- recorded gate outcomes
+- pass, fail, blocked, or skipped state for each recorded gate
 - quality dimension states
 - next required human action, if any
 
@@ -111,8 +111,10 @@ V1 uses multiple internal dimensions instead of one public scalar:
 
 - `correctness`
 - `release_readiness`
-- `observability`
+- `evidence_quality`
 - `ux_confidence`
+
+`evidence_quality` measures whether the run emitted inspectable, redactable, contract-shaped evidence. It does not imply agent transcript or telemetry capture.
 
 Each dimension uses discrete states:
 
@@ -137,7 +139,7 @@ CI may attach more artifacts, but it should not invent a second gate vocabulary.
 
 - evidence bundles must not capture secrets by default
 - screenshots, logs, and command outputs must be redactable
-- skipped gates must be explicit in the summary
+- skipped gates must be explicit in the summary when a gate is considered but intentionally not run
 - a passed release-preflight does not mean final production publish is approved
 
 ## References

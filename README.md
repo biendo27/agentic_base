@@ -20,9 +20,9 @@ dart pub global activate agentic_base
 
 ```bash
 # Create a new agent-ready repo
+# Default profile: subscription-commerce-app
 agentic_base create my_app \
   --org com.example \
-  --app-profile consumer-app \
   --flutter-sdk-manager system
 
 # Add modules
@@ -70,7 +70,7 @@ Every generated repo ships:
 - one finite human-readable context surface in `README.md`, `docs/01-07`, `AGENTS.md`, and `CLAUDE.md`
 - deterministic wrapper scripts in `tools/` for setup, run, test, verify, build, release-preflight, and release
 - named verify and release-preflight evidence bundles under `artifacts/evidence/`
-- a product-neutral starter journey that proves runtime diagnostics, detail navigation, settings, and a provider-neutral monetization seam
+- a profile-aware starter journey that proves runtime diagnostics, detail navigation, settings preview, config and lifecycle signals, and separated payments, entitlement, consent, and ads seams for the selected profile
 - starter tests for repository seams, the selected state runtime, starter widget behavior, app boot smoke, and native readiness where the host supports it
 - explicit human checkpoints for credentials and final store publish
 
@@ -93,7 +93,9 @@ The shipped V1 surface covers:
 - explicit human pauses for product direction, credential setup, and final production publish
 - manager-aware local and CI entrypoints that preserve one gate vocabulary
 
-The detailed contract docs live in [`docs/08-14`](./docs/08-harness-contract-v1.md).
+The detailed contract docs live in [`docs/08-15`](./docs/08-harness-contract-v1.md).
+
+`subscription-commerce-app` is now the canonical V1 golden-path profile and the shipped CLI default. Preset resolution, starter seams, and profile-aware verify behavior now render from the same generator-owned policy, and the upgrade path for older generated repos is documented in [`docs/16-profile-rollout-migration-guide.md`](./docs/16-profile-rollout-migration-guide.md).
 
 ## Available Modules (27)
 
@@ -138,11 +140,13 @@ lib/
 | `--state` | State management. | `cubit` |
 | `--flavors` | Build flavors. | `dev,staging,prod` |
 | `--ci-provider` | Generated project CI provider (`github` or `gitlab`). | `github` |
-| `--app-profile` | Declared Harness Contract V1 primary profile. | `consumer-app` |
+| `--app-profile` | Declared Harness Contract V1 primary profile. | `subscription-commerce-app` |
 | `--traits` | Optional profile traits (comma-separated). | none |
 | `--flutter-sdk-manager` | Declared Flutter SDK manager (`system`, `fvm`, `puro`). | `system` |
 | `--flutter-version` | Explicit tested Flutter SDK version. | auto-detected from selected manager |
 | `--no-interactive` | Skip prompts and use defaults. | `false` |
+
+The shipped default V1 lane is documented in [`docs/15-default-app-service-matrix.md`](./docs/15-default-app-service-matrix.md), and upgrade guidance for older generated repos lives in [`docs/16-profile-rollout-migration-guide.md`](./docs/16-profile-rollout-migration-guide.md).
 
 ## CI Provider Selection
 
@@ -169,6 +173,8 @@ GitLab native validation is macOS-only by contract. Generated GitLab projects re
 12. [`12-approval-state-machine.md`](./docs/12-approval-state-machine.md)
 13. [`13-flutter-adapter-boundaries.md`](./docs/13-flutter-adapter-boundaries.md)
 14. [`14-sdk-and-version-policy.md`](./docs/14-sdk-and-version-policy.md)
+15. [`15-default-app-service-matrix.md`](./docs/15-default-app-service-matrix.md)
+16. [`16-profile-rollout-migration-guide.md`](./docs/16-profile-rollout-migration-guide.md)
 
 ## Local Development
 
