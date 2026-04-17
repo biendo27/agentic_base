@@ -125,7 +125,7 @@ harness:
     quality_dimensions:
       - correctness
       - release_readiness
-      - observability
+      - evidence_quality
       - ux_confidence
   approvals:
     pause_on:
@@ -169,18 +169,20 @@ harness:
     'tools/release-preflight.sh': 'credential-setup\nUploadReady\n',
     'tools/release.sh': 'AwaitingFinalPublishApproval\n',
     'tools/verify.sh':
-        '--exclude-tags app-smoke\napp-shell-smoke\ntest/app_smoke_test.dart\n',
+        '--exclude-tags app-smoke\napp-shell-smoke\ntest/app_smoke_test.dart\nstarter-journey\ntest/features/home/presentation/widgets/starter_journey_signal_card_test.dart\n',
     'test/app_smoke_test.dart':
         "group('app shell smoke', tags: const ['app-smoke'], () {})\n",
-    'pubspec.yaml': stateSurface.pubspec,
+    'pubspec.yaml': '${stateSurface.pubspec}  google_fonts: ^8.0.2\n',
     stateSurface.testPath: 'ok',
     'lib/core/theme/app_theme.dart': 'ThemeData.from(\n',
     'lib/core/theme/color_schemes.dart':
         'static const light = ColorScheme(\n'
         'static const dark = ColorScheme(\n'
         'primaryFixed:\n',
+    'lib/core/theme/typography.dart':
+        'GoogleFonts.lexendTextTheme\nGoogleFonts.sourceSans3TextTheme\n',
     'lib/core/extensions/context_extensions.dart': 'adaptivePagePadding\n',
-    'docs/05-theming-guide.md': 'BuildContextX\n',
+    'docs/05-theming-guide.md': 'BuildContextX\ntrustworthy-commerce\n',
     '.github/workflows/ci.yml':
         r'./tools/verify.sh ${{ github.workflow }}-${{ github.ref }} ./tools/build.sh ${{ matrix.flavor }} actions/upload-artifact@v4 flutter-version:',
     '.github/workflows/cd-dev.yml': './tools/release.sh dev firebase\n',
@@ -435,6 +437,61 @@ void main() {
         );
       },
     );
+
+    test('validate rejects stale evidence quality vocabulary', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-evidence-quality-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+      final manifest = File(p.join(tempDir.path, '.info/agentic.yaml'));
+      await manifest.writeAsString(
+        manifest.readAsStringSync().replaceFirst(
+          'evidence_quality',
+          'observability',
+        ),
+      );
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test('validate rejects secret-like values in approvals and sdk', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-secret-fields-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+      final manifest = File(p.join(tempDir.path, '.info/agentic.yaml'));
+      await manifest.writeAsString(
+        manifest.readAsStringSync().replaceFirst(
+          '  approvals:\n    pause_on:\n',
+          '  approvals:\n    token: sk_test_secret\n    pause_on:\n',
+        ),
+      );
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+
+      await seedRequiredContractFiles(tempDir.path);
+      await manifest.writeAsString(
+        manifest.readAsStringSync().replaceFirst(
+          '  sdk:\n    manager: system\n',
+          '  sdk:\n    manager: system\n    preferred_version: sk_test_secret\n',
+        ),
+      );
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
 
     test(
       'validateStateOutput requires only the active state test surface',

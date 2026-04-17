@@ -19,18 +19,23 @@ import 'package:{{project_name.snakeCase()}}/app/observers/app_bloc_observer.dar
 import 'package:{{project_name.snakeCase()}}/core/di/injection.dart';
 {{/is_riverpod}}
 
-Future<void> bootstrap(Widget Function() builder) async {
+Future<void> bootstrap(
+  Widget Function() builder, {
+  bool initializeModules = true,
+}) async {
   WidgetsFlutterBinding.ensureInitialized();
   unawaited(AppLocaleContract.useDeviceLocale());
 {{#is_cubit}}
   Bloc.observer = AppBlocObserver();
 {{/is_cubit}}
 {{^is_riverpod}}
-  await configureDependencies();
+  await configureDependencies(initializeModules: initializeModules);
 {{/is_riverpod}}
 {{#is_riverpod}}
   final container = ProviderContainer();
-  await initializeModuleProviders(container);
+  if (initializeModules) {
+    await initializeModuleProviders(container);
+  }
 {{/is_riverpod}}
   final existingFlutterErrorHandler = FlutterError.onError;
   FlutterError.onError = (details) {

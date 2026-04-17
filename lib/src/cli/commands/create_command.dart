@@ -59,7 +59,7 @@ class CreateCommand extends Command<int> {
         'app-profile',
         help: 'Harness app profile',
         allowed: supportedHarnessAppProfiles,
-        defaultsTo: HarnessAppProfile.consumerApp.wireName,
+        defaultsTo: HarnessAppProfile.subscriptionCommerceApp.wireName,
       )
       ..addOption(
         'traits',
@@ -149,7 +149,6 @@ class CreateCommand extends Command<int> {
     final requestedFlavors = _resolveSupportedFlavors(
       args['flavors'] as String?,
     );
-    final requestedModules = _normalizeCsvOption(args['modules'] as String?);
     final requestedTraits = _normalizeCsvOption(args['traits'] as String?);
     final ciProvider = parseCiProvider(
       args['ci-provider'] as String? ?? defaultCiProvider.name,
@@ -221,19 +220,28 @@ class CreateCommand extends Command<int> {
 
     final flavors = requestedFlavors;
 
+    final hasExplicitModuleOverride = args.wasParsed('modules');
     final modules =
         noInteractive
-            ? requestedModules ?? <String>[]
-            : requestedModules ?? prompts.promptModules(null);
+            ? (hasExplicitModuleOverride
+                ? _normalizeCsvOption(args['modules'] as String?) ??
+                    <String>[]
+                : null)
+            : prompts.promptModules(
+              hasExplicitModuleOverride ? args['modules'] as String? : null,
+              appProfile: appProfile,
+            );
 
-    final unknownModules =
-        modules.where((name) => ModuleRegistry.find(name) == null).toList();
-    if (unknownModules.isNotEmpty) {
-      _logger.err(
-        'Unknown module(s): ${unknownModules.join(', ')}. '
-        'Available: ${ModuleRegistry.allNames.join(', ')}',
-      );
-      return 1;
+    if (modules != null) {
+      final unknownModules =
+          modules.where((name) => ModuleRegistry.find(name) == null).toList();
+      if (unknownModules.isNotEmpty) {
+        _logger.err(
+          'Unknown module(s): ${unknownModules.join(', ')}. '
+          'Available: ${ModuleRegistry.allNames.join(', ')}',
+        );
+        return 1;
+      }
     }
 
     try {

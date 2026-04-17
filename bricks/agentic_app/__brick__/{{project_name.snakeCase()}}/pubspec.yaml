@@ -25,6 +25,7 @@ dependencies:
 {{#uses_get_it}}  get_it: ^9.2.1
   injectable: ^2.7.1
 {{/uses_get_it}}
+  google_fonts: ^8.0.2
   intl: any
   json_annotation: ^4.11.0
 {{#is_mobx}}  mobx: ^2.4.0

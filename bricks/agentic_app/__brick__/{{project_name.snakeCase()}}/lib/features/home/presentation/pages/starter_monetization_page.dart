@@ -13,6 +13,7 @@ import 'package:{{project_name.snakeCase()}}/features/home/domain/usecases/get_s
 {{#is_riverpod}}
 import 'package:{{project_name.snakeCase()}}/features/home/presentation/controller/starter_monetization_controller.dart';
 {{/is_riverpod}}
+import 'package:{{project_name.snakeCase()}}/features/home/presentation/widgets/starter_monetization_overview_card.dart';
 
 @RoutePage()
 {{#is_riverpod}}
@@ -88,8 +89,11 @@ class _StarterPaywallView extends StatelessWidget {
         child: ListView(
           padding: context.adaptivePagePadding,
           children: [
-            Text(monetization.subtitle, style: context.textTheme.bodyLarge),
-            const SizedBox(height: 24),
+            StarterMonetizationOverviewCard(
+              snapshot: snapshot,
+              subtitle: monetization.subtitle,
+            ),
+            const SizedBox(height: 16),
             Card(
               child: ListTile(
                 title: Text(snapshot.currentEntitlement.name),

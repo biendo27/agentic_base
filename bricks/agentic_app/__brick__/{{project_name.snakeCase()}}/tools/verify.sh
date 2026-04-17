@@ -8,6 +8,7 @@ start_evidence_run "verify" "{{required_gate_pack}}"
 set_approval_state "EvalRunning"
 
 RUN_EXIT_CODE=0
+FAST_VERIFY_MODE="${AGENTIC_VERIFY_FAST:-0}"
 trap 'finalize_evidence_run "$RUN_EXIT_CODE"' EXIT
 
 verify_static_contract() {
@@ -17,6 +18,10 @@ verify_static_contract() {
 
 verify_app_shell_smoke() {
   run_flutter test test/app_smoke_test.dart
+}
+
+verify_profile_starter_gate() {
+  run_flutter test "{{{required_profile_verify_gate_test_path}}}"
 }
 
 verify_native_readiness() {
@@ -51,28 +56,36 @@ verify_native_readiness() {
   return $exit_code
 }
 
-if ! run_gate "contract-surface" "correctness" "[1/6] Validating the harness contract surface..." verify_contract_surface; then
+if ! run_gate "contract-surface" "correctness" "Validating the harness contract surface..." verify_contract_surface; then
   RUN_EXIT_CODE=1
   exit 1
 fi
 
-if ! run_gate "toolchain-contract" "correctness" "[2/6] Validating the declared Flutter toolchain..." validate_flutter_contract; then
+if ! run_gate "toolchain-contract" "correctness" "Validating the declared Flutter toolchain..." validate_flutter_contract; then
   RUN_EXIT_CODE=1
   exit 1
 fi
 
-if ! run_gate "static" "correctness" "[3/6] Refreshing generated outputs and running static analysis..." verify_static_contract; then
-  RUN_EXIT_CODE=1
-  exit 1
+if [[ "$FAST_VERIFY_MODE" == "1" ]]; then
+  skip_gate "static" "correctness" "Static gate skipped by AGENTIC_VERIFY_FAST."
+else
+  if ! run_gate "static" "correctness" "Refreshing generated outputs and running static analysis..." verify_static_contract; then
+    RUN_EXIT_CODE=1
+    exit 1
+  fi
 fi
 
-if ! run_gate "unit-widget" "correctness" "[4/6] Running unit and widget tests..." run_flutter test --exclude-tags app-smoke; then
-  RUN_EXIT_CODE=1
-  exit 1
+if [[ "$FAST_VERIFY_MODE" == "1" ]]; then
+  skip_gate "unit-widget" "correctness" "Unit and widget gate skipped by AGENTIC_VERIFY_FAST."
+else
+  if ! run_gate "unit-widget" "correctness" "Running unit and widget tests..." run_flutter test --exclude-tags app-smoke; then
+    RUN_EXIT_CODE=1
+    exit 1
+  fi
 fi
 
 if [[ -f "$PROJECT_ROOT/test/app_smoke_test.dart" ]]; then
-  if ! run_gate "app-shell-smoke" "ux_confidence" "[5/6] Running the starter app-shell smoke path..." verify_app_shell_smoke; then
+  if ! run_gate "app-shell-smoke" "ux_confidence" "Running the starter app-shell smoke path..." verify_app_shell_smoke; then
     RUN_EXIT_CODE=1
     exit 1
   fi
@@ -80,8 +93,24 @@ else
   skip_gate "app-shell-smoke" "ux_confidence" "Starter app-shell smoke test is not present."
 fi
 
-if [[ "$(uname -s)" == "Darwin" && -d ios ]]; then
-  if ! run_gate "native-readiness" "release_readiness" "[6/6] Checking iOS simulator readiness..." verify_native_readiness; then
+{{#has_required_profile_verify_gate}}
+if ! run_gate "{{required_profile_verify_gate_id}}" "{{required_profile_verify_gate_dimension}}" "Running {{required_profile_verify_gate_label}}..." verify_profile_starter_gate; then
+  RUN_EXIT_CODE=1
+  exit 1
+fi
+{{/has_required_profile_verify_gate}}
+{{^has_required_profile_verify_gate}}
+{{#has_advisory_profile_verify_gate}}
+skip_gate "profile-advisory" "ux_confidence" "{{advisory_profile_verify_gate_label}}"
+{{/has_advisory_profile_verify_gate}}
+{{/has_required_profile_verify_gate}}
+
+if [[ "$FAST_VERIFY_MODE" == "1" ]]; then
+  skip_gate "native-readiness" "release_readiness" "Native readiness skipped by AGENTIC_VERIFY_FAST."
+elif [[ "${AGENTIC_SKIP_NATIVE_READINESS:-0}" == "1" ]]; then
+  skip_gate "native-readiness" "release_readiness" "Native readiness skipped by AGENTIC_SKIP_NATIVE_READINESS."
+elif [[ "$(uname -s)" == "Darwin" && -d ios ]]; then
+  if ! run_gate "native-readiness" "release_readiness" "Checking iOS simulator readiness..." verify_native_readiness; then
     RUN_EXIT_CODE=1
     exit 1
   fi

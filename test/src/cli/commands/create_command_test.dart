@@ -44,11 +44,13 @@ class RecordingProjectGenerator extends ProjectGenerator {
     required FlutterSdkManager flutterSdkManager,
     String? flutterSdkVersion,
     List<String> secondaryTraits = const [],
-    List<String> modules = const [],
+    List<String>? modules,
   }) async {
     previewInvoked = true;
     this.projectName = projectName;
     this.outputDirectory = outputDirectory;
+    this.modules = modules == null ? null : List.of(modules);
+    this.appProfile = appProfile;
   }
 
   @override
@@ -64,7 +66,7 @@ class RecordingProjectGenerator extends ProjectGenerator {
     required FlutterSdkManager flutterSdkManager,
     String? flutterSdkVersion,
     List<String> secondaryTraits = const [],
-    List<String> modules = const [],
+    List<String>? modules,
     bool runVerify = true,
   }) async {
     generateInvoked = true;
@@ -79,7 +81,7 @@ class RecordingProjectGenerator extends ProjectGenerator {
     this.flutterSdkManager = flutterSdkManager;
     this.flutterSdkVersion = flutterSdkVersion;
     this.secondaryTraits = List.of(secondaryTraits);
-    this.modules = List.of(modules);
+    this.modules = modules == null ? null : List.of(modules);
   }
 }
 
@@ -149,6 +151,14 @@ void main() {
     test('state option defaults to cubit', () {
       final args = command.argParser.parse([]);
       expect(args['state'], equals('cubit'));
+    });
+
+    test('app-profile defaults to subscription-commerce-app', () {
+      final args = command.argParser.parse([]);
+      expect(
+        args['app-profile'],
+        equals(HarnessAppProfile.subscriptionCommerceApp.wireName),
+      );
     });
 
     test('state option accepts cubit, riverpod, mobx', () {
@@ -233,8 +243,33 @@ void main() {
           'gitlab',
         ]);
 
+      expect(exitCode, equals(0));
+      expect(recordingGenerator.ciProvider, equals(CiProvider.gitlab));
+    },
+  );
+
+    test(
+      'keeps module resolution deferred when the caller does not override it',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'create-command-default-profile-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        final exitCode = await runner.run([
+          'create',
+          'demo_app',
+          '--no-interactive',
+          '--output-dir',
+          tempDir.path,
+        ]);
+
         expect(exitCode, equals(0));
-        expect(recordingGenerator.ciProvider, equals(CiProvider.gitlab));
+        expect(
+          recordingGenerator.appProfile,
+          equals(HarnessAppProfile.subscriptionCommerceApp),
+        );
+        expect(recordingGenerator.modules, isNull);
       },
     );
 

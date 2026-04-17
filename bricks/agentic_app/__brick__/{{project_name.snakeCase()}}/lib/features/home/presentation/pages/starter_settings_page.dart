@@ -4,6 +4,7 @@ import 'package:{{project_name.snakeCase()}}/app/i18n/translations.g.dart';
 import 'package:{{project_name.snakeCase()}}/app/locale/app_locale_contract.dart';
 import 'package:{{project_name.snakeCase()}}/app/theme/app_theme_scope.dart';
 import 'package:{{project_name.snakeCase()}}/core/extensions/context_extensions.dart';
+import 'package:{{project_name.snakeCase()}}/features/home/presentation/widgets/starter_settings_preview_card.dart';
 
 @RoutePage()
 class StarterSettingsPage extends StatelessWidget {
@@ -25,6 +26,8 @@ class StarterSettingsPage extends StatelessWidget {
             padding: context.adaptivePagePadding,
             children: [
               Text(settings.subtitle, style: context.textTheme.bodyLarge),
+              const SizedBox(height: 16),
+              StarterSettingsPreviewCard(subtitle: settings.subtitle),
               const SizedBox(height: 24),
               Text(
                 settings.themeModeTitle,

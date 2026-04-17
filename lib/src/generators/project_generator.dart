@@ -7,6 +7,7 @@ import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/config/flutter_toolchain_runtime.dart';
 import 'package:agentic_base/src/config/harness_metadata.dart';
 import 'package:agentic_base/src/config/harness_profile.dart';
+import 'package:agentic_base/src/config/profile_preset.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:agentic_base/src/generators/agentic_app_surface_synchronizer.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
@@ -38,7 +39,7 @@ class ProjectGenerator {
     required FlutterSdkManager flutterSdkManager,
     String? flutterSdkVersion,
     List<String> secondaryTraits = const [],
-    List<String> modules = const [],
+    List<String>? modules,
   }) async {
     final metadata = _buildMetadata(
       projectName: projectName,
@@ -54,7 +55,6 @@ class ProjectGenerator {
       modules: modules,
     );
     final preferredManager = metadata.harness.sdk.preferredManager;
-    final expandedModules = _expandedModuleInstallOrder(modules);
     final flutterCreateCommand = flutterCommandForManager(preferredManager, [
       'create',
       '--org',
@@ -96,9 +96,15 @@ class ProjectGenerator {
       _logger.info('  - would run `$flavorizrCommand`');
     }
 
-    if (expandedModules.isNotEmpty) {
+    if (metadata.modules.isNotEmpty) {
+      final installSummary =
+          metadata.provenance['modules'] == MetadataProvenance.defaulted
+              ? 'profile default modules'
+              : 'modules';
       _logger
-        ..info('  - would install modules: ${expandedModules.join(', ')}')
+        ..info(
+          '  - would install $installSummary: ${metadata.modules.join(', ')}',
+        )
         ..info('  - would run `$pubGetCommand` after module sync');
     }
 
@@ -133,7 +139,7 @@ class ProjectGenerator {
     required FlutterSdkManager flutterSdkManager,
     String? flutterSdkVersion,
     List<String> secondaryTraits = const [],
-    List<String> modules = const [],
+    List<String>? modules,
     bool runVerify = true,
   }) async {
     final toolchain = resolveFlutterToolchain(
@@ -205,12 +211,12 @@ class ProjectGenerator {
     }
 
     // Step 6: Install selected modules
-    if (modules.isNotEmpty) {
+    if (metadata.modules.isNotEmpty) {
       await _installModules(
         outputDirectory,
         projectName,
         stateManagement,
-        modules,
+        metadata.modules,
         toolchain,
       );
     }
@@ -465,11 +471,15 @@ class ProjectGenerator {
     required FlutterSdkManager flutterSdkManager,
     String? flutterSdkVersion,
     List<String> secondaryTraits = const [],
-    List<String> modules = const [],
+    List<String>? modules,
     FlutterSdkManager? preferredFlutterSdkManager,
     String? preferredFlutterSdkVersion,
     String? detectedChannel,
   }) {
+    final preset = resolveProfilePreset(
+      appProfile: appProfile,
+      explicitModules: modules,
+    );
     final sdkContract = FlutterSdkContract(
       manager: flutterSdkManager,
       channel: detectedChannel ?? defaultFlutterChannel,
@@ -484,7 +494,8 @@ class ProjectGenerator {
     final harness = HarnessMetadata.defaultFor(
       appProfile: appProfile,
       secondaryTraits: secondaryTraits,
-      capabilities: modules,
+      capabilities: preset.effectiveModules,
+      providers: preset.providers,
       sdk: sdkContract,
     );
     return AgenticConfig.buildInitialMetadata(
@@ -503,12 +514,12 @@ class ProjectGenerator {
         'state_management': MetadataProvenance.explicit,
         'platforms': MetadataProvenance.explicit,
         'flavors': MetadataProvenance.explicit,
-        'modules': MetadataProvenance.defaulted,
+        'modules': preset.modulesProvenance,
         'harness.contract_version': MetadataProvenance.defaulted,
         'harness.app_profile.primary_profile': MetadataProvenance.explicit,
         'harness.app_profile.secondary_traits': MetadataProvenance.explicit,
-        'harness.capabilities.enabled': MetadataProvenance.explicit,
-        'harness.providers': MetadataProvenance.defaulted,
+        'harness.capabilities.enabled': preset.modulesProvenance,
+        'harness.providers': preset.providersProvenance,
         'harness.eval.evidence_dir': MetadataProvenance.defaulted,
         'harness.eval.quality_dimensions': MetadataProvenance.defaulted,
         'harness.approvals.pause_on': MetadataProvenance.defaulted,
@@ -525,27 +536,8 @@ class ProjectGenerator {
                 : MetadataProvenance.explicit,
         'harness.sdk.policy': MetadataProvenance.defaulted,
       },
-      modules: modules,
+      modules: preset.effectiveModules,
       harness: harness,
     );
-  }
-
-  List<String> _expandedModuleInstallOrder(List<String> modules) {
-    final requestedModules = <String>[];
-    for (final name in modules) {
-      final missing = ModuleRegistry.missingPrerequisites(
-        name,
-        installed: requestedModules,
-      );
-      for (final prereq in missing) {
-        if (!requestedModules.contains(prereq)) {
-          requestedModules.add(prereq);
-        }
-      }
-      if (!requestedModules.contains(name)) {
-        requestedModules.add(name);
-      }
-    }
-    return requestedModules;
   }
 }

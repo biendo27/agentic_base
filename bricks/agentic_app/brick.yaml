@@ -81,7 +81,7 @@ vars:
   app_profile:
     type: string
     description: Harness app profile
-    default: consumer-app
+    default: subscription-commerce-app
     prompt: "Harness app profile:"
   app_profile_label:
     type: string
@@ -106,8 +106,118 @@ vars:
   required_gate_pack:
     type: string
     description: Required gate pack description
-    default: core + profile pack
+    default: core + subscription commerce pack
     prompt: "Required gate pack:"
+  starter_analytics_enabled:
+    type: boolean
+    description: Whether starter analytics seams are enabled
+    default: false
+    prompt: "Enable starter analytics seams?"
+  starter_crashlytics_enabled:
+    type: boolean
+    description: Whether starter crash reporting seams are enabled
+    default: false
+    prompt: "Enable starter crash reporting seams?"
+  starter_remote_config_enabled:
+    type: boolean
+    description: Whether starter remote config seams are enabled
+    default: false
+    prompt: "Enable starter remote config seams?"
+  starter_feature_flags_enabled:
+    type: boolean
+    description: Whether starter feature flag seams are enabled
+    default: false
+    prompt: "Enable starter feature flag seams?"
+  starter_payments_enabled:
+    type: boolean
+    description: Whether starter payment seams are enabled
+    default: false
+    prompt: "Enable starter payment seams?"
+  starter_entitlement_enabled:
+    type: boolean
+    description: Whether starter entitlement seams are enabled
+    default: false
+    prompt: "Enable starter entitlement seams?"
+  starter_consent_enabled:
+    type: boolean
+    description: Whether starter consent seams are enabled
+    default: false
+    prompt: "Enable starter consent seams?"
+  starter_ads_enabled:
+    type: boolean
+    description: Whether starter ads seams are enabled
+    default: false
+    prompt: "Enable starter ads seams?"
+  starter_notifications_enabled:
+    type: boolean
+    description: Whether starter notifications seams are enabled
+    default: false
+    prompt: "Enable starter notifications seams?"
+  starter_deep_links_enabled:
+    type: boolean
+    description: Whether starter deep link seams are enabled
+    default: false
+    prompt: "Enable starter deep link seams?"
+  starter_in_app_review_enabled:
+    type: boolean
+    description: Whether starter in-app review seams are enabled
+    default: false
+    prompt: "Enable starter in-app review seams?"
+  starter_app_update_enabled:
+    type: boolean
+    description: Whether starter app update seams are enabled
+    default: false
+    prompt: "Enable starter app update seams?"
+  starter_commerce_enabled:
+    type: boolean
+    description: Whether the starter should surface the commerce lane
+    default: false
+    prompt: "Enable starter commerce lane?"
+  starter_config_enabled:
+    type: boolean
+    description: Whether the starter should surface config controls
+    default: false
+    prompt: "Enable starter config lane?"
+  starter_lifecycle_enabled:
+    type: boolean
+    description: Whether the starter should surface lifecycle signals
+    default: false
+    prompt: "Enable starter lifecycle lane?"
+  has_required_profile_verify_gate:
+    type: boolean
+    description: Whether the profile adds a required verify gate
+    default: false
+    prompt: "Has required profile verify gate?"
+  required_profile_verify_gate_id:
+    type: string
+    description: Profile-specific required verify gate id
+    default: ""
+    prompt: "Required profile verify gate id:"
+  required_profile_verify_gate_label:
+    type: string
+    description: Profile-specific required verify gate label
+    default: ""
+    prompt: "Required profile verify gate label:"
+  required_profile_verify_gate_dimension:
+    type: string
+    description: Quality dimension updated by the required profile verify gate
+    default: ux_confidence
+    prompt: "Required profile verify gate dimension:"
+  required_profile_verify_gate_test_path:
+    type: string
+    description: Test target for the required profile verify gate
+    default: ""
+    prompt: "Required profile verify gate test path:"
+  has_advisory_profile_verify_gate:
+    type: boolean
+    description: Whether the profile declares advisory-only starter checks
+    default: false
+    prompt: "Has advisory profile verify gate?"
+  advisory_profile_verify_gate_label:
+    type: string
+    description: Advisory-only starter gate summary
+    default: ""
+    prompt: "Advisory profile verify gate label:"
   secondary_traits_csv:
     type: string
     description: Secondary harness traits rendered as text

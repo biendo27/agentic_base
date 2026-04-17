@@ -1,6 +1,9 @@
 {{^is_riverpod}}
 import 'package:injectable/injectable.dart';
 {{/is_riverpod}}
+import 'package:{{project_name.snakeCase()}}/core/commerce/entitlement_service.dart';
+import 'package:{{project_name.snakeCase()}}/core/privacy/consent_service.dart';
+import 'package:{{project_name.snakeCase()}}/core/starter/starter_runtime_profile.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/entities/starter_entitlement.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/entities/starter_offer.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/entities/starter_paywall_snapshot.dart';
@@ -11,16 +14,16 @@ import 'package:{{project_name.snakeCase()}}/features/home/domain/repositories/s
 {{/is_riverpod}}
 class DemoStarterMonetizationRepository
     implements StarterMonetizationRepository {
+  static const _entitlementService = StarterEntitlementService();
+  static const _consentService = StarterConsentService();
+
   @override
   Future<StarterPaywallSnapshot> loadPaywall() async {
     await Future<void>.delayed(const Duration(milliseconds: 120));
-    return const StarterPaywallSnapshot(
-      currentEntitlement: StarterEntitlement(
-        id: 'starter_preview',
-        name: 'Starter Preview',
-        description: 'Provider-neutral demo entitlement for day-0 flows.',
-        isActive: true,
-      ),
+    final entitlement = await _entitlementService.currentEntitlement();
+    final consent = await _consentService.currentStatus();
+    return StarterPaywallSnapshot(
+      currentEntitlement: entitlement,
       offers: <StarterOffer>[
         StarterOffer(
           id: 'starter_monthly',
@@ -34,11 +37,12 @@ class DemoStarterMonetizationRepository
           title: 'Starter Annual',
           priceLabel: r'$79 / year',
           billingLabel: 'Best value',
-          highlight: 'Use this lane when you wire a real billing provider later.',
+          highlight:
+              'Use this lane when you wire a real entitlement backend later.',
         ),
       ],
       supportNote:
-          'Swap this demo adapter for RevenueCat, Stripe, Paddle, or another billing backend when product requirements are real.',
+          '${StarterRuntimeProfile.paymentProviderLabel}. ${consent.summary} External checkout remains opt in only.',
     );
   }
 }

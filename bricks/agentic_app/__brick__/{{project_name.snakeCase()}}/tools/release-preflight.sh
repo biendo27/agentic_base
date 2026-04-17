@@ -12,7 +12,7 @@ if [[ -z "$FLAVOR" || -z "$TARGET" ]]; then
   die "Usage: ./tools/release-preflight.sh <dev|staging|prod> <firebase|testflight|play-internal|play-production|app-store>"
 fi
 
-start_evidence_run "release-preflight" "release-readiness"
+start_evidence_run "release-preflight" "release {{required_gate_pack}}"
 set_approval_state "ApprovedForReleasePrep"
 RUN_EXIT_CODE=0
 trap 'finalize_evidence_run "$RUN_EXIT_CODE"' EXIT
@@ -109,22 +109,22 @@ validate_release_boundary() {
   fi
 }
 
-if ! run_gate "contract-surface" "correctness" "[1/4] Validating the generated contract surface..." verify_contract_surface; then
+if ! run_gate "contract-surface" "correctness" "Validating the generated contract surface..." verify_contract_surface; then
   RUN_EXIT_CODE=1
   exit 1
 fi
 
-if ! run_gate "toolchain-contract" "release_readiness" "[2/4] Validating the declared Flutter toolchain..." validate_flutter_contract; then
+if ! run_gate "toolchain-contract" "release_readiness" "Validating the declared Flutter toolchain..." validate_flutter_contract; then
   RUN_EXIT_CODE=1
   exit 1
 fi
 
-if ! run_gate "release-inputs" "release_readiness" "[3/4] Validating release inputs and prerequisites..." validate_release_inputs; then
+if ! run_gate "release-inputs" "release_readiness" "Validating release inputs and prerequisites..." validate_release_inputs; then
   RUN_EXIT_CODE=1
   exit 1
 fi
 
-if ! run_gate "release-prereqs" "release_readiness" "[4/4] Validating release credentials and tooling..." validate_release_prerequisites; then
+if ! run_gate "release-prereqs" "release_readiness" "Validating release credentials and tooling..." validate_release_prerequisites; then
   set_approval_state "NeedsCredentials"
   set_next_required_human_action "credential-setup"
   RUN_EXIT_CODE=1

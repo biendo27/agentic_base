@@ -19,7 +19,7 @@ final class HarnessEvalConfig {
       evidenceDir:
           _readString(raw['evidence_dir']) ?? defaultHarnessEvidenceDir,
       qualityDimensions:
-          _readStringList(raw['quality_dimensions']) ??
+          _readCanonicalQualityDimensions(raw['quality_dimensions']) ??
           defaultHarnessQualityDimensions,
     );
   }
@@ -229,6 +229,22 @@ List<String>? _readStringList(dynamic value) {
       .map((entry) => entry.toString().trim())
       .where((entry) => entry.isNotEmpty)
       .toList();
+}
+
+List<String>? _readCanonicalQualityDimensions(dynamic value) {
+  final dimensions = _readStringList(value);
+  if (dimensions == null ||
+      dimensions.length != defaultHarnessQualityDimensions.length) {
+    return null;
+  }
+
+  for (var index = 0; index < dimensions.length; index++) {
+    if (dimensions[index] != defaultHarnessQualityDimensions[index]) {
+      return null;
+    }
+  }
+
+  return dimensions;
 }
 
 Map<String, String>? _readStringMap(dynamic value) {
