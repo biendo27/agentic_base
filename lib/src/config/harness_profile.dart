@@ -30,6 +30,14 @@ const defaultHarnessQualityDimensions = <String>[
 ];
 
 const defaultHarnessEvidenceDir = 'artifacts/evidence';
+const defaultHarnessObservabilityMode = 'local-first';
+const defaultHarnessRuntimeObservability = <String>[
+  'structured_logs',
+  'traces',
+  'metrics',
+];
+const defaultHarnessAgentLegibility = <String>['inspect', 'run_ledger'];
+const defaultHarnessOperatorReports = <String>['markdown'];
 
 enum SupportTier { tier1, tier2 }
 

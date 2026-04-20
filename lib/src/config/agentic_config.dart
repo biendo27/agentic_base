@@ -127,6 +127,18 @@ class AgenticConfig {
         'harness.approvals.pause_on':
             provenance['harness.approvals.pause_on'] ??
             MetadataProvenance.defaulted,
+        'harness.observability.mode':
+            provenance['harness.observability.mode'] ??
+            MetadataProvenance.defaulted,
+        'harness.observability.runtime_observability':
+            provenance['harness.observability.runtime_observability'] ??
+            MetadataProvenance.defaulted,
+        'harness.observability.agent_legibility':
+            provenance['harness.observability.agent_legibility'] ??
+            MetadataProvenance.defaulted,
+        'harness.observability.operator_reports':
+            provenance['harness.observability.operator_reports'] ??
+            MetadataProvenance.defaulted,
         'harness.sdk.manager':
             provenance['harness.sdk.manager'] ?? MetadataProvenance.defaulted,
         'harness.sdk.preferred_manager':

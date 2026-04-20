@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:{{project_name.snakeCase()}}/app/flavors.dart';
 import 'package:{{project_name.snakeCase()}}/app/i18n/translations.g.dart';
+import 'package:{{project_name.snakeCase()}}/core/observability/observability_service.dart';
 
 class RuntimeDiagnosticsCard extends StatelessWidget {
   const RuntimeDiagnosticsCard({super.key});
@@ -8,6 +9,7 @@ class RuntimeDiagnosticsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final observability = ObservabilityService.instance;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -35,6 +37,18 @@ class RuntimeDiagnosticsCard extends StatelessWidget {
             _RuntimeRow(
               label: context.t.home.apiBaseUrlLabel,
               value: FlavorConfig.instance.apiBaseUrl,
+            ),
+            _RuntimeRow(
+              label: 'Observability mode',
+              value: 'Local-first runtime telemetry',
+            ),
+            _RuntimeRow(
+              label: 'Run correlation',
+              value: observability.runId,
+            ),
+            _RuntimeRow(
+              label: 'Buffered telemetry events',
+              value: '${observability.bufferedEventCount}',
             ),
           ],
         ),

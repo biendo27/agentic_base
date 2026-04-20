@@ -59,6 +59,7 @@ The generated starter is intentionally product-neutral but not skeletal:
 ```
 
 Meaningful `verify` and `release-preflight` runs emit inspectable evidence under `{{{evidence_dir}}}`.
+Use `./tools/inspect-evidence.sh verify` for the latest derived report surface.
 
 ## Commands
 

@@ -27,6 +27,7 @@ A repo may claim Harness Contract V1 only when it is a generated Flutter repo th
 | Capability boundary | Optional capabilities must extend the repo through declared seams, not hidden file drops. | Module registry, installer, startup integration generator, manifest provider mapping |
 | Eval contract | Repo must define what checks prove a change or release candidate is trustworthy. | `verify.sh`, generated CI, package tests, named gate vocabulary |
 | Evidence contract | Meaningful runs must emit inspectable artifacts, not only exit codes. | `tools/_common.sh`, `verify.sh`, `release-preflight.sh`, generated CI artifact uploads |
+| Observability contract | Repo must expose local-first runtime telemetry and derived inspection surfaces without claiming a hosted console. | `harness.observability`, generated app observability seams, telemetry bundle files, `agentic_base inspect`, and `./tools/inspect-evidence.sh` |
 | Approval contract | Human-only checkpoints must be explicit and finite. | `.info/agentic.yaml`, `release-preflight.sh`, `release.sh`, generated docs/adapters |
 
 ## Hard Guarantees
@@ -39,6 +40,7 @@ Generated repos that claim Harness Contract V1 guarantee:
 4. Generated validation never implies unattended production publish authority.
 5. Capability and provider choices stay declarative enough for agents to inspect before editing code.
 6. Verification results are summarized as named gates plus inspectable evidence, not only prose.
+7. Observability remains repo-scoped and local-first; the contract does not imply a hosted operator plane.
 
 ## Explicit Non-Goals
 
@@ -49,6 +51,7 @@ Harness Contract V1 does not guarantee:
 - unattended final App Store or Play production publish
 - support for every Flutter profile
 - one magic quality score that hides missing evidence
+- a hosted observability backend or persistent remote operator console
 
 ## Mechanical Enforcement Map
 
@@ -95,6 +98,7 @@ The V1 contract stays intentionally small:
 - capabilities plus providers
 - eval plus evidence
 - approvals
+- observability
 - SDK/version policy
 
 ## Current Rollout Freeze
@@ -104,6 +108,7 @@ The active profile-execution rollout freezes three product-policy rules without 
 - `subscription-commerce-app` is the canonical V1 golden path
 - thin base stays separate from profile-owned default-on capability packs
 - `evidence_quality` means run-evidence quality, not richer agent telemetry
+- observability stays local-first, additive, and derived on read through one inspect surface
 
 [`docs/15-default-app-service-matrix.md`](./15-default-app-service-matrix.md) is the canonical reference for that freeze.
 

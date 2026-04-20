@@ -34,7 +34,10 @@ void main() {
     );
 
     expect(find.text('Starter commerce seams'), findsOneWidget);
-    expect(find.textContaining('Store-native via in_app_purchase'), findsAtLeastNWidgets(1));
+    expect(
+      find.textContaining('Store-native via in_app_purchase'),
+      findsAtLeastNWidgets(1),
+    );
     expect(find.text('Ads status'), findsOneWidget);
   });
 }

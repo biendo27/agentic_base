@@ -16,6 +16,7 @@ import 'package:{{project_name.snakeCase()}}/app/i18n/translations.g.dart';
 import 'package:{{project_name.snakeCase()}}/core/di/injection.dart';
 {{/uses_get_it}}
 import 'package:{{project_name.snakeCase()}}/core/extensions/context_extensions.dart';
+import 'package:{{project_name.snakeCase()}}/core/observability/observability_service.dart';
 import 'package:{{project_name.snakeCase()}}/core/router/app_router.gr.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/entities/home_item.dart';
 {{#is_cubit}}
@@ -121,6 +122,7 @@ class _HomeScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ObservabilityService.instance.trackScreenView('home');
     return Scaffold(
       appBar: AppBar(title: Text(context.t.app.title)),
       body: switch (state) {

@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `lib/src/config/profile_preset.dart` as the generator-owned source of truth for default modules, providers, starter seams, and profile verify policy
 - generated starter seams for `EntitlementService`, `ConsentService`, and `starter_runtime_profile.dart`
 - starter widget regression coverage for commerce, journey, and settings profile signals
+- `harness.observability` as the additive local-first observability support envelope in `.info/agentic.yaml`
+- generated app runtime observability seams, network correlation, and telemetry export hooks
+- `agentic_base inspect` plus generated `./tools/inspect-evidence.sh` for latest-run bundle inspection
+- `docs/17-observability-contract.md`, `docs/18-local-operator-reporting.md`, and `docs/19-observability-rollout-migration-guide.md`
 
 ### Changed
 
@@ -31,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - the package slow canary now runs generated `verify.sh` in a fast smoke mode, streams verify output live, and leaves real native readiness to the dedicated CI native gate
 - the default starter theme now ships the trustworthy-commerce family with Lexend, Source Sans 3, and `google_fonts`
 - the default payments seam now uses store-native `in_app_purchase`, and the starter commerce lane keeps payments, entitlement, consent, and ads responsibilities separate
+- evidence bundles now emit structured telemetry files beside `summary.json` and `commands.ndjson`, and the latest run is published through a deterministic local `latest/` pointer
+- observability stays local-first and additive; `evidence_quality` remains a run-evidence dimension, not a telemetry rename
 
 ### Testing
 
@@ -38,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - targeted tests passed: `test/src/config/project_metadata_test.dart` and `test/src/generators/project_generator_test.dart`
 - targeted tests passed: `test/src/config/profile_preset_test.dart`, `test/src/cli/commands/create_command_test.dart`, `test/src/generators/profile_gate_contract_test.dart`, and `test/src/docs/harness_contract_documentation_test.dart`
 - generated-app smoke regression passed: `test/integration/generated_app_smoke_test.dart`
+- targeted tests passed: `test/src/cli/commands/inspect_command_test.dart` and `test/src/observability/run_ledger_test.dart`
 - shell syntax checks passed for the generated `tools/verify.sh` and `tools/release-preflight.sh`
 - full `dart test` passed
 

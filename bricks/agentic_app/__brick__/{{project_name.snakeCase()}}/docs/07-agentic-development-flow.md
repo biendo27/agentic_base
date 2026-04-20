@@ -22,9 +22,10 @@ If those surfaces drift, follow `README.md` and `docs/`.
 3. Edit generator-owned or app-owned files according to the ownership boundary.
 4. Run `./tools/test.sh` for focused checks while iterating.
 5. Run `./tools/verify.sh` before claiming a change is ready.
-6. Inspect `{{{evidence_dir}}}` before summarizing verify or release-preflight results.
-7. Run `./tools/release-preflight.sh <flavor> <target>` before any upload-oriented release work.
-8. Stop at human pauses for product decisions, credential setup, and final production publish.
+6. Run `./tools/inspect-evidence.sh verify` before summarizing verify or release-preflight results.
+7. Inspect `{{{evidence_dir}}}` directly only when debugging the raw bundle files.
+8. Run `./tools/release-preflight.sh <flavor> <target>` before any upload-oriented release work.
+9. Stop at human pauses for product decisions, credential setup, and final production publish.
 
 ## Ownership Boundary
 
@@ -50,9 +51,11 @@ Use the wrapper surfaces in this order:
 
 1. `./tools/test.sh` for local focused checks
 2. `./tools/verify.sh` for the pre-review gate
-3. `./tools/release-preflight.sh` before any upload-oriented release work
+3. `./tools/inspect-evidence.sh` for the latest derived run report
+4. `./tools/release-preflight.sh` before any upload-oriented release work
 
 The wrapper scripts stay manager-aware. They resolve the declared Flutter runtime from `.info/agentic.yaml` instead of assuming one local toolchain layout.
+`inspect-evidence.sh` stays local-first and reads the existing bundle files instead of requiring a hosted console.
 
 ## Human Approval Boundary
 

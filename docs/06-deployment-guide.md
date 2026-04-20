@@ -104,7 +104,9 @@ Supported environments in source:
   - `./tools/build.sh <env> [artifact]`
   - `./tools/release-preflight.sh <env> <target>`
   - `./tools/release.sh <env> <target>`
+  - `./tools/inspect-evidence.sh <run-kind> [latest|run-id] [markdown|json]`
 - generated workflows upload `artifacts/evidence/**` so verify and release-preflight runs stay inspectable outside the runner
+- generated evidence bundles now also include `telemetry/*` files for runtime context, events, and metrics
 - final production store publish remains a human approval boundary even when upload plumbing is automated
 
 ### GitLab generated projects
@@ -166,6 +168,7 @@ The generated deployment and release surfaces now implement the Harness Contract
 - named release-preflight and evidence outputs
 - explicit approval states shared across local and CI runs
 - tier-aware gate packs derived from the declared profile/support tier
+- derived inspect/report surfaces that read local bundle files instead of a hosted service
 - declared Flutter toolchain checks before release-preflight and release flows
 
 The human boundary remains unchanged: final production publish is still not automated away.

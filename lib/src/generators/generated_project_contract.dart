@@ -60,6 +60,10 @@ final class GeneratedProjectContract {
     'lib/core/contracts/localized_text.dart',
     'lib/core/contracts/app_response.dart',
     'lib/core/contracts/app_result.dart',
+    'lib/core/network/interceptors/observability_interceptor.dart',
+    'lib/core/observability/observability_service.dart',
+    'lib/core/observability/redaction_policy.dart',
+    'lib/core/observability/trace_context.dart',
     'lib/core/contracts/pagination.dart',
     'lib/core/privacy/consent_service.dart',
     'lib/core/starter/starter_runtime_profile.dart',
@@ -84,6 +88,7 @@ final class GeneratedProjectContract {
     'tools/clean.sh',
     'tools/format.sh',
     'tools/gen.sh',
+    'tools/inspect-evidence.sh',
     'tools/lint.sh',
     'tools/release-preflight.sh',
     'tools/release.sh',
@@ -854,6 +859,34 @@ final class GeneratedProjectContract {
       );
     }
 
+    final observability = _requireYamlMap(harness, 'observability');
+    if (observability['mode'] != defaultHarnessObservabilityMode) {
+      throw const ProjectGenerationException(
+        'Harness observability mode must stay local-first.',
+      );
+    }
+    _requireYamlStringList(
+      observability,
+      key: 'runtime_observability',
+      expectedValues: defaultHarnessRuntimeObservability,
+      message:
+          'Harness runtime observability signals drifted from the canonical contract.',
+    );
+    _requireYamlStringList(
+      observability,
+      key: 'agent_legibility',
+      expectedValues: defaultHarnessAgentLegibility,
+      message:
+          'Harness agent legibility signals drifted from the canonical contract.',
+    );
+    _requireYamlStringList(
+      observability,
+      key: 'operator_reports',
+      expectedValues: defaultHarnessOperatorReports,
+      message:
+          'Harness operator report signals drifted from the canonical contract.',
+    );
+
     final sdk = _requireYamlMap(harness, 'sdk');
     if (_containsSecretLikeValue(sdk)) {
       throw const ProjectGenerationException(
@@ -912,6 +945,23 @@ final class GeneratedProjectContract {
     return true;
   }
 
+  static void _requireYamlStringList(
+    YamlMap map, {
+    required String key,
+    required List<String> expectedValues,
+    required String message,
+  }) {
+    final raw = map[key];
+    if (raw is! YamlList) {
+      throw ProjectGenerationException(message);
+    }
+
+    final resolved = raw.map((value) => value.toString()).toList();
+    if (!_listsEqual(resolved, expectedValues)) {
+      throw ProjectGenerationException(message);
+    }
+  }
+
   static void _validateGeneratedReadme(String projectDir) {
     final readme = _readRequiredFile(projectDir, 'README.md');
 
@@ -941,12 +991,14 @@ final class GeneratedProjectContract {
 
     _requireContent(testingGuide, './tools/test.sh');
     _requireContent(testingGuide, './tools/verify.sh');
+    _requireContent(testingGuide, './tools/inspect-evidence.sh');
     _requireContent(testingGuide, 'make test');
     _requireContent(testingGuide, 'app-shell-smoke');
     _forbidContent(testingGuide, 'flutter test');
 
     _requireContent(workflowGuide, '.info/agentic.yaml');
     _requireContent(workflowGuide, './tools/verify.sh');
+    _requireContent(workflowGuide, './tools/inspect-evidence.sh');
     _requireContent(workflowGuide, 'Recommended default Gitflow');
     _requireContent(workflowGuide, 'feature/*');
     _requireContent(workflowGuide, 'release/*');
@@ -1006,6 +1058,8 @@ final class GeneratedProjectContract {
 
     _requireContent(dartTestConfig, 'app-smoke');
     _requireContent(verifyScript, '--exclude-tags app-smoke');
+    _requireContent(verifyScript, 'runtime-telemetry');
+    _requireContent(verifyScript, 'AGENTIC_RUNTIME_TELEMETRY_CONTEXT_FILE');
     _requireContent(verifyScript, 'test/app_smoke_test.dart');
     _requireContent(appSmokeTest, 'app-smoke');
 

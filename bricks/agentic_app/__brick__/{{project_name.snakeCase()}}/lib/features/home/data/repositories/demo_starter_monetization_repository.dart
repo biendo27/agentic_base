@@ -2,6 +2,7 @@
 import 'package:injectable/injectable.dart';
 {{/is_riverpod}}
 import 'package:{{project_name.snakeCase()}}/core/commerce/entitlement_service.dart';
+import 'package:{{project_name.snakeCase()}}/core/observability/observability_service.dart';
 import 'package:{{project_name.snakeCase()}}/core/privacy/consent_service.dart';
 import 'package:{{project_name.snakeCase()}}/core/starter/starter_runtime_profile.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/entities/starter_entitlement.dart';
@@ -19,10 +20,13 @@ class DemoStarterMonetizationRepository
 
   @override
   Future<StarterPaywallSnapshot> loadPaywall() async {
+    final trace = ObservabilityService.instance.startSpan(
+      'starter.paywall.load',
+    );
     await Future<void>.delayed(const Duration(milliseconds: 120));
     final entitlement = await _entitlementService.currentEntitlement();
     final consent = await _consentService.currentStatus();
-    return StarterPaywallSnapshot(
+    final snapshot = StarterPaywallSnapshot(
       currentEntitlement: entitlement,
       offers: <StarterOffer>[
         StarterOffer(
@@ -44,5 +48,13 @@ class DemoStarterMonetizationRepository
       supportNote:
           '${StarterRuntimeProfile.paymentProviderLabel}. ${consent.summary} External checkout remains opt in only.',
     );
+    ObservabilityService.instance.finishSpan(
+      trace,
+      fields: <String, Object?>{
+        'offer_count': snapshot.offers.length,
+        'entitlement_active': snapshot.currentEntitlement.isActive,
+      },
+    );
+    return snapshot;
   }
 }

@@ -19,8 +19,9 @@ class ErrorHandler {
     return switch (error.type) {
       DioExceptionType.connectionTimeout ||
       DioExceptionType.sendTimeout ||
-      DioExceptionType.receiveTimeout =>
-        const NetworkFailure(message: 'Connection timeout'),
+      DioExceptionType.receiveTimeout => const NetworkFailure(
+        message: 'Connection timeout',
+      ),
       DioExceptionType.connectionError => const NetworkFailure(),
       DioExceptionType.badResponse => _handleBadResponse(error),
       _ => UnexpectedFailure(message: error.message ?? 'Unknown error'),
@@ -33,13 +34,13 @@ class ErrorHandler {
       401 => const UnauthorizedFailure(),
       404 => const NotFoundFailure(),
       422 => ValidationFailure(
-          message: error.response?.statusMessage ?? 'Validation failed',
-          fieldErrors: _readFieldErrors(error.response?.data),
-        ),
+        message: error.response?.statusMessage ?? 'Validation failed',
+        fieldErrors: _readFieldErrors(error.response?.data),
+      ),
       _ => ServerFailure(
-          message: error.response?.statusMessage ?? 'Server error',
-          statusCode: statusCode,
-        ),
+        message: error.response?.statusMessage ?? 'Server error',
+        statusCode: statusCode,
+      ),
     };
   }
 

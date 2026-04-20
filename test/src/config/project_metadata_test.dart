@@ -46,6 +46,16 @@ void main() {
                 'final-store-publish-approval',
               ],
             },
+            'observability': <String, dynamic>{
+              'mode': 'local-first',
+              'runtime_observability': [
+                'structured_logs',
+                'traces',
+                'metrics',
+              ],
+              'agent_legibility': ['inspect', 'run_ledger'],
+              'operator_reports': ['markdown'],
+            },
             'sdk': <String, dynamic>{
               'manager': 'fvm',
               'preferred_manager': 'puro',
@@ -71,6 +81,11 @@ void main() {
       expect(
         metadata.harness.sdk.preferredManager,
         equals(FlutterSdkManager.puro),
+      );
+      expect(metadata.harness.observability.mode, equals('local-first'));
+      expect(
+        metadata.harness.observability.runtimeObservability,
+        equals(['structured_logs', 'traces', 'metrics']),
       );
       expect(metadata.harness.sdk.version, equals('3.29.0'));
       expect(metadata.harness.sdk.preferredVersion, equals('3.28.0'));
@@ -100,6 +115,7 @@ void main() {
         metadata.harness.providers['analytics'],
         equals('firebase_analytics'),
       );
+      expect(metadata.harness.observability.mode, equals('local-first'));
     });
 
     test('normalizes stale quality dimensions to the canonical set', () {

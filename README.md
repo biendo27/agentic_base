@@ -36,6 +36,9 @@ agentic_base feature settings --simple
 # Run generation and verification
 agentic_base gen
 agentic_base eval --coverage
+
+# Inspect the latest local evidence bundle
+agentic_base inspect --kind verify
 ```
 
 ## Commands
@@ -52,6 +55,7 @@ agentic_base eval --coverage
 | `doctor` | Check environment health and SDK contract drift. |
 | `brick <add|remove|list>` | Manage community Mason bricks. |
 | `init` | Add or repair the agent-ready scaffold in an existing Flutter project. |
+| `inspect` | Derive a local run ledger from the latest evidence bundle. |
 | `upgrade` | Upgrade dependencies and resync generator-owned repo surfaces. |
 
 ## State Management Options
@@ -70,6 +74,7 @@ Every generated repo ships:
 - one finite human-readable context surface in `README.md`, `docs/01-07`, `AGENTS.md`, and `CLAUDE.md`
 - deterministic wrapper scripts in `tools/` for setup, run, test, verify, build, release-preflight, and release
 - named verify and release-preflight evidence bundles under `artifacts/evidence/`
+- local-first runtime observability seams plus `./tools/inspect-evidence.sh` for latest-run inspection
 - a profile-aware starter journey that proves runtime diagnostics, detail navigation, settings preview, config and lifecycle signals, and separated payments, entitlement, consent, and ads seams for the selected profile
 - starter tests for repository seams, the selected state runtime, starter widget behavior, app boot smoke, and native readiness where the host supports it
 - explicit human checkpoints for credentials and final store publish
@@ -175,6 +180,9 @@ GitLab native validation is macOS-only by contract. Generated GitLab projects re
 14. [`14-sdk-and-version-policy.md`](./docs/14-sdk-and-version-policy.md)
 15. [`15-default-app-service-matrix.md`](./docs/15-default-app-service-matrix.md)
 16. [`16-profile-rollout-migration-guide.md`](./docs/16-profile-rollout-migration-guide.md)
+17. [`17-observability-contract.md`](./docs/17-observability-contract.md)
+18. [`18-local-operator-reporting.md`](./docs/18-local-operator-reporting.md)
+19. [`19-observability-rollout-migration-guide.md`](./docs/19-observability-rollout-migration-guide.md)
 
 ## Local Development
 

@@ -24,6 +24,10 @@ RUN_DIR=""
 RUN_LOG_PATH=""
 RUN_COMMANDS_PATH=""
 RUN_SUMMARY_PATH=""
+RUN_TELEMETRY_DIR=""
+RUN_TELEMETRY_CONTEXT_PATH=""
+RUN_TELEMETRY_EVENTS_PATH=""
+RUN_TELEMETRY_METRICS_PATH=""
 RUN_EXPECTATION_ID="core"
 NEXT_REQUIRED_HUMAN_ACTION="none"
 APPROVAL_STATE="Draft"
@@ -44,6 +48,10 @@ json_escape() {
   value=${value//$'\r'/\\r}
   value=${value//$'\t'/\\t}
   printf '%s' "$value"
+}
+
+current_timestamp() {
+  date -u +%Y-%m-%dT%H:%M:%SZ
 }
 
 check_cmd() {
@@ -201,6 +209,7 @@ verify_contract_surface() {
   require_file "$PROJECT_ROOT/AGENTS.md"
   require_file "$PROJECT_ROOT/CLAUDE.md"
   require_file "$PROJECT_ROOT/tools/verify.sh"
+  require_file "$PROJECT_ROOT/tools/inspect-evidence.sh"
   require_file "$PROJECT_ROOT/tools/release-preflight.sh"
   require_file "$PROJECT_ROOT/tools/release.sh"
   [[ -n "$(manifest_nested_scalar harness app_profile primary_profile 2>/dev/null || true)" ]] || {
@@ -224,9 +233,14 @@ start_evidence_run() {
   RUN_LOG_PATH="$RUN_DIR/logs/$RUN_KIND.log"
   RUN_COMMANDS_PATH="$RUN_DIR/commands.ndjson"
   RUN_SUMMARY_PATH="$RUN_DIR/summary.json"
-  mkdir -p "$RUN_DIR/checks" "$RUN_DIR/logs" "$RUN_DIR/artifacts"
+  RUN_TELEMETRY_DIR="$RUN_DIR/telemetry"
+  RUN_TELEMETRY_CONTEXT_PATH="$RUN_TELEMETRY_DIR/runtime-context.json"
+  RUN_TELEMETRY_EVENTS_PATH="$RUN_TELEMETRY_DIR/events.ndjson"
+  RUN_TELEMETRY_METRICS_PATH="$RUN_TELEMETRY_DIR/metrics.json"
+  mkdir -p "$RUN_DIR/checks" "$RUN_DIR/logs" "$RUN_DIR/artifacts" "$RUN_TELEMETRY_DIR"
   : > "$RUN_LOG_PATH"
   : > "$RUN_COMMANDS_PATH"
+  : > "$RUN_TELEMETRY_EVENTS_PATH"
   EXECUTED_GATES=()
   EXECUTED_GATE_STATES=()
   QUALITY_CORRECTNESS="not_run"
@@ -240,17 +254,26 @@ start_evidence_run() {
 
 set_next_required_human_action() {
   NEXT_REQUIRED_HUMAN_ACTION="$1"
+  printf '{"ts":"%s","kind":"approval_transition","source":"run_control","run_id":"%s","name":"next_required_human_action","state_or_level":"pending","attrs":{"action":"%s"}}\n' \
+    "$(current_timestamp)" \
+    "$(json_escape "$RUN_ID")" \
+    "$(json_escape "$NEXT_REQUIRED_HUMAN_ACTION")" >> "$RUN_TELEMETRY_EVENTS_PATH"
 }
 
 set_approval_state() {
   APPROVAL_STATE="$1"
+  printf '{"ts":"%s","kind":"approval_transition","source":"run_control","run_id":"%s","name":"approval_state","state_or_level":"%s","attrs":{"run_kind":"%s"}}\n' \
+    "$(current_timestamp)" \
+    "$(json_escape "$RUN_ID")" \
+    "$(json_escape "$APPROVAL_STATE")" \
+    "$(json_escape "$RUN_KIND")" >> "$RUN_TELEMETRY_EVENTS_PATH"
 }
 
 record_command() {
   local gate="$1"
   local command_string="$2"
   printf '{"timestamp":"%s","gate":"%s","command":"%s"}\n' \
-    "$RUN_TIMESTAMP" \
+    "$(current_timestamp)" \
     "$(json_escape "$gate")" \
     "$(json_escape "$command_string")" >> "$RUN_COMMANDS_PATH"
 }
@@ -284,8 +307,11 @@ write_check_file() {
   local state="$2"
   local command_string="$3"
   local summary="$4"
+  local timestamp
+  timestamp="$(current_timestamp)"
   cat > "$RUN_DIR/checks/$gate.json" <<EOF
 {
+  "timestamp": "$(json_escape "$timestamp")",
   "gate": "$(json_escape "$gate")",
   "state": "$(json_escape "$state")",
   "command": "$(json_escape "$command_string")",
@@ -381,7 +407,29 @@ executed_gates_json() {
 
 finalize_evidence_run() {
   local exit_code="${1:-0}"
-  QUALITY_EVIDENCE_QUALITY="pass"
+  local run_root latest_path latest_tmp_path
+  if [[ "$QUALITY_EVIDENCE_QUALITY" == "not_run" ]]; then
+    QUALITY_EVIDENCE_QUALITY="pass"
+  fi
+  if [[ ! -f "$RUN_TELEMETRY_CONTEXT_PATH" ]]; then
+    cat > "$RUN_TELEMETRY_CONTEXT_PATH" <<EOF
+{
+  "run_id": "$(json_escape "$RUN_ID")",
+  "run_kind": "$(json_escape "$RUN_KIND")",
+  "timestamp": "$(json_escape "$RUN_TIMESTAMP")",
+  "mode": "local-first",
+  "exported": false
+}
+EOF
+  fi
+  if [[ ! -f "$RUN_TELEMETRY_METRICS_PATH" ]]; then
+    cat > "$RUN_TELEMETRY_METRICS_PATH" <<EOF
+{
+  "counters": {},
+  "durations": {}
+}
+EOF
+  fi
   cat > "$RUN_SUMMARY_PATH" <<EOF
 {
   "run_id": "$(json_escape "$RUN_ID")",
@@ -402,4 +450,11 @@ finalize_evidence_run() {
   "next_required_human_action": "$(json_escape "$NEXT_REQUIRED_HUMAN_ACTION")"
 }
 EOF
+  run_root="$PROJECT_ROOT/$(manifest_evidence_dir)/$RUN_KIND"
+  latest_path="$run_root/latest"
+  latest_tmp_path="$run_root/.latest-$RUN_ID"
+  rm -f "$latest_tmp_path"
+  ln -s "$RUN_ID" "$latest_tmp_path"
+  rm -rf "$latest_path"
+  mv "$latest_tmp_path" "$latest_path"
 }

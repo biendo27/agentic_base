@@ -11,6 +11,9 @@ void main() {
     );
 
     expect(find.text('Trustworthy starter defaults'), findsOneWidget);
-    expect(find.textContaining('theme and locale previews honest'), findsOneWidget);
+    expect(
+      find.textContaining('theme and locale previews honest'),
+      findsOneWidget,
+    );
   });
 }

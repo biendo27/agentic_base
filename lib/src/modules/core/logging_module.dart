@@ -81,6 +81,7 @@ abstract class LoggingService {
   String _implContent(String pkg) => '''
 import 'package:talker/talker.dart';
 import 'package:$pkg/core/logging/logging_service.dart';
+import 'package:$pkg/core/observability/observability_service.dart';
 
 /// [Talker] implementation of [LoggingService].
 class TalkerLoggingService implements LoggingService {
@@ -92,24 +93,73 @@ class TalkerLoggingService implements LoggingService {
   Talker get talker => _talker;
 
   @override
-  void debug(Object message, [Object? error, StackTrace? stackTrace]) =>
-      _talker.debug(message, error, stackTrace);
+  void debug(Object message, [Object? error, StackTrace? stackTrace]) {
+    ObservabilityService.instance.log(
+      'logging.debug',
+      level: 'debug',
+      fields: {
+        'message_type': message.runtimeType.toString(),
+        'has_error': error != null,
+        if (error != null) 'error_type': error.runtimeType.toString(),
+      },
+    );
+    _talker.debug(message, error, stackTrace);
+  }
 
   @override
-  void info(Object message, [Object? error, StackTrace? stackTrace]) =>
-      _talker.info(message, error, stackTrace);
+  void info(Object message, [Object? error, StackTrace? stackTrace]) {
+    ObservabilityService.instance.log(
+      'logging.info',
+      fields: {
+        'message_type': message.runtimeType.toString(),
+        'has_error': error != null,
+        if (error != null) 'error_type': error.runtimeType.toString(),
+      },
+    );
+    _talker.info(message, error, stackTrace);
+  }
 
   @override
-  void warning(Object message, [Object? error, StackTrace? stackTrace]) =>
-      _talker.warning(message, error, stackTrace);
+  void warning(Object message, [Object? error, StackTrace? stackTrace]) {
+    ObservabilityService.instance.log(
+      'logging.warning',
+      level: 'warning',
+      fields: {
+        'message_type': message.runtimeType.toString(),
+        'has_error': error != null,
+        if (error != null) 'error_type': error.runtimeType.toString(),
+      },
+    );
+    _talker.warning(message, error, stackTrace);
+  }
 
   @override
-  void error(Object message, [Object? error, StackTrace? stackTrace]) =>
-      _talker.error(message, error, stackTrace);
+  void error(Object message, [Object? error, StackTrace? stackTrace]) {
+    ObservabilityService.instance.log(
+      'logging.error',
+      level: 'error',
+      fields: {
+        'message_type': message.runtimeType.toString(),
+        'has_error': error != null,
+        if (error != null) 'error_type': error.runtimeType.toString(),
+      },
+    );
+    _talker.error(message, error, stackTrace);
+  }
 
   @override
-  void critical(Object message, [Object? error, StackTrace? stackTrace]) =>
-      _talker.critical(message, error, stackTrace);
+  void critical(Object message, [Object? error, StackTrace? stackTrace]) {
+    ObservabilityService.instance.log(
+      'logging.critical',
+      level: 'critical',
+      fields: {
+        'message_type': message.runtimeType.toString(),
+        'has_error': error != null,
+        if (error != null) 'error_type': error.runtimeType.toString(),
+      },
+    );
+    _talker.critical(message, error, stackTrace);
+  }
 }
 ''';
 }

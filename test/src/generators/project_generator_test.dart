@@ -132,6 +132,17 @@ harness:
       - product-decisions
       - credential-setup
       - final-store-publish-approval
+  observability:
+    mode: local-first
+    runtime_observability:
+      - structured_logs
+      - traces
+      - metrics
+    agent_legibility:
+      - inspect
+      - run_ledger
+    operator_reports:
+      - markdown
   sdk:
     manager: system
     channel: stable
@@ -149,9 +160,9 @@ harness:
         'pure convenience, serialization, and formatting helpers may stay in extensions when they depend only on the contract value and keep the Freezed model smaller\n'
         'locale-, DI-, or app-runtime-aware convenience belongs in extensions or services outside raw contracts\n',
     'docs/06-testing-guide.md':
-        './tools/test.sh\n./tools/verify.sh\nmake test\napp-shell-smoke\n',
+        './tools/test.sh\n./tools/verify.sh\n./tools/inspect-evidence.sh\nmake test\napp-shell-smoke\n',
     'docs/07-agentic-development-flow.md':
-        '.info/agentic.yaml\n./tools/verify.sh\nRecommended default Gitflow\nfeature/*\nrelease/*\nhotfix/*\n',
+        '.info/agentic.yaml\n./tools/verify.sh\n./tools/inspect-evidence.sh\nRecommended default Gitflow\nfeature/*\nrelease/*\nhotfix/*\n',
     'dart_test.yaml': 'tags:\n  app-smoke:\n',
     'tools/_common.sh': 'summary.json\n',
     'lib/core/contracts/app_response.dart':
@@ -169,7 +180,7 @@ harness:
     'tools/release-preflight.sh': 'credential-setup\nUploadReady\n',
     'tools/release.sh': 'AwaitingFinalPublishApproval\n',
     'tools/verify.sh':
-        '--exclude-tags app-smoke\napp-shell-smoke\ntest/app_smoke_test.dart\nstarter-journey\ntest/features/home/presentation/widgets/starter_journey_signal_card_test.dart\n',
+        '--exclude-tags app-smoke\nruntime-telemetry\nAGENTIC_RUNTIME_TELEMETRY_CONTEXT_FILE\ntest/app_smoke_test.dart\napp-shell-smoke\nstarter-journey\ntest/features/home/presentation/widgets/starter_journey_signal_card_test.dart\n',
     'test/app_smoke_test.dart':
         "group('app shell smoke', tags: const ['app-smoke'], () {})\n",
     'pubspec.yaml': '${stateSurface.pubspec}  google_fonts: ^8.0.2\n',

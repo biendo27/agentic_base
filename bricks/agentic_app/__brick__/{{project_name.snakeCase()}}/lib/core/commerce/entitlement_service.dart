@@ -1,3 +1,4 @@
+import 'package:{{project_name.snakeCase()}}/core/observability/observability_service.dart';
 import 'package:{{project_name.snakeCase()}}/core/starter/starter_runtime_profile.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/entities/starter_entitlement.dart';
 
@@ -10,6 +11,12 @@ class StarterEntitlementService implements EntitlementService {
 
   @override
   Future<StarterEntitlement> currentEntitlement() async {
+    ObservabilityService.instance.log(
+      'starter.entitlement.snapshot',
+      fields: <String, Object?>{
+        'enabled': StarterRuntimeProfile.entitlementEnabled,
+      },
+    );
     return StarterEntitlement(
       id: 'starter_preview',
       name: 'Starter Preview',

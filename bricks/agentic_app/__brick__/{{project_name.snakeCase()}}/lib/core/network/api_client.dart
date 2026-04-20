@@ -5,6 +5,7 @@ import 'package:injectable/injectable.dart';
 import 'package:{{project_name.snakeCase()}}/app/flavors.dart';
 import 'package:{{project_name.snakeCase()}}/core/network/interceptors/error_interceptor.dart';
 import 'package:{{project_name.snakeCase()}}/core/network/interceptors/logging_interceptor.dart';
+import 'package:{{project_name.snakeCase()}}/core/network/interceptors/observability_interceptor.dart';
 
 {{^is_riverpod}}
 @module
@@ -23,6 +24,7 @@ abstract class NetworkModule {
       ),
     );
     dio.interceptors.addAll([
+      ObservabilityInterceptor(),
       LoggingInterceptor(),
       ErrorInterceptor(),
     ]);
