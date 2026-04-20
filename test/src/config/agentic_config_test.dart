@@ -99,7 +99,7 @@ void main() {
         stateManagement: 'cubit',
         platforms: const ['android', 'ios'],
         flavors: const ['dev', 'staging', 'prod'],
-        toolVersion: '0.2.1',
+        toolVersion: '0.2.2',
         ciProvider: CiProvider.gitlab,
       );
 
@@ -123,7 +123,7 @@ void main() {
 
     test('writeMetadata round-trips typed metadata and provenance', () {
       final metadata = ProjectMetadata(
-        toolVersion: '0.2.1',
+        toolVersion: '0.2.2',
         projectName: 'demo_app',
         org: 'com.example',
         ciProvider: CiProvider.github,
@@ -209,7 +209,7 @@ void main() {
 
       final metadata = AgenticConfig(projectPath: tempDir.path).readMetadata(
         fallbackProjectName: 'fallback_app',
-        fallbackToolVersion: '0.2.1',
+        fallbackToolVersion: '0.2.2',
       );
 
       expect(metadata.projectName, equals('legacy_app'));

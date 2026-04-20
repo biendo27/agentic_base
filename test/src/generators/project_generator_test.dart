@@ -71,7 +71,7 @@ Future<void> seedRequiredContractFiles(
     '.info/agentic.yaml': '''
 schema_version: 3
 project_kind: agent_ready_flutter_repo
-tool_version: 0.2.1
+tool_version: 0.2.2
 project_name: demo_app
 org: com.example
 ci_provider: github
