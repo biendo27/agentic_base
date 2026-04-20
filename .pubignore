@@ -3,3 +3,18 @@
 /plans/
 /coverage/
 /repomix-output.*
+
+# The app brick intentionally contains hidden project files. pub excludes dot
+# files/directories by default, so these must be re-included for `create`.
+!/bricks/agentic_app/__brick__/**/.gitignore
+!/bricks/agentic_app/__brick__/**/.gitlab-ci.yml
+!/bricks/agentic_app/__brick__/**/.github/
+!/bricks/agentic_app/__brick__/**/.github/**
+!/bricks/agentic_app/__brick__/**/.gitlab/
+!/bricks/agentic_app/__brick__/**/.gitlab/**
+!/bricks/agentic_app/__brick__/**/.idea/
+!/bricks/agentic_app/__brick__/**/.idea/**
+!/bricks/agentic_app/__brick__/**/.info/
+!/bricks/agentic_app/__brick__/**/.info/**
+!/bricks/agentic_app/__brick__/**/.vscode/
+!/bricks/agentic_app/__brick__/**/.vscode/**
