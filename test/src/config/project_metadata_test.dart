@@ -9,7 +9,7 @@ void main() {
       final metadata = ProjectMetadata.fromConfigMap(
         <String, dynamic>{
           'schema_version': 3,
-          'tool_version': '0.1.0',
+          'tool_version': '0.2.0',
           'project_name': 'demo_app',
           'org': 'com.example',
           'ci_provider': 'github',
@@ -94,7 +94,7 @@ void main() {
     test('defaults harness metadata for legacy configs', () {
       final metadata = ProjectMetadata.fromConfigMap(
         <String, dynamic>{
-          'tool_version': '0.1.0',
+          'tool_version': '0.2.0',
           'project_name': 'legacy_app',
           'org': 'com.example',
           'ci_provider': 'github',
@@ -121,7 +121,7 @@ void main() {
     test('normalizes stale quality dimensions to the canonical set', () {
       final metadata = ProjectMetadata.fromConfigMap(
         <String, dynamic>{
-          'tool_version': '0.1.0',
+          'tool_version': '0.2.0',
           'project_name': 'legacy_app',
           'org': 'com.example',
           'ci_provider': 'github',
@@ -159,7 +159,7 @@ void main() {
       () {
         final metadata = ProjectMetadata.fromConfigMap(
           <String, dynamic>{
-            'tool_version': '0.1.0',
+            'tool_version': '0.2.0',
             'project_name': 'legacy_app',
             'org': 'com.example',
             'ci_provider': 'github',

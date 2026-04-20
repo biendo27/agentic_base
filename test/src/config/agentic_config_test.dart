@@ -99,7 +99,7 @@ void main() {
         stateManagement: 'cubit',
         platforms: const ['android', 'ios'],
         flavors: const ['dev', 'staging', 'prod'],
-        toolVersion: '0.1.0',
+        toolVersion: '0.2.0',
         ciProvider: CiProvider.gitlab,
       );
 
@@ -123,7 +123,7 @@ void main() {
 
     test('writeMetadata round-trips typed metadata and provenance', () {
       final metadata = ProjectMetadata(
-        toolVersion: '0.1.0',
+        toolVersion: '0.2.0',
         projectName: 'demo_app',
         org: 'com.example',
         ciProvider: CiProvider.github,
