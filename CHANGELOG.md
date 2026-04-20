@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-20
+
 ### Added
 
 - classic Gitflow repo policy with documented `main`, `develop`, `feature/*`, `release/*`, and `hotfix/*` roles
@@ -24,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- pub.dev release archives now exclude repo-only `docs/`, `plans/`, coverage output, and repomix artifacts via `.pubignore`
+- package README deep links now point at the repository docs so the published page keeps working after the leaner archive cut
 - repo CI now runs for pull requests into `main` and `develop`, plus pushes to `main`, `develop`, `release/*`, and `hotfix/*`
 - deployment docs now record the repo merge strategy targets and the current GitHub branch-protection limitation for private repos on this plan
 - shared contract guidance now prefers extension-based ergonomics for raw contract models, keeping locale/DI/runtime behavior outside the transport contract

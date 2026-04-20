@@ -2,10 +2,10 @@ name: agentic_base
 description: >-
   A Dart CLI tool that generates agent-ready Flutter repositories with
   canonical context and deterministic workflows.
-version: 0.1.0
-homepage: https://github.com/pubs-digital/agentic_base
-repository: https://github.com/pubs-digital/agentic_base
-issue_tracker: https://github.com/pubs-digital/agentic_base/issues
+version: 0.2.0
+homepage: https://github.com/biendo27/agentic_base
+repository: https://github.com/biendo27/agentic_base
+issue_tracker: https://github.com/biendo27/agentic_base/issues
 
 environment:
   sdk: ^3.7.0

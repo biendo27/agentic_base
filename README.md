@@ -8,7 +8,7 @@
 - evidence-backed verify and release-preflight runs
 - explicit human approval boundaries around credentials and final production publish
 
-The package lives at the repository root. Root-level [`docs/`](./docs/) stores evergreen package docs. [`plans/`](./plans/) stores implementation plans and reports.
+The package lives at the repository root. Root-level [`docs/`](https://github.com/biendo27/agentic_base/tree/main/docs) stores evergreen package docs. [`plans/`](https://github.com/biendo27/agentic_base/tree/main/plans) stores implementation plans and reports.
 
 ## Installation
 
@@ -98,9 +98,9 @@ The shipped V1 surface covers:
 - explicit human pauses for product direction, credential setup, and final production publish
 - manager-aware local and CI entrypoints that preserve one gate vocabulary
 
-The detailed contract docs live in [`docs/08-15`](./docs/08-harness-contract-v1.md).
+The detailed contract docs live in [`docs/08-15`](https://github.com/biendo27/agentic_base/blob/main/docs/08-harness-contract-v1.md).
 
-`subscription-commerce-app` is now the canonical V1 golden-path profile and the shipped CLI default. Preset resolution, starter seams, and profile-aware verify behavior now render from the same generator-owned policy, and the upgrade path for older generated repos is documented in [`docs/16-profile-rollout-migration-guide.md`](./docs/16-profile-rollout-migration-guide.md).
+`subscription-commerce-app` is now the canonical V1 golden-path profile and the shipped CLI default. Preset resolution, starter seams, and profile-aware verify behavior now render from the same generator-owned policy, and the upgrade path for older generated repos is documented in [`docs/16-profile-rollout-migration-guide.md`](https://github.com/biendo27/agentic_base/blob/main/docs/16-profile-rollout-migration-guide.md).
 
 ## Available Modules (27)
 
@@ -151,7 +151,7 @@ lib/
 | `--flutter-version` | Explicit tested Flutter SDK version. | auto-detected from selected manager |
 | `--no-interactive` | Skip prompts and use defaults. | `false` |
 
-The shipped default V1 lane is documented in [`docs/15-default-app-service-matrix.md`](./docs/15-default-app-service-matrix.md), and upgrade guidance for older generated repos lives in [`docs/16-profile-rollout-migration-guide.md`](./docs/16-profile-rollout-migration-guide.md).
+The shipped default V1 lane is documented in [`docs/15-default-app-service-matrix.md`](https://github.com/biendo27/agentic_base/blob/main/docs/15-default-app-service-matrix.md), and upgrade guidance for older generated repos lives in [`docs/16-profile-rollout-migration-guide.md`](https://github.com/biendo27/agentic_base/blob/main/docs/16-profile-rollout-migration-guide.md).
 
 ## CI Provider Selection
 
@@ -164,25 +164,25 @@ GitLab native validation is macOS-only by contract. Generated GitLab projects re
 
 ## Documentation Index
 
-1. [`01-project-overview-pdr.md`](./docs/01-project-overview-pdr.md)
-2. [`02-codebase-summary.md`](./docs/02-codebase-summary.md)
-3. [`03-code-standards.md`](./docs/03-code-standards.md)
-4. [`04-system-architecture.md`](./docs/04-system-architecture.md)
-5. [`05-project-roadmap.md`](./docs/05-project-roadmap.md)
-6. [`06-deployment-guide.md`](./docs/06-deployment-guide.md)
-7. [`07-design-guidelines.md`](./docs/07-design-guidelines.md)
-8. [`08-harness-contract-v1.md`](./docs/08-harness-contract-v1.md)
-9. [`09-support-tier-matrix.md`](./docs/09-support-tier-matrix.md)
-10. [`10-manifest-schema.md`](./docs/10-manifest-schema.md)
-11. [`11-eval-and-evidence-model.md`](./docs/11-eval-and-evidence-model.md)
-12. [`12-approval-state-machine.md`](./docs/12-approval-state-machine.md)
-13. [`13-flutter-adapter-boundaries.md`](./docs/13-flutter-adapter-boundaries.md)
-14. [`14-sdk-and-version-policy.md`](./docs/14-sdk-and-version-policy.md)
-15. [`15-default-app-service-matrix.md`](./docs/15-default-app-service-matrix.md)
-16. [`16-profile-rollout-migration-guide.md`](./docs/16-profile-rollout-migration-guide.md)
-17. [`17-observability-contract.md`](./docs/17-observability-contract.md)
-18. [`18-local-operator-reporting.md`](./docs/18-local-operator-reporting.md)
-19. [`19-observability-rollout-migration-guide.md`](./docs/19-observability-rollout-migration-guide.md)
+1. [`01-project-overview-pdr.md`](https://github.com/biendo27/agentic_base/blob/main/docs/01-project-overview-pdr.md)
+2. [`02-codebase-summary.md`](https://github.com/biendo27/agentic_base/blob/main/docs/02-codebase-summary.md)
+3. [`03-code-standards.md`](https://github.com/biendo27/agentic_base/blob/main/docs/03-code-standards.md)
+4. [`04-system-architecture.md`](https://github.com/biendo27/agentic_base/blob/main/docs/04-system-architecture.md)
+5. [`05-project-roadmap.md`](https://github.com/biendo27/agentic_base/blob/main/docs/05-project-roadmap.md)
+6. [`06-deployment-guide.md`](https://github.com/biendo27/agentic_base/blob/main/docs/06-deployment-guide.md)
+7. [`07-design-guidelines.md`](https://github.com/biendo27/agentic_base/blob/main/docs/07-design-guidelines.md)
+8. [`08-harness-contract-v1.md`](https://github.com/biendo27/agentic_base/blob/main/docs/08-harness-contract-v1.md)
+9. [`09-support-tier-matrix.md`](https://github.com/biendo27/agentic_base/blob/main/docs/09-support-tier-matrix.md)
+10. [`10-manifest-schema.md`](https://github.com/biendo27/agentic_base/blob/main/docs/10-manifest-schema.md)
+11. [`11-eval-and-evidence-model.md`](https://github.com/biendo27/agentic_base/blob/main/docs/11-eval-and-evidence-model.md)
+12. [`12-approval-state-machine.md`](https://github.com/biendo27/agentic_base/blob/main/docs/12-approval-state-machine.md)
+13. [`13-flutter-adapter-boundaries.md`](https://github.com/biendo27/agentic_base/blob/main/docs/13-flutter-adapter-boundaries.md)
+14. [`14-sdk-and-version-policy.md`](https://github.com/biendo27/agentic_base/blob/main/docs/14-sdk-and-version-policy.md)
+15. [`15-default-app-service-matrix.md`](https://github.com/biendo27/agentic_base/blob/main/docs/15-default-app-service-matrix.md)
+16. [`16-profile-rollout-migration-guide.md`](https://github.com/biendo27/agentic_base/blob/main/docs/16-profile-rollout-migration-guide.md)
+17. [`17-observability-contract.md`](https://github.com/biendo27/agentic_base/blob/main/docs/17-observability-contract.md)
+18. [`18-local-operator-reporting.md`](https://github.com/biendo27/agentic_base/blob/main/docs/18-local-operator-reporting.md)
+19. [`19-observability-rollout-migration-guide.md`](https://github.com/biendo27/agentic_base/blob/main/docs/19-observability-rollout-migration-guide.md)
 
 ## Local Development
 
