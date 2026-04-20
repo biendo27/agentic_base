@@ -102,6 +102,30 @@ void main() {
     );
   });
 
+  test('repo publish automation stays tag-scoped and oidc-backed', () {
+    final ciWorkflow = _readRepoFile('.github/workflows/ci.yml');
+    final publishWorkflow = _readRepoFile('.github/workflows/publish.yml');
+    final deploymentGuide = _readRepoFile('docs/06-deployment-guide.md');
+
+    expect(ciWorkflow, contains('pub-publish-dry-run'));
+    expect(ciWorkflow, contains('dart pub publish --dry-run'));
+    expect(ciWorkflow, contains('Package has 0 warnings'));
+
+    expect(publishWorkflow, contains('Publish to pub.dev'));
+    expect(publishWorkflow, contains("'v[0-9]+.[0-9]+.[0-9]+'"));
+    expect(publishWorkflow, contains('id-token: write'));
+    expect(
+      publishWorkflow,
+      contains('dart-lang/setup-dart/.github/workflows/publish.yml@v1'),
+    );
+    expect(publishWorkflow, contains('environment: pub.dev'));
+    expect(publishWorkflow, contains('Tag must point at origin/main'));
+
+    expect(deploymentGuide, contains('v{{version}}'));
+    expect(deploymentGuide, contains('repository: `biendo27/agentic_base`'));
+    expect(deploymentGuide, contains('environment named `pub.dev`'));
+  });
+
   test(
     'root and generated coding standards agree on extension-safe contract helpers',
     () {
