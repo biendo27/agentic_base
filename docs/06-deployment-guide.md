@@ -63,9 +63,9 @@ The last command is an inferred best practice from the package metadata in `pubs
 Verified from [`pubspec.yaml`](../pubspec.yaml):
 
 - package name: `agentic_base`
-- version: `0.2.0`
+- version: `0.2.1`
 - homepage/repository/issue tracker are set
-- `.pubignore` excludes repo-only `docs/`, `plans/`, coverage output, and repomix artifacts from the published archive while `README.md` links back to the repository docs
+- `.pubignore` excludes repo-only `/docs/`, `/plans/`, coverage output, and repomix artifacts from the published archive while keeping generated-app brick docs available for runtime scaffolding
 
 Recommended manual publish sequence:
 

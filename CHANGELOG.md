@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-04-20
+
+### Fixed
+
+- root-anchor `.pubignore` entries so generated-app brick docs stay in the pub.dev archive
+- restore packaged `agentic_base create` output for required generated docs such as `docs/01-architecture.md`
+
+### Testing
+
+- `dart pub publish --dry-run` verified that `bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/docs/01-architecture.md` remains in the archive
+
 ## [0.2.0] - 2026-04-20
 
 ### Added
