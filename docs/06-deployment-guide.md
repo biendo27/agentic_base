@@ -73,9 +73,9 @@ The CI workflow also runs `dart pub publish --dry-run` and fails unless the dry-
 Verified from [`pubspec.yaml`](../pubspec.yaml):
 
 - package name: `agentic_base`
-- version: `0.2.1`
+- version: `0.2.2`
 - homepage/repository/issue tracker are set
-- `.pubignore` excludes repo-only `/docs/`, `/plans/`, coverage output, and repomix artifacts from the published archive while keeping generated-app brick docs available for runtime scaffolding
+- `.pubignore` excludes repo-only `/docs/`, `/plans/`, coverage output, and repomix artifacts from the published archive while keeping generated-app brick docs and hidden generated-project files available for runtime scaffolding
 
 Recommended manual publish sequence:
 

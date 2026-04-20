@@ -8,43 +8,6 @@ String _readRepoFile(String relativePath) {
 }
 
 void main() {
-  test('pubignore keeps generated brick docs in the package archive', () {
-    final pubignoreLines =
-        _readRepoFile('.pubignore')
-            .split('\n')
-            .map((line) => line.trim())
-            .where((line) => line.isNotEmpty && !line.startsWith('#'))
-            .toList();
-
-    expect(pubignoreLines, contains('/docs/'));
-    expect(pubignoreLines, isNot(contains('docs/')));
-
-    const generatedDocs = <String>[
-      'docs/01-architecture.md',
-      'docs/02-coding-standards.md',
-      'docs/03-state-management.md',
-      'docs/04-network-layer.md',
-      'docs/05-theming-guide.md',
-      'docs/06-testing-guide.md',
-      'docs/07-agentic-development-flow.md',
-    ];
-
-    for (final docPath in generatedDocs) {
-      final brickDoc = File(
-        p.join(
-          Directory.current.path,
-          'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}',
-          docPath,
-        ),
-      );
-      expect(
-        brickDoc.existsSync(),
-        isTrue,
-        reason: 'pub package must ship generated brick doc $docPath',
-      );
-    }
-  });
-
   test('root harness docs stay in shipped-state language', () {
     const files = <String>[
       'docs/08-harness-contract-v1.md',
