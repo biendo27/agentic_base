@@ -14,8 +14,14 @@ void main() {
       ),
     );
 
-    expect(find.text('Build from a starter that teaches the right architecture.'), findsOneWidget);
-    expect(find.text('This screen proves the generated app shell works.'), findsOneWidget);
+    expect(
+      find.text('Build from a starter that teaches the right architecture.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('This screen proves the generated app shell works.'),
+      findsOneWidget,
+    );
     expect(find.textContaining('pack'), findsOneWidget);
   });
 }

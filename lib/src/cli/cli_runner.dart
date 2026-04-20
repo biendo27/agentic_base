@@ -7,6 +7,7 @@ import 'package:agentic_base/src/cli/commands/eval_command.dart';
 import 'package:agentic_base/src/cli/commands/feature_command.dart';
 import 'package:agentic_base/src/cli/commands/gen_command.dart';
 import 'package:agentic_base/src/cli/commands/init_command.dart';
+import 'package:agentic_base/src/cli/commands/inspect_command.dart';
 import 'package:agentic_base/src/cli/commands/remove_command.dart';
 import 'package:agentic_base/src/cli/commands/upgrade_command.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
@@ -37,6 +38,7 @@ class AgenticBaseCliRunner extends CommandRunner<int> {
     addCommand(FeatureCommand(logger: _logger));
     addCommand(GenCommand(logger: _logger));
     addCommand(InitCommand(logger: _logger));
+    addCommand(InspectCommand(logger: _logger));
     addCommand(RemoveCommand(logger: _logger));
     addCommand(UpgradeCommand(logger: _logger));
   }

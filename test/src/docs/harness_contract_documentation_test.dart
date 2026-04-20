@@ -16,6 +16,8 @@ void main() {
       'docs/11-eval-and-evidence-model.md',
       'docs/12-approval-state-machine.md',
       'docs/13-flutter-adapter-boundaries.md',
+      'docs/17-observability-contract.md',
+      'docs/18-local-operator-reporting.md',
     ];
     const stalePhrases = <String>[
       'design target for upcoming implementation waves',
@@ -110,6 +112,9 @@ void main() {
       final verifyScript = _readRepoFile(
         'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/tools/verify.sh',
       );
+      final inspectScript = _readRepoFile(
+        'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/tools/inspect-evidence.sh',
+      );
       final appSmokeTest = _readRepoFile(
         'bricks/agentic_app/__brick__/{{project_name.snakeCase()}}/test/app_smoke_test.dart',
       );
@@ -117,7 +122,11 @@ void main() {
       expect(rootDartTestConfig, contains('slow-canary'));
       expect(generatedDartTestConfig, contains('app-smoke'));
       expect(testingGuide, contains('app-shell-smoke'));
+      expect(testingGuide, contains('./tools/inspect-evidence.sh'));
       expect(verifyScript, contains('--exclude-tags app-smoke'));
+      expect(verifyScript, contains('runtime-telemetry'));
+      expect(verifyScript, contains('AGENTIC_RUNTIME_TELEMETRY_CONTEXT_FILE'));
+      expect(inspectScript, contains('agentic_base inspect'));
       expect(verifyScript, contains('test/app_smoke_test.dart'));
       expect(appSmokeTest, contains('app-smoke'));
     },

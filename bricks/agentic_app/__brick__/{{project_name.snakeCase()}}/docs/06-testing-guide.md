@@ -13,6 +13,7 @@ The primary verification surface is `./tools/verify.sh`. It runs the same local 
 
 Use `./tools/release-preflight.sh` before any upload-oriented release command.
 Inspect evidence under `{{{evidence_dir}}}` for `summary.json`, gate check files, and logs.
+Use `./tools/inspect-evidence.sh verify` for the latest derived run report.
 
 ## Manager-Aware Test Surface
 
@@ -22,6 +23,7 @@ Use the generated wrappers first:
 - `./tools/test.sh <path-or-args>` passes extra test arguments through to the resolved Flutter runtime
 - `make test` is the shortest full-suite entrypoint
 - `./tools/verify.sh` is the pre-review gate, not just another test command
+- `./tools/inspect-evidence.sh <run-kind> [latest|run-id] [markdown|json]` renders the local evidence bundle through the shared inspect surface when `agentic_base` is available
 - `test/app_smoke_test.dart` stays on the dedicated `app-shell-smoke` gate so verify avoids duplicate Flutter startup cost inside the broader suite
 
 Do not bypass these wrappers unless you are debugging the wrapper itself.
@@ -150,6 +152,7 @@ testWidgets('renders the starter CTA and reacts to taps', (tester) async {
 ./tools/test.sh test/features/home/
 ./tools/test.sh --coverage
 ./tools/verify.sh
+./tools/inspect-evidence.sh verify
 make test
 make verify
 ```

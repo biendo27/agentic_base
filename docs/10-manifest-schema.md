@@ -5,6 +5,7 @@
 Harness Contract V1 keeps `.info/agentic.yaml` as the single machine-readable source of truth.
 
 This document defines the additive schema shape used for support tiers, evidence, approvals, and SDK policy.
+Observability support-envelope fields are additive to that same contract and stay declarative only.
 
 ## Design Rules
 
@@ -104,6 +105,17 @@ harness:
       - product-decisions
       - credential-setup
       - final-store-publish-approval
+  observability:
+    mode: local-first
+    runtime_observability:
+      - structured_logs
+      - traces
+      - metrics
+    agent_legibility:
+      - inspect
+      - run_ledger
+    operator_reports:
+      - markdown
   sdk:
     manager: system
     channel: stable
@@ -123,6 +135,10 @@ harness:
 | `harness.eval.evidence_dir` | Canonical output directory for verify and release evidence bundles. |
 | `harness.eval.quality_dimensions` | Named internal quality states. `evidence_quality` covers run-evidence completeness and inspectability, not agent telemetry. |
 | `harness.approvals.pause_on` | Named human approval interrupts. |
+| `harness.observability.mode` | Declared support envelope. Current contract value is `local-first`. |
+| `harness.observability.runtime_observability` | Minimum runtime signal classes the generated repo owns locally. |
+| `harness.observability.agent_legibility` | Derived local inspection surfaces agents may rely on. |
+| `harness.observability.operator_reports` | Human-facing local report formats the repo guarantees today. |
 | `harness.sdk.*` | Declared Flutter toolchain manager and tested version contract. |
 
 Derivation rules:
@@ -131,6 +147,7 @@ Derivation rules:
 - support tier is derived from the support matrix for the declared `primary_profile`
 - the default eval pack is derived from the same profile plus enabled capabilities
 - Gitflow guidance stays in human-readable docs and thin adapters, not in `.info/agentic.yaml`
+- redaction policy, retention policy, and report layout stay code/doc policy, not manifest knobs
 - if future summary fields such as `support_tier` or `default_gate_pack` are emitted, validators must treat them as derived read models and reject drift
 
 ## Tier 2 Example

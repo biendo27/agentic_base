@@ -8,6 +8,7 @@ import 'package:{{project_name.snakeCase()}}/app/i18n/translations.g.dart';
 import 'package:{{project_name.snakeCase()}}/core/di/injection.dart';
 {{/is_riverpod}}
 import 'package:{{project_name.snakeCase()}}/core/extensions/context_extensions.dart';
+import 'package:{{project_name.snakeCase()}}/core/observability/observability_service.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/entities/starter_paywall_snapshot.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/usecases/get_starter_paywall.dart';
 {{#is_riverpod}}
@@ -22,6 +23,7 @@ class StarterMonetizationPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ObservabilityService.instance.trackScreenView('starter_monetization');
     final monetization = context.t.home.monetization;
     final snapshot = ref.watch(starterPaywallProvider);
     return Scaffold(
@@ -54,6 +56,7 @@ class _StarterMonetizationPageState extends State<StarterMonetizationPage> {
 
   @override
   Widget build(BuildContext context) {
+    ObservabilityService.instance.trackScreenView('starter_monetization');
     final monetization = context.t.home.monetization;
     return Scaffold(
       appBar: AppBar(title: Text(monetization.title)),
@@ -81,6 +84,13 @@ class _StarterPaywallView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ObservabilityService.instance.trackStarterSurface(
+      'starter_paywall',
+      fields: <String, Object?>{
+        'offers': snapshot.offers.length,
+        'entitlement_active': snapshot.currentEntitlement.isActive,
+      },
+    );
     final monetization = context.t.home.monetization;
     return Align(
       alignment: Alignment.topCenter,

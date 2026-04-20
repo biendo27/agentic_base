@@ -10,6 +10,10 @@ The profile-execution rollout is also complete: `subscription-commerce-app` is n
 
 Validation is green on `dart analyze --fatal-infos`, the doc and generator-focused tests, shell syntax checks, the generated-app smoke regression, and the full `dart test` suite.
 
+The observability contract and agent legibility milestone is now complete: repo-scoped runtime telemetry, structured evidence exports, and a single derived local inspect surface are landed and regression-covered.
+
+The next active milestone is command/orchestration modularization so large command files can be split without changing behavior.
+
 ## Completed Phases
 
 | Phase | Status | Outcome |
@@ -27,25 +31,16 @@ Validation is green on `dart analyze --fatal-infos`, the doc and generator-focus
 
 ## Active Milestone
 
-### Milestone: Profile Execution Rollout
+### Milestone: Observability Contract And Agent Legibility
 
 Status:
 
-- Complete
-- Harness Contract V1 implementation complete
-- Shared app contracts now standardize generated starter and feature data/domain boundaries on `fpdart` while keeping presentation state APIs simple
-- CLI commands now have truthful preview-only `--dry-run` paths, and real execution uses manager-aware toolchain selection for `system`, `fvm`, and `puro`
-- Generated starter contracts now use Freezed-backed response and pagination models, and the theme layer splits controller state from family composition
-- Generated locale runtime wrapping now lives outside the Slang output tree so contract verification stays stable after regeneration
-- Generated starter apps now ship the trustworthy-commerce family: bright neutral surfaces, blue primary, orange accent, Lexend headings, Source Sans 3 body copy, and `google_fonts` as part of the brick contract
-- The starter app now proves one day-0 journey with profile-aware dashboard signals, settings preview, lifecycle/config seams, and separated payments, entitlement, consent, and ads starter seams
-- Verification no longer relies mainly on downstream boot smoke: generated apps now ship repository tests, state-runtime tests, a starter widget test, and the package smoke matrix retains only the heavy lanes that still prove unique behavior
-- Smoke verification is now split into a fast blocking lane and a slow blocking canary; the generic test pass excludes the dedicated `app-shell-smoke` gate so the canary is not duplicated
-- The full contract-freeze slice is complete: default app service matrix docs landed, `evidence_quality` is canonical, preset resolution drives create output, profile-aware verify gates are rendered from generator policy, and migration guidance exists for older generated repos
-- The default lane now uses store-native `in_app_purchase` instead of the earlier provider-neutral monetization demo
-- Repo release hygiene now includes classic Gitflow branch roles, PR route validation, and CI coverage for `develop`, `release/*`, and `hotfix/*`
-- Docs, generated workflow guidance, and release claims align with shipped behavior
-- Remaining work is future generator polish and release automation, not this rollout
+- Completed
+- Preserve Harness Contract V1 and keep `evidence_quality` as the evidence dimension only
+- Add one additive `harness.observability` support envelope to the manifest
+- Ship generated app runtime telemetry plus structured `telemetry/*` bundle files
+- Ship one derived inspect surface through `agentic_base inspect` and `./tools/inspect-evidence.sh`
+- Keep operator reporting local-first, Markdown/JSON only, and free of hosted-console claims
 
 Defined outputs:
 
@@ -53,7 +48,9 @@ Defined outputs:
 - prevent drift between generated surfaces, validators, and docs
 - keep evidence and approval outputs stable across local and CI execution
 - preserve honest Flutter SDK contract handling during future upgrades
+- keep observability local-first, redactable, and inspectable from one derived run ledger
 - ship publication/release automation only when it matches the real package workflow
+- preserve approval transitions inside verify evidence and keep `latest/` as a deterministic local pointer, not a second copied truth
 
 Key docs:
 
@@ -71,7 +68,7 @@ Key docs:
 
 | Wave | Goal | Entry Gate | Exit Gate |
 | --- | --- | --- | --- |
-| 1 | Reduce command/orchestration file size | profile rollout complete | large command files split without behavior regressions |
+| 1 | Reduce command/orchestration file size | observability rollout stable | large command files split without behavior regressions |
 | 2 | Improve package release hygiene | stabilized docs/tests | publish flow is scripted or explicitly documented end to end |
 | 3 | Grow non-default profile coverage | rollout stable | more Tier 1 and Tier 2 profile packs are mechanically proven, not just documented |
 

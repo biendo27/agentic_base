@@ -2,7 +2,7 @@
 
 ## Overview
 
-`agentic_base` is a generator package, not an app runtime. The repo architecture centers on a command-line control plane that resolves a manager-aware Flutter/Dart toolchain, shells out through that resolved executable path, applies Mason templates, and mutates target-project files in a controlled way so generated repos have one canonical context contract and deterministic execution surfaces. Preview-only `--dry-run` paths now report the planned reads, writes, and commands without probing toolchains or mutating projects.
+`agentic_base` is a generator package, not an app runtime. The repo architecture centers on a command-line control plane that resolves a manager-aware Flutter/Dart toolchain, shells out through that resolved executable path, applies Mason templates, and mutates target-project files in a controlled way so generated repos have one canonical context contract and deterministic execution surfaces. Preview-only `--dry-run` paths now report the planned reads, writes, and commands without probing toolchains or mutating projects. The current local-first observability wave extends that same control plane with structured runtime telemetry files and a derived inspect surface, not with a hosted console.
 
 ```mermaid
 flowchart LR
@@ -106,6 +106,19 @@ localized-text, pagination, and failure files, while the theme layer splits
 controller state from the family registry so the starter can grow into multiple
 theme families without rewiring the shell.
 
+### 6. Observability Layer
+
+Files under `lib/src/observability/` now derive local operator read models:
+
+- `TelemetryBundle` loads `summary.json`, `commands.ndjson`, and `telemetry/*`
+- `RunLedger` joins gate, command, runtime, and approval records in memory
+- `OperatorReportRenderer` emits Markdown from that derived ledger
+- `InspectCommand` is the single package-side read surface for latest-run inspection
+
+The generated app brick owns the runtime signal producer under
+`lib/core/observability/`, while generated shell scripts keep evidence bundle
+layout stable under `artifacts/evidence/**`.
+
 ## Key Flows
 
 ### Create Flow
@@ -169,6 +182,7 @@ That workflow verifies the package, keeps one full cubit/GitHub generated-repo l
 - README and registry inventory must stay in sync as modules change
 - module startup behavior now depends on generated service contracts exposing deterministic init seams
 - upgrade now needs to sync generator-owned surfaces without rewriting app-layer code
+- observability must stay additive and local-first so bundle files, docs, validators, and inspect output do not drift
 
 ## Harness Contract V1 Split
 

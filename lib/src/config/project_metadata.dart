@@ -210,6 +210,22 @@ final class ProjectMetadata {
         'harness.approvals.pause_on',
         hasDefault: true,
       ),
+      'harness.observability.mode': resolve(
+        'harness.observability.mode',
+        hasDefault: true,
+      ),
+      'harness.observability.runtime_observability': resolve(
+        'harness.observability.runtime_observability',
+        hasDefault: true,
+      ),
+      'harness.observability.agent_legibility': resolve(
+        'harness.observability.agent_legibility',
+        hasDefault: true,
+      ),
+      'harness.observability.operator_reports': resolve(
+        'harness.observability.operator_reports',
+        hasDefault: true,
+      ),
       'harness.sdk.manager': resolve(
         'harness.sdk.manager',
         hasDefault: true,

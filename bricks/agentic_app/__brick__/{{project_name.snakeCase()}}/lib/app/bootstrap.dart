@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 {{/is_cubit}}
 import 'package:{{project_name.snakeCase()}}/app/locale/app_locale_contract.dart';
+import 'package:{{project_name.snakeCase()}}/app/flavors.dart';
 {{#is_riverpod}}
 import 'package:{{project_name.snakeCase()}}/app/modules/module_providers.dart';
 {{/is_riverpod}}
@@ -18,12 +19,20 @@ import 'package:{{project_name.snakeCase()}}/app/observers/app_bloc_observer.dar
 {{^is_riverpod}}
 import 'package:{{project_name.snakeCase()}}/core/di/injection.dart';
 {{/is_riverpod}}
+import 'package:{{project_name.snakeCase()}}/core/observability/redaction_policy.dart';
+import 'package:{{project_name.snakeCase()}}/core/observability/observability_service.dart';
+
+const _observabilityRedactionPolicy = RedactionPolicy();
 
 Future<void> bootstrap(
   Widget Function() builder, {
   bool initializeModules = true,
 }) async {
   WidgetsFlutterBinding.ensureInitialized();
+  ObservabilityService.instance.bootstrap(
+    flavor: FlavorConfig.instance.flavor.name,
+    appName: FlavorConfig.instance.appName,
+  );
   unawaited(AppLocaleContract.useDeviceLocale());
 {{#is_cubit}}
   Bloc.observer = AppBlocObserver();
@@ -57,6 +66,15 @@ Future<void> bootstrap(
 {{/is_riverpod}}
     },
     (error, stackTrace) {
+      ObservabilityService.instance.log(
+        'bootstrap.uncaught_error',
+        level: 'error',
+        fields: <String, Object?>{
+          'error_type': error.runtimeType.toString(),
+          'error_message': _observabilityRedactionPolicy.summarizeObject(error),
+          'stack_frame_count': _countStackFrames(stackTrace),
+        },
+      );
       FlutterError.reportError(
         FlutterErrorDetails(
           exception: error,
@@ -70,4 +88,12 @@ Future<void> bootstrap(
       }
     },
   );
+}
+
+int _countStackFrames(StackTrace stackTrace) {
+  return stackTrace
+      .toString()
+      .split('\n')
+      .where((line) => line.trim().isNotEmpty)
+      .length;
 }

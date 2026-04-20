@@ -23,6 +23,7 @@ Harness core remains stable even if the runtime stack changes later:
 - deterministic command surface names
 - support tier vocabulary
 - eval ladder and evidence bundle shape
+- observability vocabulary, redaction policy, and derived inspect surface
 - approval gate vocabulary
 - generator-owned vs human-owned boundary model
 
@@ -32,6 +33,7 @@ Flutter adapter owns:
 
 - environment detection for `flutter`, `dart`, and version managers
 - generated app creation and overlay workflow
+- runtime signal capture, local telemetry export, and latest-run inspection hooks
 - state-management runtime wiring
 - flavors, build targets, and entrypoints
 - code generation and localization generation expectations
@@ -48,6 +50,7 @@ Capability packs own:
 - extra advisory or required gate hooks when the support tier allows them
 
 Capability packs must not create hidden alternative control planes.
+When capability packs emit logs or crash records, they should flow through the shared observability context instead of bypassing it.
 
 ## Boundary Rules
 

@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:{{project_name.snakeCase()}}/app/i18n/translations.g.dart';
 import 'package:{{project_name.snakeCase()}}/core/extensions/context_extensions.dart';
+import 'package:{{project_name.snakeCase()}}/core/observability/observability_service.dart';
 import 'package:{{project_name.snakeCase()}}/core/router/app_router.gr.dart';
 import 'package:{{project_name.snakeCase()}}/core/starter/starter_runtime_profile.dart';
 import 'package:{{project_name.snakeCase()}}/features/home/domain/entities/home_item.dart';
@@ -18,6 +19,13 @@ class StarterDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ObservabilityService.instance.trackStarterSurface(
+      'starter_dashboard',
+      fields: <String, Object?>{
+        'signal_count': _signalCards.length,
+        'checklist_items': items.length,
+      },
+    );
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
@@ -103,7 +111,8 @@ class StarterDashboard extends StatelessWidget {
         description:
             'Remote config and feature flags are surfaced as generated seams so rollout policy is visible on day 0.',
       ),
-    if (StarterRuntimeProfile.consentEnabled || StarterRuntimeProfile.adsEnabled)
+    if (StarterRuntimeProfile.consentEnabled ||
+        StarterRuntimeProfile.adsEnabled)
       const StarterSignalCard(
         icon: Icons.privacy_tip_outlined,
         title: 'Consent and ads safety',

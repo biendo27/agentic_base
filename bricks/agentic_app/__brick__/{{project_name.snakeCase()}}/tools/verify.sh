@@ -6,6 +6,9 @@ cd "$PROJECT_ROOT"
 check_flutter
 start_evidence_run "verify" "{{required_gate_pack}}"
 set_approval_state "EvalRunning"
+export AGENTIC_RUNTIME_TELEMETRY_CONTEXT_FILE="$RUN_TELEMETRY_CONTEXT_PATH"
+export AGENTIC_RUNTIME_TELEMETRY_EVENTS_FILE="$RUN_TELEMETRY_EVENTS_PATH"
+export AGENTIC_RUNTIME_TELEMETRY_METRICS_FILE="$RUN_TELEMETRY_METRICS_PATH"
 
 RUN_EXIT_CODE=0
 FAST_VERIFY_MODE="${AGENTIC_VERIFY_FAST:-0}"
@@ -18,6 +21,21 @@ verify_static_contract() {
 
 verify_app_shell_smoke() {
   run_flutter test test/app_smoke_test.dart
+}
+
+verify_runtime_telemetry() {
+  [[ -s "$RUN_TELEMETRY_EVENTS_PATH" ]] || {
+    error "Missing telemetry events export."
+    return 1
+  }
+  [[ -f "$RUN_TELEMETRY_CONTEXT_PATH" ]] || {
+    error "Missing runtime context export."
+    return 1
+  }
+  [[ -f "$RUN_TELEMETRY_METRICS_PATH" ]] || {
+    error "Missing runtime metrics export."
+    return 1
+  }
 }
 
 verify_profile_starter_gate() {
@@ -91,6 +109,15 @@ if [[ -f "$PROJECT_ROOT/test/app_smoke_test.dart" ]]; then
   fi
 else
   skip_gate "app-shell-smoke" "ux_confidence" "Starter app-shell smoke test is not present."
+fi
+
+if [[ -f "$PROJECT_ROOT/test/app_smoke_test.dart" ]]; then
+  if ! run_gate "runtime-telemetry" "evidence_quality" "Exporting runtime telemetry from the starter smoke path..." verify_runtime_telemetry; then
+    RUN_EXIT_CODE=1
+    exit 1
+  fi
+else
+  skip_gate "runtime-telemetry" "evidence_quality" "Runtime telemetry export is skipped without app smoke coverage."
 fi
 
 {{#has_required_profile_verify_gate}}

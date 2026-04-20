@@ -80,6 +80,7 @@ Agents must not:
 The approval state is visible in:
 
 - evidence `summary.json`
+- derived `agentic_base inspect` / `./tools/inspect-evidence.sh` output
 - release-preflight output
 - generated docs that explain release boundaries
 - manifest pause vocabulary through `harness.approvals.pause_on`

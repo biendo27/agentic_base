@@ -66,6 +66,10 @@ checks/
   static.json
   unit-widget.json
 commands.ndjson
+telemetry/
+  runtime-context.json
+  events.ndjson
+  metrics.json
 logs/
   verify.log
 artifacts/
@@ -101,6 +105,14 @@ One file per executed gate with:
 
 Append-only execution log with one record per invoked script or tool.
 
+### `telemetry/*`
+
+Structured local-first telemetry payloads:
+
+- `runtime-context.json` for run/session correlation plus declared mode
+- `events.ndjson` for typed records such as `log`, `span_start`, `span_end`, and `approval_transition`
+- `metrics.json` for bounded counters and timing summaries
+
 ### `logs/*`
 
 Human-readable logs safe to inspect locally or in CI. Secrets must be redacted.
@@ -132,6 +144,15 @@ The same gate names should work:
 - locally through `tools/verify.sh` and related scripts
 - in generated CI workflows
 - in future richer harness wrappers
+
+## Inspect Surface
+
+The canonical inspection path is now:
+
+- package CLI: `agentic_base inspect --kind verify`
+- generated repo helper: `./tools/inspect-evidence.sh verify`
+
+Both derive a run ledger on read from `summary.json`, `checks/*.json`, `commands.ndjson`, and `telemetry/*`. They do not create a second persisted source of truth by default.
 
 CI may attach more artifacts, but it should not invent a second gate vocabulary.
 

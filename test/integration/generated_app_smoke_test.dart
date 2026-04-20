@@ -129,6 +129,17 @@ void _expectStarterRuntimeSurfaces(
           'lib/core/network/interceptors/error_interceptor.dart',
         ),
       ).readAsStringSync();
+  final observabilityInterceptor =
+      File(
+        p.join(
+          appDir,
+          'lib/core/network/interceptors/observability_interceptor.dart',
+        ),
+      ).readAsStringSync();
+  final bootstrap =
+      File(
+        p.join(appDir, 'lib/app/bootstrap.dart'),
+      ).readAsStringSync();
   final errorHandler =
       File(
         p.join(appDir, 'lib/core/error/error_handler.dart'),
@@ -169,6 +180,13 @@ void _expectStarterRuntimeSurfaces(
       File(
         p.join(appDir, 'lib/core/privacy/consent_service.dart'),
       ).readAsStringSync();
+  final observabilityService =
+      File(
+        p.join(
+          appDir,
+          'lib/core/observability/observability_service.dart',
+        ),
+      ).readAsStringSync();
   final entitlementService =
       File(
         p.join(appDir, 'lib/core/commerce/entitlement_service.dart'),
@@ -192,6 +210,46 @@ void _expectStarterRuntimeSurfaces(
 
   expect(errorInterceptor, contains('ErrorHandler.handle(err)'));
   expect(errorInterceptor, contains('handler.next(mappedError);'));
+  expect(
+    errorInterceptor,
+    contains('_redactionPolicy.sanitizePath(err.requestOptions.path)'),
+  );
+  expect(
+    errorInterceptor,
+    contains("'error_type': mappedError.error.runtimeType.toString()"),
+  );
+  expect(errorInterceptor, isNot(contains(r"'error': '${mappedError.error}'")));
+  expect(
+    observabilityInterceptor,
+    contains("'header_keys': _redactionPolicy.sanitizeKeys("),
+  );
+  expect(
+    observabilityInterceptor,
+    contains("'query_keys': _redactionPolicy.sanitizeKeys("),
+  );
+  expect(
+    observabilityInterceptor,
+    contains("'path': _redactionPolicy.sanitizePath(options.path)"),
+  );
+  expect(
+    observabilityInterceptor,
+    isNot(contains("'headers': options.headers")),
+  );
+  expect(
+    observabilityInterceptor,
+    isNot(contains("'query_parameters': options.queryParameters")),
+  );
+  expect(
+    bootstrap,
+    contains("'stack_frame_count': _countStackFrames(stackTrace)"),
+  );
+  expect(
+    bootstrap,
+    contains(
+      "'error_message': _observabilityRedactionPolicy.summarizeObject(error)",
+    ),
+  );
+  expect(bootstrap, isNot(contains("'stack_trace': stackTrace.toString()")));
   expect(
     errorHandler,
     contains('error is DioException && error.error is AppFailure'),
@@ -222,10 +280,15 @@ void _expectStarterRuntimeSurfaces(
   expect(starterRuntimeProfile, contains('requiredGatePack'));
   expect(consentService, contains('ConsentService'));
   expect(entitlementService, contains('EntitlementService'));
+  expect(observabilityService, contains("mode': 'local-first'"));
+  expect(observabilityService, contains('trackScreenView'));
+  expect(observabilityService, contains('final Set<String> _sessionSignals'));
   expect(testingGuide, contains('./tools/test.sh'));
+  expect(testingGuide, contains('./tools/inspect-evidence.sh'));
   expect(testingGuide, contains('make test'));
   expect(testingGuide, isNot(contains('flutter test')));
   expect(workflowGuide, contains('.info/agentic.yaml'));
+  expect(workflowGuide, contains('./tools/inspect-evidence.sh'));
   expect(workflowGuide, contains('Recommended default Gitflow'));
   expect(appListResponseContract, contains('abstract class AppListResponse'));
   expect(localizedTextContract, contains('abstract class LocalizedText'));
@@ -277,6 +340,48 @@ void _expectStarterRuntimeSurfaces(
       p.join(
         appDir,
         'test/core/contracts/pagination_test.dart',
+      ),
+    ).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(
+      p.join(appDir, 'tools/inspect-evidence.sh'),
+    ).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'lib/core/network/interceptors/observability_interceptor.dart',
+      ),
+    ).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'lib/core/observability/trace_context.dart',
+      ),
+    ).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'lib/core/observability/redaction_policy.dart',
+      ),
+    ).existsSync(),
+    isTrue,
+  );
+  expect(
+    File(
+      p.join(
+        appDir,
+        'lib/core/observability/observability_service.dart',
       ),
     ).existsSync(),
     isTrue,
@@ -441,11 +546,39 @@ void main() {
               'summary.json',
             ),
           ).readAsStringSync();
+      final verifyTelemetryContext =
+          File(
+            p.join(
+              _latestEvidenceRunDirectory(appDir, 'verify').path,
+              'telemetry',
+              'runtime-context.json',
+            ),
+          ).readAsStringSync();
+      final verifyTelemetryMetrics =
+          File(
+            p.join(
+              _latestEvidenceRunDirectory(appDir, 'verify').path,
+              'telemetry',
+              'metrics.json',
+            ),
+          ).readAsStringSync();
+      final verifyTelemetryEvents =
+          File(
+            p.join(
+              _latestEvidenceRunDirectory(appDir, 'verify').path,
+              'telemetry',
+              'events.ndjson',
+            ),
+          ).readAsStringSync();
       expect(verifySummary, contains('"run_kind": "verify"'));
       expect(verifySummary, contains('"derived_gate_expectation_id"'));
       expect(verifySummary, contains('"unit-widget"'));
       expect(verifySummary, contains('"app-shell-smoke"'));
+      expect(verifySummary, contains('"runtime-telemetry"'));
       expect(verifySummary, contains('"starter-commerce"'));
+      expect(verifyTelemetryContext, contains('"mode": "local-first"'));
+      expect(verifyTelemetryEvents, contains('"kind":"approval_transition"'));
+      expect(verifyTelemetryMetrics, contains('"counters"'));
       _expectStarterRuntimeSurfaces(appDir, stateManagement: 'cubit');
     },
     tags: const ['slow-canary'],
@@ -666,8 +799,17 @@ void main() {
               'summary.json',
             ),
           ).readAsStringSync();
+      final telemetryEvents =
+          File(
+            p.join(
+              _latestEvidenceRunDirectory(appDir, 'release-preflight').path,
+              'telemetry',
+              'events.ndjson',
+            ),
+          ).readAsStringSync();
       expect(summary, contains('"run_kind": "release-preflight"'));
       expect(summary, contains('"approval_state": "UploadReady"'));
+      expect(telemetryEvents, contains('"kind":"approval_transition"'));
     },
     skip:
         flutterAvailable
