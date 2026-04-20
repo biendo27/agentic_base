@@ -54,6 +54,22 @@ jobs:
       - run: dart pub get
       - run: dart test test/integration/generated_app_smoke_test.dart
 
+  pub-publish-dry-run:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1.7.2
+        with:
+          sdk: stable
+      - run: dart pub get
+      - name: Validate pub.dev package archive
+        shell: bash
+        run: |
+          set -o pipefail
+          dart pub publish --dry-run 2>&1 | tee "$RUNNER_TEMP/pub-publish-dry-run.log"
+          grep -q "Package has 0 warnings" "$RUNNER_TEMP/pub-publish-dry-run.log"
+
   generated-app-native-gate:
     runs-on: macos-15
     needs: generated-app-smoke

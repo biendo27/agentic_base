@@ -1,0 +1,48 @@
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+concurrency:
+  group: publish-pub-dev-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate-release-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Validate Gitflow release tag
+        shell: bash
+        run: |
+          git fetch --no-tags origin main:refs/remotes/origin/main
+
+          tag_version="${GITHUB_REF_NAME#v}"
+          pubspec_version="$(grep '^version:' pubspec.yaml | awk '{print $2}')"
+          tag_commit="$(git rev-list -n 1 "$GITHUB_REF_NAME")"
+
+          if [ "$tag_version" != "$pubspec_version" ]; then
+            echo "::error title=Version mismatch::Tag ${GITHUB_REF_NAME} does not match pubspec.yaml version ${pubspec_version}."
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "$tag_commit" origin/main; then
+            echo "::error title=Tag must point at origin/main::Publish tags must be created from main after Gitflow promotion."
+            exit 1
+          fi
+
+  publish:
+    needs: validate-release-tag
+    permissions:
+      contents: read
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      environment: pub.dev
