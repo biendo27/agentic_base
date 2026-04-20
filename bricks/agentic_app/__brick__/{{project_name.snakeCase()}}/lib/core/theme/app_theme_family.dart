@@ -39,7 +39,7 @@ final class AppThemeFamily {
 }
 
 abstract final class AppThemeFamilies {
-  static const defaultFamilyId = 'material-default';
+  static const defaultFamilyId = 'trustworthy-commerce';
 
   static const AppThemeFamily defaultFamily = AppThemeFamily(
     id: defaultFamilyId,

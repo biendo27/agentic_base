@@ -52,6 +52,11 @@ Keep `library` + `part` limited to codegen-required leaf files such as Freezed,
 JsonSerializable, auto_route, and injectable outputs. Repositories, use cases,
 pages, modules, and services stay as normal files with imports.
 
+Keep `lib/core/contracts` runtime-agnostic:
+- raw data shape, defaults, and invariants that define the transport contract stay on the contract class
+- pure convenience, serialization, and formatting helpers may stay in extensions when they depend only on the contract value and keep the Freezed model smaller
+- locale-, DI-, or app-runtime-aware convenience belongs in extensions or services outside raw contracts
+
 ## Code Patterns
 
 ### Freezed State

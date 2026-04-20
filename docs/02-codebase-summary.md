@@ -9,7 +9,7 @@ The repo root is the real product root. `docs/` stores evergreen repo docs and `
 | Path | Purpose |
 | --- | --- |
 | [`README.md`](../README.md) | Package landing page and usage guide. |
-| [`docs/`](./) | Repo-level docs, architecture, roadmap, journals. |
+| [`docs/`](./) | Repo-level product, architecture, contract, and delivery docs. |
 | [`plans/`](../plans/) | Timestamped implementation plans and reports. |
 | [`.github/workflows/`](../.github/workflows/ci.yml) | Package CI automation. |
 
@@ -18,7 +18,7 @@ The repo root is the real product root. `docs/` stores evergreen repo docs and `
 | Area | Responsibility |
 | --- | --- |
 | `lib/src/cli/` | Command runner plus individual CLI commands. |
-| `lib/src/config/` | `.info/agentic.yaml` state, init metadata inference/repair, state profile config. |
+| `lib/src/config/` | `.info/agentic.yaml` state, init metadata inference/repair, support-tier summaries, and profile preset resolution. |
 | `lib/src/generators/` | Project, feature, and contract generation orchestration. |
 | `lib/src/modules/` | Module contract, registry, rollback journal, integration generator, install/uninstall helpers. |
 | `lib/src/tui/` | Logging and interactive prompt helpers. |
@@ -47,7 +47,7 @@ The CLI runner registers:
 
 The package creates or modifies Flutter projects in two main ways:
 
-- `create` makes a fresh Flutter project, overlays the `agentic_app` brick, writes `.info/agentic.yaml`, installs selected modules, materializes typed translations, and verifies the generated app.
+- `create` makes a fresh Flutter project, overlays the `agentic_app` brick, writes `.info/agentic.yaml`, resolves profile-owned default modules and providers when the user does not explicitly override them, materializes typed translations, and verifies the generated app with profile-aware gate policy.
 - `init` adds agentic scaffolding to an existing Flutter project without overwriting existing files and can repair stale or fabricated metadata with provenance.
 
 Generated starter apps now follow one explicit ownership contract:
@@ -57,6 +57,7 @@ Generated starter apps now follow one explicit ownership contract:
 - native flavor assets come from `flutter_flavorizr`
 - duplicate root shell files such as `lib/app.dart`, `lib/flavors.dart`, and `lib/pages/**` are deleted and asserted absent
 - starter scaffolds now keep cubit, riverpod, and mobx output aligned with the selected state profile
+- starter scaffolds now render `starter_runtime_profile.dart` plus consent and entitlement seams from one profile-owned preset resolver
 - analytics now wires a concrete `AnalyticsService` seam into the generated DI graph and is smoke-tested
 
 The app brick also ships its own generated-project docs under the template `docs/` folder, which means this repo has two doc surfaces:
@@ -90,7 +91,10 @@ What is not present yet in this repo CI:
 - manager-aware command execution now resolves `flutter`/`dart` invocations through `system`, `fvm`, or `puro`, while `doctor` reports manager fallback as a contract mismatch instead of a healthy state
 - generated app smoke coverage now asserts analytics module DI wiring in the emitted `injection.config.dart`
 - generated app smoke coverage now exercises cubit, riverpod, and mobx starter apps
-- generated starter contracts now use Freezed-backed response/pagination/failure files, and the theme layer splits family selection from theme composition
+- generated starter contracts now use file-per-contract shared models for `AppResult`, response envelopes, pagination, and runtime-agnostic localized text, while the theme layer splits family selection from theme composition
+- default profile execution now lives in `profile_preset.dart`, which resolves the default `subscription-commerce-app` module pack, provider map, gate pack, and starter seam toggles from one source of truth
+- generated starter apps now ship a trustworthy-commerce family, Lexend plus Source Sans 3 via `google_fonts`, profile-aware dashboard signals, and explicit `PaymentsService`, `EntitlementService`, and `ConsentService` seams
+- the default payments lane is now store-native via `in_app_purchase`, while ads stay generated-but-safe until consent and config gates allow richer behavior
 - `ProjectMutationJournal` keeps module mutations rollback-safe while `ModuleIntegrationGenerator` rewrites the live bootstrap seam
 - some command/orchestration files exceed the repo's 200 LOC target:
   - `init_command.dart`
@@ -101,6 +105,7 @@ What is not present yet in this repo CI:
 
 - [`lib/src/cli/cli_runner.dart`](../lib/src/cli/cli_runner.dart)
 - [`lib/src/generators/project_generator.dart`](../lib/src/generators/project_generator.dart)
+- [`lib/src/config/profile_preset.dart`](../lib/src/config/profile_preset.dart)
 - [`lib/src/generators/generated_project_contract.dart`](../lib/src/generators/generated_project_contract.dart)
 - [`lib/src/modules/module_registry.dart`](../lib/src/modules/module_registry.dart)
 - [`lib/src/modules/module_integration_generator.dart`](../lib/src/modules/module_integration_generator.dart)

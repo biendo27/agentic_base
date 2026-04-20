@@ -1,3 +1,5 @@
+import 'package:agentic_base/src/config/harness_profile.dart';
+import 'package:agentic_base/src/config/profile_preset.dart';
 import 'package:agentic_base/src/modules/module_registry.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 
@@ -47,17 +49,21 @@ class CreatePrompts {
     );
   }
 
-  /// Recommended modules pre-selected during interactive create.
-  static const defaultModules = ['analytics', 'logging'];
-
-  /// Prompt user to select modules to install during project creation.
-  List<String> promptModules(String? flagValue) {
+  /// Prompt user to customize modules during project creation.
+  ///
+  /// Returns `null` when the user keeps the profile-owned defaults.
+  List<String>? promptModules(
+    String? flagValue, {
+    required HarnessAppProfile appProfile,
+  }) {
     if (flagValue != null) {
       return flagValue.split(',').map((m) => m.trim()).toList();
     }
-    if (!_logger.confirm('Add modules now?')) {
-      return [];
+    if (!_logger.confirm('Customize the profile-owned module pack now?')) {
+      return null;
     }
+    final defaultModules =
+        resolveProfilePreset(appProfile: appProfile).effectiveModules;
     return _logger.chooseAny(
       'Select modules to install',
       choices: ModuleRegistry.allNames,

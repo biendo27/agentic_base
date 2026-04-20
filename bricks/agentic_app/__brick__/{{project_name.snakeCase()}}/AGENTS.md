@@ -18,6 +18,7 @@ Thin adapter for coding agents working in `{{project_name.titleCase()}}`.
   - `docs/04-network-layer.md`
   - `docs/05-theming-guide.md`
   - `docs/06-testing-guide.md`
+  - `docs/07-agentic-development-flow.md`
 - If this file conflicts with `README.md` or `docs/`, follow `README.md` and `docs/`.
 
 ## Deterministic Commands
@@ -25,11 +26,22 @@ Thin adapter for coding agents working in `{{project_name.titleCase()}}`.
 ```bash
 ./tools/setup.sh
 ./tools/run-dev.sh
+./tools/test.sh
 ./tools/verify.sh
 ./tools/build.sh <dev|staging|prod> [apk|appbundle|ipa|all]
 ./tools/release-preflight.sh <dev|staging|prod> <firebase|testflight|play-internal|play-production|app-store>
 ./tools/release.sh <dev|staging|prod> <firebase|testflight|play-internal|play-production|app-store>
 ```
+
+## Recommended Default Gitflow
+
+Recommended default Gitflow:
+
+- `feature/*` -> `develop`
+- `release/*` -> `main`
+- `hotfix/*` -> `main`
+
+See `docs/07-agentic-development-flow.md` for the full workflow and back-merge rule.
 
 ## Guardrails
 

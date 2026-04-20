@@ -34,6 +34,7 @@ final class GeneratedProjectContract {
     'README.md',
     'Makefile',
     'build.yaml',
+    'dart_test.yaml',
     'flavorizr.yaml',
     'assets/i18n/app/app_en.i18n.yaml',
     'assets/i18n/app/app_vi.i18n.yaml',
@@ -48,14 +49,24 @@ final class GeneratedProjectContract {
     'docs/04-network-layer.md',
     'docs/05-theming-guide.md',
     'docs/06-testing-guide.md',
+    'docs/07-agentic-development-flow.md',
     'lib/app/app.dart',
     'lib/app/bootstrap.dart',
     'lib/app/flavors.dart',
     'lib/app/locale/app_locale_contract.dart',
     'lib/app/i18n/translations.g.dart',
+    'lib/core/commerce/entitlement_service.dart',
+    'lib/core/contracts/app_list_response.dart',
+    'lib/core/contracts/localized_text.dart',
     'lib/core/contracts/app_response.dart',
     'lib/core/contracts/app_result.dart',
+    'lib/core/network/interceptors/observability_interceptor.dart',
+    'lib/core/observability/observability_service.dart',
+    'lib/core/observability/redaction_policy.dart',
+    'lib/core/observability/trace_context.dart',
     'lib/core/contracts/pagination.dart',
+    'lib/core/privacy/consent_service.dart',
+    'lib/core/starter/starter_runtime_profile.dart',
     'lib/main.dart',
     'lib/main_dev.dart',
     'lib/main_staging.dart',
@@ -77,6 +88,7 @@ final class GeneratedProjectContract {
     'tools/clean.sh',
     'tools/format.sh',
     'tools/gen.sh',
+    'tools/inspect-evidence.sh',
     'tools/lint.sh',
     'tools/release-preflight.sh',
     'tools/release.sh',
@@ -85,9 +97,16 @@ final class GeneratedProjectContract {
     'tools/test.sh',
     'tools/verify.sh',
     'test/app_smoke_test.dart',
+    'test/core/contracts/app_list_response_test.dart',
+    'test/core/contracts/app_response_test.dart',
+    'test/core/contracts/localized_text_test.dart',
+    'test/core/contracts/pagination_test.dart',
     'test/features/home/data/repositories/demo_starter_monetization_repository_test.dart',
     'test/features/home/data/repositories/home_repository_impl_test.dart',
     'test/features/home/presentation/widgets/starter_action_card_test.dart',
+    'test/features/home/presentation/widgets/starter_journey_signal_card_test.dart',
+    'test/features/home/presentation/widgets/starter_monetization_overview_card_test.dart',
+    'test/features/home/presentation/widgets/starter_settings_preview_card_test.dart',
   ];
 
   static const requiredFeatureHostPaths = <String>[
@@ -236,6 +255,9 @@ final class GeneratedProjectContract {
       ciProvider: resolvedCiProvider,
     );
     _validateGeneratedReadme(projectDir);
+    _validateGeneratedDocs(projectDir);
+    _validateGeneratedContractModelSurface(projectDir);
+    _validateGeneratedVerifySurface(projectDir);
     _validateThemeSurface(projectDir);
     validateNativeFlavorOutputs(projectDir);
     if (stateManagement != null) {
@@ -687,9 +709,12 @@ final class GeneratedProjectContract {
     final checkpoints = _requireYamlMap(config, 'checkpoints');
     final harness = _requireYamlMap(config, 'harness');
 
-    _requireYamlListValue(context, 'canonical_docs', 'docs/01-architecture.md');
-    _requireYamlListValue(context, 'thin_adapters', 'AGENTS.md');
-    _requireYamlListValue(context, 'thin_adapters', 'CLAUDE.md');
+    for (final doc in canonicalContextDocs) {
+      _requireYamlListValue(context, 'canonical_docs', doc);
+    }
+    for (final adapter in thinAdapterFiles) {
+      _requireYamlListValue(context, 'thin_adapters', adapter);
+    }
 
     final storedCiProvider = config['ci_provider'];
     if (storedCiProvider is! String) {
@@ -806,10 +831,21 @@ final class GeneratedProjectContract {
       );
     }
     final qualityDimensions = eval['quality_dimensions'];
-    if (qualityDimensions is! YamlList ||
-        qualityDimensions.length != defaultHarnessQualityDimensions.length) {
+    if (qualityDimensions is! YamlList) {
       throw const ProjectGenerationException(
         'Harness eval quality dimensions are missing or incomplete.',
+      );
+    }
+    final resolvedQualityDimensions =
+        qualityDimensions.map((value) => value.toString()).toList();
+    if (resolvedQualityDimensions.length !=
+            defaultHarnessQualityDimensions.length ||
+        !_listsEqual(
+          resolvedQualityDimensions,
+          defaultHarnessQualityDimensions,
+        )) {
+      throw const ProjectGenerationException(
+        'Harness eval quality dimensions drifted from the canonical contract.',
       );
     }
 
@@ -817,8 +853,46 @@ final class GeneratedProjectContract {
     for (final pause in requiredHumanApprovalPauses) {
       _requireYamlListValue(approvals, 'pause_on', pause);
     }
+    if (_containsSecretLikeValue(approvals)) {
+      throw const ProjectGenerationException(
+        'Harness approvals must stay declarative and secret-free.',
+      );
+    }
+
+    final observability = _requireYamlMap(harness, 'observability');
+    if (observability['mode'] != defaultHarnessObservabilityMode) {
+      throw const ProjectGenerationException(
+        'Harness observability mode must stay local-first.',
+      );
+    }
+    _requireYamlStringList(
+      observability,
+      key: 'runtime_observability',
+      expectedValues: defaultHarnessRuntimeObservability,
+      message:
+          'Harness runtime observability signals drifted from the canonical contract.',
+    );
+    _requireYamlStringList(
+      observability,
+      key: 'agent_legibility',
+      expectedValues: defaultHarnessAgentLegibility,
+      message:
+          'Harness agent legibility signals drifted from the canonical contract.',
+    );
+    _requireYamlStringList(
+      observability,
+      key: 'operator_reports',
+      expectedValues: defaultHarnessOperatorReports,
+      message:
+          'Harness operator report signals drifted from the canonical contract.',
+    );
 
     final sdk = _requireYamlMap(harness, 'sdk');
+    if (_containsSecretLikeValue(sdk)) {
+      throw const ProjectGenerationException(
+        'Harness SDK metadata must stay declarative and secret-free.',
+      );
+    }
     final manager = sdk['manager']?.toString();
     if (!FlutterSdkManager.values
         .map((value) => value.wireName)
@@ -848,12 +922,44 @@ final class GeneratedProjectContract {
     _requireContent(agents, './tools/verify.sh');
     _requireContent(agents, 'Harness Contract: `v1`');
     _requireContent(agents, 'Evidence directory: `artifacts/evidence`');
-    _forbidContent(agents, 'Feature Workflow');
+    _requireContent(agents, 'docs/07-agentic-development-flow.md');
+    _requireContent(agents, 'Recommended default Gitflow');
 
     _requireContent(claude, 'Thin Claude adapter');
     _requireContent(claude, 'Machine contract: `.info/agentic.yaml`');
     _requireContent(claude, 'Harness Contract: `v1`');
     _requireContent(claude, 'Support tier:');
+    _requireContent(claude, 'docs/07-agentic-development-flow.md');
+    _requireContent(claude, 'Recommended default Gitflow');
+  }
+
+  static bool _listsEqual(List<String> left, List<String> right) {
+    if (left.length != right.length) {
+      return false;
+    }
+    for (var index = 0; index < left.length; index++) {
+      if (left[index] != right[index]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static void _requireYamlStringList(
+    YamlMap map, {
+    required String key,
+    required List<String> expectedValues,
+    required String message,
+  }) {
+    final raw = map[key];
+    if (raw is! YamlList) {
+      throw ProjectGenerationException(message);
+    }
+
+    final resolved = raw.map((value) => value.toString()).toList();
+    if (!_listsEqual(resolved, expectedValues)) {
+      throw ProjectGenerationException(message);
+    }
   }
 
   static void _validateGeneratedReadme(String projectDir) {
@@ -863,11 +969,142 @@ final class GeneratedProjectContract {
     _requireContent(readme, 'Primary profile: `');
     _requireContent(readme, 'Support tier: `');
     _requireContent(readme, 'Evidence directory: `artifacts/evidence`');
+    _requireContent(readme, './tools/test.sh');
     _requireContent(readme, './tools/run-dev.sh');
+    _requireContent(readme, 'docs/07-agentic-development-flow.md');
+    _requireContent(readme, 'Recommended default Gitflow');
     _requireContent(
       readme,
       'final production store publish remains a human approval step',
     );
+  }
+
+  static void _validateGeneratedDocs(String projectDir) {
+    final testingGuide = _readRequiredFile(
+      projectDir,
+      'docs/06-testing-guide.md',
+    );
+    final workflowGuide = _readRequiredFile(
+      projectDir,
+      'docs/07-agentic-development-flow.md',
+    );
+
+    _requireContent(testingGuide, './tools/test.sh');
+    _requireContent(testingGuide, './tools/verify.sh');
+    _requireContent(testingGuide, './tools/inspect-evidence.sh');
+    _requireContent(testingGuide, 'make test');
+    _requireContent(testingGuide, 'app-shell-smoke');
+    _forbidContent(testingGuide, 'flutter test');
+
+    _requireContent(workflowGuide, '.info/agentic.yaml');
+    _requireContent(workflowGuide, './tools/verify.sh');
+    _requireContent(workflowGuide, './tools/inspect-evidence.sh');
+    _requireContent(workflowGuide, 'Recommended default Gitflow');
+    _requireContent(workflowGuide, 'feature/*');
+    _requireContent(workflowGuide, 'release/*');
+    _requireContent(workflowGuide, 'hotfix/*');
+  }
+
+  static void _validateGeneratedContractModelSurface(String projectDir) {
+    final codingStandards = _readRequiredFile(
+      projectDir,
+      'docs/02-coding-standards.md',
+    );
+
+    _requireContent(
+      codingStandards,
+      'raw data shape, defaults, and invariants that define the transport contract stay on the contract class',
+    );
+    _requireContent(
+      codingStandards,
+      'pure convenience, serialization, and formatting helpers may stay in extensions',
+    );
+    _forbidContent(
+      codingStandards,
+      'invariants and value behavior live on the contract class',
+    );
+
+    _requireContent(
+      _readRequiredFile(projectDir, 'lib/core/contracts/app_response.dart'),
+      'extension AppResponseX',
+    );
+    _requireContent(
+      _readRequiredFile(
+        projectDir,
+        'lib/core/contracts/app_list_response.dart',
+      ),
+      'extension AppListResponseX',
+    );
+    _requireContent(
+      _readRequiredFile(projectDir, 'lib/core/contracts/localized_text.dart'),
+      'extension LocalizedTextX',
+    );
+    final pagination = _readRequiredFile(
+      projectDir,
+      'lib/core/contracts/pagination.dart',
+    );
+    _requireContent(pagination, 'extension PaginationRequestX');
+    _requireContent(pagination, 'extension PaginatedResponseX');
+  }
+
+  static void _validateGeneratedVerifySurface(String projectDir) {
+    final config = _readRequiredYamlMap(projectDir, '.info/agentic.yaml');
+    final dartTestConfig = _readRequiredFile(projectDir, 'dart_test.yaml');
+    final verifyScript = _readRequiredFile(projectDir, 'tools/verify.sh');
+    final appSmokeTest = _readRequiredFile(
+      projectDir,
+      'test/app_smoke_test.dart',
+    );
+
+    _requireContent(dartTestConfig, 'app-smoke');
+    _requireContent(verifyScript, '--exclude-tags app-smoke');
+    _requireContent(verifyScript, 'runtime-telemetry');
+    _requireContent(verifyScript, 'AGENTIC_RUNTIME_TELEMETRY_CONTEXT_FILE');
+    _requireContent(verifyScript, 'test/app_smoke_test.dart');
+    _requireContent(appSmokeTest, 'app-smoke');
+
+    final harness = _requireYamlMap(config, 'harness');
+    final appProfile = _requireYamlMap(harness, 'app_profile');
+    final primaryProfile = appProfile['primary_profile']?.toString();
+    final capabilities =
+        (_requireYamlMap(harness, 'capabilities')['enabled'] as YamlList)
+            .map((value) => value.toString())
+            .toSet();
+
+    switch (primaryProfile) {
+      case 'consumer-app':
+        _requireContent(verifyScript, 'starter-journey');
+        _requireContent(
+          verifyScript,
+          'test/features/home/presentation/widgets/starter_journey_signal_card_test.dart',
+        );
+      case 'internal-business-app':
+        _requireContent(verifyScript, 'starter-settings');
+        _requireContent(
+          verifyScript,
+          'test/features/home/presentation/widgets/starter_settings_preview_card_test.dart',
+        );
+      case 'subscription-commerce-app':
+        if (capabilities.any(
+          (capability) => const {
+            'payments',
+            'remote_config',
+            'feature_flags',
+            'ads',
+          }.contains(capability),
+        )) {
+          _requireContent(verifyScript, 'starter-commerce');
+          _requireContent(
+            verifyScript,
+            'test/features/home/presentation/widgets/starter_monetization_overview_card_test.dart',
+          );
+        }
+      case 'content-community-app':
+      case 'offline-first-field-app':
+        _requireContent(verifyScript, 'profile-advisory');
+      case null:
+        break;
+    }
   }
 
   static void _validateThemeSurface(String projectDir) {
@@ -880,6 +1117,10 @@ final class GeneratedProjectContract {
       projectDir,
       'lib/core/theme/color_schemes.dart',
     );
+    final typography = _readRequiredFile(
+      projectDir,
+      'lib/core/theme/typography.dart',
+    );
     final contextExtensions = _readRequiredFile(
       projectDir,
       'lib/core/extensions/context_extensions.dart',
@@ -890,11 +1131,14 @@ final class GeneratedProjectContract {
     );
 
     _forbidContent(pubspec, 'flutter_screenutil:');
+    _requireContent(pubspec, 'google_fonts:');
     _requireContent(appTheme, 'ThemeData.from(');
     _requireContent(colorSchemes, 'static const light = ColorScheme(');
     _requireContent(colorSchemes, 'static const dark = ColorScheme(');
     _requireContent(colorSchemes, 'primaryFixed:');
     _forbidContent(colorSchemes, 'ColorScheme.fromSeed(');
+    _requireContent(typography, 'GoogleFonts.lexendTextTheme');
+    _requireContent(typography, 'GoogleFonts.sourceSans3TextTheme');
     _requireContent(contextExtensions, 'adaptivePagePadding');
     _requireContent(themingGuide, 'BuildContextX');
     _forbidPath(projectDir, 'lib/core/responsive/app_screen_util_init.dart');
@@ -1102,6 +1346,29 @@ final class GeneratedProjectContract {
       '(secret|token|apikey|api_key|-----BEGIN|AIza|AKIA|sk_live|sk_test)',
       caseSensitive: false,
     ).hasMatch(value);
+  }
+
+  static bool _containsSecretLikeValue(dynamic value) {
+    if (value is String) {
+      return _looksLikeSecret(value);
+    }
+    if (value is YamlMap) {
+      for (final entry in value.entries) {
+        if (_containsSecretLikeValue(entry.value)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    if (value is YamlList) {
+      for (final entry in value) {
+        if (_containsSecretLikeValue(entry)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    return false;
   }
 
   static String _resolveProjectPath(String projectDir, String relativePath) {

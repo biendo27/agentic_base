@@ -6,11 +6,6 @@ Harness Contract V1 requires a repo to prove trustworthiness through named gates
 
 `analyze + test` stays necessary. It stops being sufficient as the only story.
 
-Status:
-
-- design target for future implementation waves
-- until generator code lands, the gate ladder and evidence bundle below define the contract to earn, not a currently shipped generated-repo guarantee
-
 ## Eval Ladder
 
 | Level | Name | Purpose |
@@ -56,7 +51,7 @@ Advisory only:
 
 ## Evidence Bundle Contract
 
-Meaningful verify and release-preflight runs should emit a bundle under the contract once the implementation waves land:
+Meaningful verify and release-preflight runs emit a bundle under the contract:
 
 ```text
 artifacts/evidence/<run-kind>/<timestamp>-<run-id>/
@@ -71,6 +66,10 @@ checks/
   static.json
   unit-widget.json
 commands.ndjson
+telemetry/
+  runtime-context.json
+  events.ndjson
+  metrics.json
 logs/
   verify.log
 artifacts/
@@ -81,14 +80,14 @@ artifacts/
 
 ### `summary.json`
 
-Must include:
+Includes:
 
 - run id
 - timestamp
 - repo manifest snapshot reference
 - derived gate expectation id
-- executed gates
-- pass, fail, blocked, or skipped state per gate
+- recorded gate outcomes
+- pass, fail, blocked, or skipped state for each recorded gate
 - quality dimension states
 - next required human action, if any
 
@@ -106,6 +105,14 @@ One file per executed gate with:
 
 Append-only execution log with one record per invoked script or tool.
 
+### `telemetry/*`
+
+Structured local-first telemetry payloads:
+
+- `runtime-context.json` for run/session correlation plus declared mode
+- `events.ndjson` for typed records such as `log`, `span_start`, `span_end`, and `approval_transition`
+- `metrics.json` for bounded counters and timing summaries
+
 ### `logs/*`
 
 Human-readable logs safe to inspect locally or in CI. Secrets must be redacted.
@@ -116,10 +123,12 @@ V1 uses multiple internal dimensions instead of one public scalar:
 
 - `correctness`
 - `release_readiness`
-- `observability`
+- `evidence_quality`
 - `ux_confidence`
 
-Each dimension should use discrete states:
+`evidence_quality` measures whether the run emitted inspectable, redactable, contract-shaped evidence. It does not imply agent transcript or telemetry capture.
+
+Each dimension uses discrete states:
 
 - `pass`
 - `risk`
@@ -136,14 +145,23 @@ The same gate names should work:
 - in generated CI workflows
 - in future richer harness wrappers
 
+## Inspect Surface
+
+The canonical inspection path is now:
+
+- package CLI: `agentic_base inspect --kind verify`
+- generated repo helper: `./tools/inspect-evidence.sh verify`
+
+Both derive a run ledger on read from `summary.json`, `checks/*.json`, `commands.ndjson`, and `telemetry/*`. They do not create a second persisted source of truth by default.
+
 CI may attach more artifacts, but it should not invent a second gate vocabulary.
 
 ## Guardrails
 
 - evidence bundles must not capture secrets by default
 - screenshots, logs, and command outputs must be redactable
-- skipped gates must be explicit in the summary
-- a passed release-preflight still does not mean final production publish is approved
+- skipped gates must be explicit in the summary when a gate is considered but intentionally not run
+- a passed release-preflight does not mean final production publish is approved
 
 ## References
 

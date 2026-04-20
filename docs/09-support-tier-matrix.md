@@ -6,11 +6,6 @@ This document defines the truthful support envelope for Harness Contract V1 gene
 
 The goal is not to say "`agentic_base` supports Flutter." The goal is to say which Flutter product profiles get which guarantees.
 
-Status:
-
-- design target for later implementation waves
-- profiles, tiers, and gate expectations below should not be claimed by generated repos until the generator writes and validates the corresponding manifest and eval surfaces
-
 ## Support Envelope
 
 Harness Contract V1 targets mainstream Flutter product apps.
@@ -32,14 +27,16 @@ Not supported as first-class V1 profiles:
 
 ## Profile Identity Rules
 
-Every repo that claims Harness Contract V1 should declare:
+Every repo that claims Harness Contract V1 declares:
 
 - one `primary_profile`
 - zero or more `secondary_traits`
 
 `primary_profile` is the authoritative identity field.
 
-Support tier and the default gate expectations are derived from the static matrix for that profile. They are summary views, not independent sources of truth.
+Support tier and default gate expectations are derived from the static matrix for that profile. They are summary views, not independent sources of truth.
+
+Service-matrix policy is separate from support-tier policy. The canonical thin-base versus golden-path split lives in [`docs/15-default-app-service-matrix.md`](./15-default-app-service-matrix.md).
 
 `secondary_traits` describe modifiers such as:
 
@@ -51,7 +48,7 @@ Support tier and the default gate expectations are derived from the static matri
 - `multi-brand`
 - `multi-locale`
 
-Traits do not upgrade a tier by themselves. They only add context for capability selection and advisory checks.
+Traits do not upgrade a tier by themselves. They add context for capability selection and advisory checks.
 
 ## Tier Semantics
 
@@ -75,6 +72,12 @@ Tier 2 means the profile gets:
 
 Tier 2 must not silently inherit Tier 1 profile claims.
 
+## Default V1 Golden Path
+
+`subscription-commerce-app` is the canonical V1 golden path for the active rollout.
+
+That decision means it receives the strongest preset, starter-runtime, and gate hardening work. It does not make other supported profiles invalid, and it does not widen the thin base by itself.
+
 ## V1 Tier Assignment
 
 | Profile | Tier | Required Guarantees |
@@ -87,21 +90,21 @@ Tier 2 must not silently inherit Tier 1 profile claims.
 
 ## Universal Core Gates
 
-Every supported profile should get these required gates once the corresponding implementation waves land:
+Every supported profile gets these required gates:
 
 - manifest and generated-surface validation
-- deterministic setup, verify, build, and release-preflight entrypoints
+- deterministic setup, test, verify, build, and release-preflight entrypoints
 - static analysis
 - unit or widget coverage for generator-produced seams
 - at least one runnable smoke path for the generated app shell
-- explicit human gates for `product-decisions`, `credential-setup`, and `final-store-publish-approval`
+- explicit human pauses for `product-decisions`, `credential-setup`, and `final-store-publish-approval`
 - evidence bundle emission for meaningful verify and release-preflight runs
 
 ## Profile-Specific Gate Policy
 
 Tier 1 profile packs may add required checks for:
 
-- critical path navigation
+- critical-path navigation
 - authenticated or entitlement-aware flows
 - capability-specific smoke runs when a capability is enabled
 - release-surface checks that are essential to the profile claim

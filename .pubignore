@@ -1,0 +1,5 @@
+# Keep the pub.dev archive focused on consumable package assets.
+docs/
+plans/
+coverage/
+repomix-output.*

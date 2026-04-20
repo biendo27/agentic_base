@@ -25,11 +25,19 @@ const requiredHumanApprovalPauses = <String>[
 const defaultHarnessQualityDimensions = <String>[
   'correctness',
   'release_readiness',
-  'observability',
+  'evidence_quality',
   'ux_confidence',
 ];
 
 const defaultHarnessEvidenceDir = 'artifacts/evidence';
+const defaultHarnessObservabilityMode = 'local-first';
+const defaultHarnessRuntimeObservability = <String>[
+  'structured_logs',
+  'traces',
+  'metrics',
+];
+const defaultHarnessAgentLegibility = <String>['inspect', 'run_ledger'];
+const defaultHarnessOperatorReports = <String>['markdown'];
 
 enum SupportTier { tier1, tier2 }
 
@@ -85,11 +93,11 @@ extension HarnessAppProfileX on HarnessAppProfile {
 
   String get profileSummary => switch (this) {
     HarnessAppProfile.consumerApp =>
-      'User-facing app shell with first-class app-shell and navigation confidence.',
+      'Thin-base user-facing app shell with first-class app-shell and navigation confidence.',
     HarnessAppProfile.internalBusinessApp =>
       'Operator workflows with stronger authenticated and configuration expectations.',
     HarnessAppProfile.subscriptionCommerceApp =>
-      'Purchase-aware app with monetization readiness when billing modules are enabled.',
+      'Subscription-led app profile for the V1 golden path, with profile-owned commerce and evidence hardening beyond the thin base.',
     HarnessAppProfile.contentCommunityApp =>
       'Feed and engagement surfaces stay supported, but community-specific checks remain advisory.',
     HarnessAppProfile.offlineFirstFieldApp =>
@@ -108,12 +116,17 @@ extension HarnessAppProfileX on HarnessAppProfile {
 
 Map<String, String> buildHarnessProviderMap(Iterable<String> capabilities) {
   const knownProviders = <String, String>{
+    'ads': 'google_mobile_ads',
     'analytics': 'firebase_analytics',
+    'app_update': 'upgrader',
     'auth': 'firebase_auth',
+    'feature_flags': 'starter_in_memory',
     'connectivity': 'connectivity_plus',
     'crashlytics': 'firebase_crashlytics',
+    'in_app_review': 'in_app_review',
     'local_storage': 'shared_preferences',
     'permissions': 'permission_handler',
+    'payments': 'in_app_purchase',
     'secure_storage': 'flutter_secure_storage',
     'notifications': 'awesome_notifications',
     'deep_link': 'app_links',

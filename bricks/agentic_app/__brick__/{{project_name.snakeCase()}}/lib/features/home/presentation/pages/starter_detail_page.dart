@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:{{project_name.snakeCase()}}/app/i18n/translations.g.dart';
 import 'package:{{project_name.snakeCase()}}/core/extensions/context_extensions.dart';
+import 'package:{{project_name.snakeCase()}}/core/observability/observability_service.dart';
 
 @RoutePage()
 class StarterDetailPage extends StatelessWidget {
@@ -11,6 +12,10 @@ class StarterDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ObservabilityService.instance.trackScreenView(
+      'starter_detail',
+      fields: <String, Object?>{'item_id': itemId},
+    );
     final detail = _resolveDetail(context);
     return Scaffold(
       appBar: AppBar(title: Text(detail.title)),

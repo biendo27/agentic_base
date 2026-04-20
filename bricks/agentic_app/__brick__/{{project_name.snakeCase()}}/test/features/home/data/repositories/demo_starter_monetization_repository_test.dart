@@ -7,8 +7,12 @@ void main() {
 
     expect(snapshot.currentEntitlement.name, equals('Starter Preview'));
     expect(snapshot.currentEntitlement.isActive, isTrue);
+    expect(
+      snapshot.currentEntitlement.description,
+      contains('Entitlements stay separate from payments'),
+    );
     expect(snapshot.offers, hasLength(2));
     expect(snapshot.offers.first.priceLabel, equals(r'$9 / month'));
-    expect(snapshot.supportNote, contains('RevenueCat'));
+    expect(snapshot.supportNote, contains('in_app_purchase'));
   });
 }

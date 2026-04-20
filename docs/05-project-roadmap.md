@@ -4,9 +4,15 @@
 
 The original generator foundation is complete.
 
-Harness Contract V1 implementation is now landed in generator code, generated scripts, CI templates, validators, and regression tests.
+Harness Contract V1 implementation is landed in generator code, generated scripts, CI templates, validators, and regression tests.
 
-The current dry-run, toolchain-selection, and theme-contract wave has also landed in code; the remaining work is stabilization and release hygiene.
+The profile-execution rollout is also complete: `subscription-commerce-app` is now the shipped CLI default, preset resolution drives starter seams and verify policy from one source of truth, the default starter theme is the trustworthy-commerce family, and the default payment seam is store-native via `in_app_purchase`.
+
+Validation is green on `dart analyze --fatal-infos`, the doc and generator-focused tests, shell syntax checks, the generated-app smoke regression, and the full `dart test` suite.
+
+The observability contract and agent legibility milestone is now complete: repo-scoped runtime telemetry, structured evidence exports, and a single derived local inspect surface are landed and regression-covered.
+
+The next active milestone is command/orchestration modularization so large command files can be split without changing behavior.
 
 ## Completed Phases
 
@@ -20,23 +26,21 @@ The current dry-run, toolchain-selection, and theme-contract wave has also lande
 | 6. Multi-State & Bricks | Completed | State options and brick-based scaffolding in place. |
 | 7. Polish & Publish | Completed | Initial package polish and pubspec metadata present. |
 | 8. Harness Contract V1 | Completed | Typed harness manifest, support tiers, evidence outputs, approval states, and SDK policy enforcement shipped. |
+| 9. Contract-Freeze Slice 1 | Completed | Default app service matrix added; `observability` renamed to `evidence_quality`; validator and manifest parser now enforce canonical quality dimensions. |
+| 10. Profile Execution Golden Path | Completed | Profile presets, profile-aware verify gates, trustworthy-commerce starter UI, migration docs, and generated-app regression coverage shipped. |
 
 ## Active Milestone
 
-### Milestone: Contract Rollout Stabilization
+### Milestone: Observability Contract And Agent Legibility
 
 Status:
 
-- Harness Contract V1 implementation complete
-- Shared app contracts now standardize generated starter and feature data/domain boundaries on `fpdart` while keeping presentation state APIs simple
-- CLI commands now have truthful preview-only `--dry-run` paths, and real execution uses manager-aware toolchain selection for `system`, `fvm`, and `puro`
-- Generated starter contracts now use Freezed-backed response and pagination models, and the theme layer splits controller state from family composition
-- Generated locale runtime wrapping now lives outside the Slang output tree so contract verification stays stable after regeneration
-- Generated starter apps now ship a stronger Material 3 foundation with the exact default Figma palette, exact base typography and measurement tokens, `ThemeData.from(...)`, and internal adaptive helpers instead of ScreenUtil leftovers
-- The starter app now proves one day-0 journey: runtime diagnostics, detail navigation, settings, and a provider-neutral monetization screen
-- Verification no longer relies mainly on downstream boot smoke: generated apps now ship repository tests, state-runtime tests, a starter widget test, and the package smoke matrix retains only the heavy lanes that still prove unique behavior
-- Docs and release claims aligned with shipped behavior
-- Remaining work is stabilization, release hygiene, and future generator polish
+- Completed
+- Preserve Harness Contract V1 and keep `evidence_quality` as the evidence dimension only
+- Add one additive `harness.observability` support envelope to the manifest
+- Ship generated app runtime telemetry plus structured `telemetry/*` bundle files
+- Ship one derived inspect surface through `agentic_base inspect` and `./tools/inspect-evidence.sh`
+- Keep operator reporting local-first, Markdown/JSON only, and free of hosted-console claims
 
 Defined outputs:
 
@@ -44,7 +48,9 @@ Defined outputs:
 - prevent drift between generated surfaces, validators, and docs
 - keep evidence and approval outputs stable across local and CI execution
 - preserve honest Flutter SDK contract handling during future upgrades
+- keep observability local-first, redactable, and inspectable from one derived run ledger
 - ship publication/release automation only when it matches the real package workflow
+- preserve approval transitions inside verify evidence and keep `latest/` as a deterministic local pointer, not a second copied truth
 
 Key docs:
 
@@ -55,14 +61,16 @@ Key docs:
 - [`docs/12-approval-state-machine.md`](./12-approval-state-machine.md)
 - [`docs/13-flutter-adapter-boundaries.md`](./13-flutter-adapter-boundaries.md)
 - [`docs/14-sdk-and-version-policy.md`](./14-sdk-and-version-policy.md)
+- [`docs/15-default-app-service-matrix.md`](./15-default-app-service-matrix.md)
+- [`docs/16-profile-rollout-migration-guide.md`](./16-profile-rollout-migration-guide.md)
 
 ## Next Waves
 
 | Wave | Goal | Entry Gate | Exit Gate |
 | --- | --- | --- | --- |
-| 1 | Stabilize Harness Contract V1 | current suite green | no contract drift across create/init/upgrade/docs |
-| 2 | Reduce command/orchestration file size | contract stable | large command files split without behavior regressions |
-| 3 | Improve package release hygiene | stabilized docs/tests | publish flow is scripted or explicitly documented end to end |
+| 1 | Reduce command/orchestration file size | observability rollout stable | large command files split without behavior regressions |
+| 2 | Improve package release hygiene | stabilized docs/tests | publish flow is scripted or explicitly documented end to end |
+| 3 | Grow non-default profile coverage | rollout stable | more Tier 1 and Tier 2 profile packs are mechanically proven, not just documented |
 
 ## Release Gates
 
@@ -74,6 +82,7 @@ Key docs:
 - command docs, generated docs, adapters, and roadmap agree
 - generated verify/release-preflight evidence remains downloadable in downstream CI
 - `dart pub publish --dry-run` passes before publication
+- Gitflow PR routing and CI gates stay aligned with the documented branch model
 
 ## Open Questions
 

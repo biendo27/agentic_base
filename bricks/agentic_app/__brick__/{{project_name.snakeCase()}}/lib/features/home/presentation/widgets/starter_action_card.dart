@@ -5,14 +5,14 @@ class StarterActionCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.description,
-    required this.onTap,
+    this.onTap,
     super.key,
   });
 
   final IconData icon;
   final String title;
   final String description;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -33,9 +33,12 @@ class StarterActionCard extends StatelessWidget {
               Text(description, style: theme.textTheme.bodyMedium),
               const SizedBox(height: 16),
               Text(
-                'Open',
+                onTap == null ? 'Profile override disabled' : 'Open',
                 style: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.primary,
+                  color:
+                      onTap == null
+                          ? theme.colorScheme.onSurfaceVariant
+                          : theme.colorScheme.primary,
                 ),
               ),
             ],

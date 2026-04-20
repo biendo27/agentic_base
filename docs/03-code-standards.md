@@ -71,6 +71,12 @@ Each command should:
 - typed Slang output belongs in `lib/app/i18n/**`
 - generated app and feature data/domain boundaries should use `fpdart` `Either`
   wrappers from the shared contract files, not tuple returns
+- keep `lib/core/contracts` runtime-agnostic:
+  - raw data shape, defaults, and invariants that define the transport contract stay on the contract class
+  - pure convenience, serialization, and formatting helpers may stay in extensions when they depend only on the contract value and keep the contract model smaller
+  - locale-, DI-, or app-runtime-aware convenience belongs in extensions or services outside raw contracts
+- prefer extension-oriented helpers for shared contract ergonomics; move logic into services only when it needs locale, DI, or app runtime state
+- keep shared contract tests aligned with the raw-model boundary, not with convenience methods that could move between extensions and services later
 - generated app theme assembly must use `ThemeData.from(...)` on top of an
   explicit Material 3 `ColorScheme` sourced from the owned design-kit tokens
 - generated app adaptive layout should use `BuildContextX` breakpoint helpers,
@@ -92,6 +98,15 @@ Each command should:
   - `dart format --set-exit-if-changed lib bin`
   - `dart test`
 - state-specific starter apps should be validated with `GeneratedProjectContract.validate(..., stateManagement: ...)`
+
+## Git Workflow Standards
+
+- use classic Gitflow branch roles: `main`, `develop`, `feature/*`, `release/*`, `hotfix/*`
+- route feature work into `develop`, not `main`
+- route production promotion through `release/*` or `hotfix/*`, not direct `develop -> main`
+- request review only after CI is green
+- keep `main` history release-oriented; use annotated tags for package releases
+- prefer squash merges so each merged branch lands as one auditable changeset
 
 ## Documentation Standards
 

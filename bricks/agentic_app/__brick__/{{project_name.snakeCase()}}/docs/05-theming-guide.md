@@ -2,9 +2,9 @@
 
 ## Technology: Material 3
 
-The app uses Material 3 with the exact default colors from the supplied
-Material 3 Figma design kit, explicit typography,
-semantic component defaults, and Flutter-native adaptive helpers.
+The app uses Material 3 with a trustworthy-accessible-commerce palette,
+explicit typography, semantic component defaults, and Flutter-native adaptive
+helpers.
 Theme is defined in `lib/core/theme/`.
 
 ## File Structure
@@ -26,14 +26,15 @@ lib/core/theme/
 ## Color Scheme
 
 Colors are defined as `ColorScheme` objects in `color_schemes.dart`.
-The generator uses the exact light and dark values from the Material 3
-Figma `Color Modes` collection as the default family palette.
+The default family uses bright neutrals, strong blue primary actions,
+and orange emphasis so the starter reads like a mainstream commerce app
+instead of a luxury or glass-heavy demo.
 
 ## Theme Family vs Theme Mode
 
 - Theme family chooses the palette bundle, typography, extensions, and component-theme composer.
 - Theme mode chooses whether that family renders light, dark, or follows system.
-- The starter keeps one bundled family only: `material-default`.
+- The starter keeps one bundled family only: `trustworthy-commerce`.
 - `AppThemeController` stores both values so downstream apps can add another family later without rewiring the shell.
 
 Use semantic color tokens, not raw hex values in widgets:
@@ -43,7 +44,7 @@ Use semantic color tokens, not raw hex values in widgets:
 color: context.colorScheme.primary
 
 // Bad - hardcoded
-color: Color(0xFF6750A4)
+color: Color(0xFF1F5EFF)
 ```
 
 Access via context extension:
@@ -55,7 +56,8 @@ context.colorScheme.onSurface
 
 ## Typography
 
-Text styles from `context.textTheme`:
+Text styles from `context.textTheme` use Lexend for display and titles and
+Source Sans 3 for body copy and labels:
 ```dart
 context.textTheme.headlineLarge
 context.textTheme.bodyMedium

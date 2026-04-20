@@ -9,7 +9,7 @@ void main() {
       final metadata = ProjectMetadata.fromConfigMap(
         <String, dynamic>{
           'schema_version': 3,
-          'tool_version': '0.1.0',
+          'tool_version': '0.2.0',
           'project_name': 'demo_app',
           'org': 'com.example',
           'ci_provider': 'github',
@@ -35,7 +35,7 @@ void main() {
               'quality_dimensions': [
                 'correctness',
                 'release_readiness',
-                'observability',
+                'evidence_quality',
                 'ux_confidence',
               ],
             },
@@ -45,6 +45,16 @@ void main() {
                 'credential-setup',
                 'final-store-publish-approval',
               ],
+            },
+            'observability': <String, dynamic>{
+              'mode': 'local-first',
+              'runtime_observability': [
+                'structured_logs',
+                'traces',
+                'metrics',
+              ],
+              'agent_legibility': ['inspect', 'run_ledger'],
+              'operator_reports': ['markdown'],
             },
             'sdk': <String, dynamic>{
               'manager': 'fvm',
@@ -72,6 +82,11 @@ void main() {
         metadata.harness.sdk.preferredManager,
         equals(FlutterSdkManager.puro),
       );
+      expect(metadata.harness.observability.mode, equals('local-first'));
+      expect(
+        metadata.harness.observability.runtimeObservability,
+        equals(['structured_logs', 'traces', 'metrics']),
+      );
       expect(metadata.harness.sdk.version, equals('3.29.0'));
       expect(metadata.harness.sdk.preferredVersion, equals('3.28.0'));
     });
@@ -79,7 +94,7 @@ void main() {
     test('defaults harness metadata for legacy configs', () {
       final metadata = ProjectMetadata.fromConfigMap(
         <String, dynamic>{
-          'tool_version': '0.1.0',
+          'tool_version': '0.2.0',
           'project_name': 'legacy_app',
           'org': 'com.example',
           'ci_provider': 'github',
@@ -100,6 +115,43 @@ void main() {
         metadata.harness.providers['analytics'],
         equals('firebase_analytics'),
       );
+      expect(metadata.harness.observability.mode, equals('local-first'));
+    });
+
+    test('normalizes stale quality dimensions to the canonical set', () {
+      final metadata = ProjectMetadata.fromConfigMap(
+        <String, dynamic>{
+          'tool_version': '0.2.0',
+          'project_name': 'legacy_app',
+          'org': 'com.example',
+          'ci_provider': 'github',
+          'state_management': 'cubit',
+          'platforms': ['android'],
+          'flavors': ['dev', 'staging', 'prod'],
+          'modules': const <String>[],
+          'harness': <String, dynamic>{
+            'eval': <String, dynamic>{
+              'evidence_dir': 'artifacts/evidence',
+              'quality_dimensions': [
+                'correctness',
+                'release_readiness',
+                'observability',
+                'ux_confidence',
+              ],
+            },
+          },
+        },
+      );
+
+      expect(
+        metadata.harness.eval.qualityDimensions,
+        equals(const [
+          'correctness',
+          'release_readiness',
+          'evidence_quality',
+          'ux_confidence',
+        ]),
+      );
     });
 
     test(
@@ -107,7 +159,7 @@ void main() {
       () {
         final metadata = ProjectMetadata.fromConfigMap(
           <String, dynamic>{
-            'tool_version': '0.1.0',
+            'tool_version': '0.2.0',
             'project_name': 'legacy_app',
             'org': 'com.example',
             'ci_provider': 'github',

@@ -99,6 +99,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:$pkg/core/crash_reporting/crash_reporting_service.dart';
 import 'package:$pkg/core/firebase/firebase_runtime.dart';
+import 'package:$pkg/core/observability/observability_service.dart';
 
 /// Firebase implementation of [CrashReportingService].
 class FirebaseCrashReportingService implements CrashReportingService {
@@ -114,7 +115,13 @@ class FirebaseCrashReportingService implements CrashReportingService {
   Future<void> init() async {
     await ensureFirebaseInitialized();
     await _crashlytics.setCrashlyticsCollectionEnabled(true);
+    ObservabilityService.instance.log('crash_reporting.initialized');
     PlatformDispatcher.instance.onError = (error, stackTrace) {
+      ObservabilityService.instance.log(
+        'crash_reporting.platform_error',
+        level: 'error',
+        fields: {'error_type': error.runtimeType.toString()},
+      );
       _crashlytics.recordError(error, stackTrace, fatal: true);
       return true;
     };
@@ -126,13 +133,23 @@ class FirebaseCrashReportingService implements CrashReportingService {
     StackTrace? stackTrace, {
     String? reason,
     bool fatal = false,
-  }) =>
-      _crashlytics.recordError(
+  }) {
+    ObservabilityService.instance.log(
+      'crash_reporting.record_error',
+      level: fatal ? 'critical' : 'error',
+      fields: {
+        'error_type': error.runtimeType.toString(),
+        'reason_present': reason != null,
+        'fatal': fatal,
+      },
+    );
+    return _crashlytics.recordError(
         error,
         stackTrace,
         reason: reason,
         fatal: fatal,
       );
+  }
 
   @override
   Future<void> setCustomKey(String key, Object value) =>

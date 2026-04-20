@@ -71,7 +71,7 @@ Future<void> seedRequiredContractFiles(
     '.info/agentic.yaml': '''
 schema_version: 3
 project_kind: agent_ready_flutter_repo
-tool_version: 0.1.0
+tool_version: 0.2.0
 project_name: demo_app
 org: com.example
 ci_provider: github
@@ -95,6 +95,7 @@ ${thinAdapterFiles.map((doc) => '    - $doc').join('\n')}
 execution:
   setup: ./tools/setup.sh
   run: ./tools/run-dev.sh
+  test: ./tools/test.sh
   verify: ./tools/verify.sh
   build: ./tools/build.sh
   release_preflight: ./tools/release-preflight.sh
@@ -124,13 +125,24 @@ harness:
     quality_dimensions:
       - correctness
       - release_readiness
-      - observability
+      - evidence_quality
       - ux_confidence
   approvals:
     pause_on:
       - product-decisions
       - credential-setup
       - final-store-publish-approval
+  observability:
+    mode: local-first
+    runtime_observability:
+      - structured_logs
+      - traces
+      - metrics
+    agent_legibility:
+      - inspect
+      - run_ledger
+    operator_reports:
+      - markdown
   sdk:
     manager: system
     channel: stable
@@ -138,27 +150,50 @@ harness:
     policy: newest_tested
 ''',
     'AGENTS.md':
-        'Thin adapter\n./tools/verify.sh\nHarness Contract: `v1`\nEvidence directory: `artifacts/evidence`\n',
+        'Thin adapter\n./tools/verify.sh\ndocs/07-agentic-development-flow.md\nHarness Contract: `v1`\nEvidence directory: `artifacts/evidence`\nRecommended default Gitflow\n',
     'CLAUDE.md':
-        'Thin Claude adapter\nMachine contract: `.info/agentic.yaml`\nHarness Contract: `v1`\nSupport tier:\n',
+        'Thin Claude adapter\nMachine contract: `.info/agentic.yaml`\nHarness Contract: `v1`\nSupport tier:\ndocs/07-agentic-development-flow.md\nRecommended default Gitflow\n',
     'README.md':
-        'An agent-ready Flutter repository\nPrimary profile: `consumer-app`\nSupport tier: `Tier 1`\nEvidence directory: `artifacts/evidence`\n./tools/run-dev.sh\nfinal production store publish remains a human approval step\n',
+        'An agent-ready Flutter repository\nPrimary profile: `consumer-app`\nSupport tier: `Tier 1`\nEvidence directory: `artifacts/evidence`\n./tools/test.sh\n./tools/run-dev.sh\ndocs/07-agentic-development-flow.md\nRecommended default Gitflow\nfinal production store publish remains a human approval step\n',
+    'docs/02-coding-standards.md':
+        'raw data shape, defaults, and invariants that define the transport contract stay on the contract class\n'
+        'pure convenience, serialization, and formatting helpers may stay in extensions when they depend only on the contract value and keep the Freezed model smaller\n'
+        'locale-, DI-, or app-runtime-aware convenience belongs in extensions or services outside raw contracts\n',
+    'docs/06-testing-guide.md':
+        './tools/test.sh\n./tools/verify.sh\n./tools/inspect-evidence.sh\nmake test\napp-shell-smoke\n',
+    'docs/07-agentic-development-flow.md':
+        '.info/agentic.yaml\n./tools/verify.sh\n./tools/inspect-evidence.sh\nRecommended default Gitflow\nfeature/*\nrelease/*\nhotfix/*\n',
+    'dart_test.yaml': 'tags:\n  app-smoke:\n',
     'tools/_common.sh': 'summary.json\n',
+    'lib/core/contracts/app_response.dart':
+        'abstract class AppResponse<T>\nextension AppResponseX<T> on AppResponse<T> {}\n',
+    'lib/core/contracts/app_list_response.dart':
+        'abstract class AppListResponse<T>\nextension AppListResponseX<T> on AppListResponse<T> {}\n',
+    'lib/core/contracts/localized_text.dart':
+        'abstract class LocalizedText\nextension LocalizedTextX on LocalizedText {}\n',
+    'lib/core/contracts/pagination.dart':
+        'extension PaginationRequestX<T extends JsonRequestFilter> on PaginationRequest<T> {}\n'
+        'extension PaginatedResponseX<T> on PaginatedResponse<T> {}\n',
     'lib/app/bootstrap.dart': stateSurface.bootstrap,
     'lib/core/di/injection.dart': stateSurface.injection,
     stateSurface.presentationPath: 'ok',
     'tools/release-preflight.sh': 'credential-setup\nUploadReady\n',
     'tools/release.sh': 'AwaitingFinalPublishApproval\n',
-    'tools/verify.sh': 'app-shell-smoke\n',
-    'pubspec.yaml': stateSurface.pubspec,
+    'tools/verify.sh':
+        '--exclude-tags app-smoke\nruntime-telemetry\nAGENTIC_RUNTIME_TELEMETRY_CONTEXT_FILE\ntest/app_smoke_test.dart\napp-shell-smoke\nstarter-journey\ntest/features/home/presentation/widgets/starter_journey_signal_card_test.dart\n',
+    'test/app_smoke_test.dart':
+        "group('app shell smoke', tags: const ['app-smoke'], () {})\n",
+    'pubspec.yaml': '${stateSurface.pubspec}  google_fonts: ^8.0.2\n',
     stateSurface.testPath: 'ok',
     'lib/core/theme/app_theme.dart': 'ThemeData.from(\n',
     'lib/core/theme/color_schemes.dart':
         'static const light = ColorScheme(\n'
         'static const dark = ColorScheme(\n'
         'primaryFixed:\n',
+    'lib/core/theme/typography.dart':
+        'GoogleFonts.lexendTextTheme\nGoogleFonts.sourceSans3TextTheme\n',
     'lib/core/extensions/context_extensions.dart': 'adaptivePagePadding\n',
-    'docs/05-theming-guide.md': 'BuildContextX\n',
+    'docs/05-theming-guide.md': 'BuildContextX\ntrustworthy-commerce\n',
     '.github/workflows/ci.yml':
         r'./tools/verify.sh ${{ github.workflow }}-${{ github.ref }} ./tools/build.sh ${{ matrix.flavor }} actions/upload-artifact@v4 flutter-version:',
     '.github/workflows/cd-dev.yml': './tools/release.sh dev firebase\n',
@@ -348,6 +383,120 @@ void main() {
           'test/features/home/data/repositories/home_repository_impl_test.dart',
         ),
       ).delete();
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test('validate rejects stale generated contract helper guidance', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-helper-policy-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+      await File(
+        p.join(tempDir.path, 'docs/02-coding-standards.md'),
+      ).writeAsString(
+        'invariants and value behavior live on the contract class\n',
+      );
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test(
+      'validate rejects testing guides that reintroduce bare flutter test',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'generated-project-contract-testing-guide-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        await seedRequiredContractFiles(tempDir.path);
+        await File(
+          p.join(tempDir.path, 'docs/06-testing-guide.md'),
+        ).writeAsString('./tools/test.sh\nflutter test\n');
+
+        expect(
+          () => GeneratedProjectContract.validate(tempDir.path),
+          throwsA(isA<ProjectGenerationException>()),
+        );
+      },
+    );
+
+    test(
+      'validate rejects verify surfaces that double-run app smoke without tag separation',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'generated-project-contract-verify-surface-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        await seedRequiredContractFiles(tempDir.path);
+        await File(
+          p.join(tempDir.path, 'tools/verify.sh'),
+        ).writeAsString('app-shell-smoke\ntest/app_smoke_test.dart\n');
+
+        expect(
+          () => GeneratedProjectContract.validate(tempDir.path),
+          throwsA(isA<ProjectGenerationException>()),
+        );
+      },
+    );
+
+    test('validate rejects stale evidence quality vocabulary', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-evidence-quality-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+      final manifest = File(p.join(tempDir.path, '.info/agentic.yaml'));
+      await manifest.writeAsString(
+        manifest.readAsStringSync().replaceFirst(
+          'evidence_quality',
+          'observability',
+        ),
+      );
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test('validate rejects secret-like values in approvals and sdk', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-secret-fields-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+      final manifest = File(p.join(tempDir.path, '.info/agentic.yaml'));
+      await manifest.writeAsString(
+        manifest.readAsStringSync().replaceFirst(
+          '  approvals:\n    pause_on:\n',
+          '  approvals:\n    token: sk_test_secret\n    pause_on:\n',
+        ),
+      );
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+
+      await seedRequiredContractFiles(tempDir.path);
+      await manifest.writeAsString(
+        manifest.readAsStringSync().replaceFirst(
+          '  sdk:\n    manager: system\n',
+          '  sdk:\n    manager: system\n    preferred_version: sk_test_secret\n',
+        ),
+      );
 
       expect(
         () => GeneratedProjectContract.validate(tempDir.path),

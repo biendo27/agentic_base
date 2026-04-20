@@ -73,6 +73,7 @@ void main() {
       expect(commands, isNotEmpty);
       expect(commands.keys, contains('create'));
       expect(commands.keys, contains('add'));
+      expect(commands.keys, contains('inspect'));
       expect(commands.keys, contains('remove'));
     });
   });

@@ -19,7 +19,7 @@ final class HarnessEvalConfig {
       evidenceDir:
           _readString(raw['evidence_dir']) ?? defaultHarnessEvidenceDir,
       qualityDimensions:
-          _readStringList(raw['quality_dimensions']) ??
+          _readCanonicalQualityDimensions(raw['quality_dimensions']) ??
           defaultHarnessQualityDimensions,
     );
   }
@@ -57,6 +57,53 @@ final class HarnessApprovalsConfig {
   }
 }
 
+final class HarnessObservabilityConfig {
+  const HarnessObservabilityConfig({
+    required this.mode,
+    required this.runtimeObservability,
+    required this.agentLegibility,
+    required this.operatorReports,
+  });
+
+  factory HarnessObservabilityConfig.fromConfigMap(dynamic raw) {
+    if (raw is! Map) {
+      return const HarnessObservabilityConfig(
+        mode: defaultHarnessObservabilityMode,
+        runtimeObservability: defaultHarnessRuntimeObservability,
+        agentLegibility: defaultHarnessAgentLegibility,
+        operatorReports: defaultHarnessOperatorReports,
+      );
+    }
+
+    return HarnessObservabilityConfig(
+      mode: _readString(raw['mode']) ?? defaultHarnessObservabilityMode,
+      runtimeObservability:
+          _readStringList(raw['runtime_observability']) ??
+          defaultHarnessRuntimeObservability,
+      agentLegibility:
+          _readStringList(raw['agent_legibility']) ??
+          defaultHarnessAgentLegibility,
+      operatorReports:
+          _readStringList(raw['operator_reports']) ??
+          defaultHarnessOperatorReports,
+    );
+  }
+
+  final String mode;
+  final List<String> runtimeObservability;
+  final List<String> agentLegibility;
+  final List<String> operatorReports;
+
+  Map<String, dynamic> toConfigMap() {
+    return <String, dynamic>{
+      'mode': mode,
+      'runtime_observability': runtimeObservability,
+      'agent_legibility': agentLegibility,
+      'operator_reports': operatorReports,
+    };
+  }
+}
+
 final class HarnessMetadata {
   const HarnessMetadata({
     required this.contractVersion,
@@ -66,6 +113,7 @@ final class HarnessMetadata {
     required this.providers,
     required this.eval,
     required this.approvals,
+    required this.observability,
     required this.sdk,
   });
 
@@ -115,6 +163,9 @@ final class HarnessMetadata {
       approvals: HarnessApprovalsConfig.fromConfigMap(
         rawHarness['approvals'],
       ),
+      observability: HarnessObservabilityConfig.fromConfigMap(
+        rawHarness['observability'],
+      ),
       sdk:
           fallbackSdk != null
               ? fallbackSdk.copyWith(
@@ -150,6 +201,12 @@ final class HarnessMetadata {
       approvals: const HarnessApprovalsConfig(
         pauseOn: requiredHumanApprovalPauses,
       ),
+      observability: const HarnessObservabilityConfig(
+        mode: defaultHarnessObservabilityMode,
+        runtimeObservability: defaultHarnessRuntimeObservability,
+        agentLegibility: defaultHarnessAgentLegibility,
+        operatorReports: defaultHarnessOperatorReports,
+      ),
       sdk:
           sdk ??
           const FlutterSdkContract(
@@ -168,6 +225,7 @@ final class HarnessMetadata {
   final Map<String, String> providers;
   final HarnessEvalConfig eval;
   final HarnessApprovalsConfig approvals;
+  final HarnessObservabilityConfig observability;
   final FlutterSdkContract sdk;
 
   SupportTier get supportTier => appProfile.supportTier;
@@ -180,6 +238,7 @@ final class HarnessMetadata {
     Map<String, String>? providers,
     HarnessEvalConfig? eval,
     HarnessApprovalsConfig? approvals,
+    HarnessObservabilityConfig? observability,
     FlutterSdkContract? sdk,
   }) {
     return HarnessMetadata(
@@ -190,6 +249,7 @@ final class HarnessMetadata {
       providers: providers ?? this.providers,
       eval: eval ?? this.eval,
       approvals: approvals ?? this.approvals,
+      observability: observability ?? this.observability,
       sdk: sdk ?? this.sdk,
     );
   }
@@ -205,6 +265,7 @@ final class HarnessMetadata {
       'providers': providers,
       'eval': eval.toConfigMap(),
       'approvals': approvals.toConfigMap(),
+      'observability': observability.toConfigMap(),
       'sdk': sdk.toConfigMap(),
     };
   }
@@ -229,6 +290,22 @@ List<String>? _readStringList(dynamic value) {
       .map((entry) => entry.toString().trim())
       .where((entry) => entry.isNotEmpty)
       .toList();
+}
+
+List<String>? _readCanonicalQualityDimensions(dynamic value) {
+  final dimensions = _readStringList(value);
+  if (dimensions == null ||
+      dimensions.length != defaultHarnessQualityDimensions.length) {
+    return null;
+  }
+
+  for (var index = 0; index < dimensions.length; index++) {
+    if (dimensions[index] != defaultHarnessQualityDimensions[index]) {
+      return null;
+    }
+  }
+
+  return dimensions;
 }
 
 Map<String, String>? _readStringMap(dynamic value) {

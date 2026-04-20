@@ -12,16 +12,35 @@ This document covers two separate surfaces:
 Current checked-in automation stays GitHub-hosted and lives in:
 
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
+- [`.github/workflows/gitflow-guard.yml`](../.github/workflows/gitflow-guard.yml)
 
-It runs on pushes and pull requests to `main` and does:
+The repo now follows classic Gitflow with `main` as the release branch and `develop` as the integration branch.
+
+Checked-in automation now runs on:
+
+- pull requests into `main`
+- pull requests into `develop`
+- pushes to `main`
+- pushes to `develop`
+- pushes to `release/*`
+- pushes to `hotfix/*`
+
+The CI workflow does:
 
 - `dart pub get`
 - `dart analyze --fatal-infos`
 - `dart format --set-exit-if-changed lib bin test`
 - `dart test`
-- generated-app smoke coverage for `--ci-provider github`
-- generated-app smoke coverage for `--ci-provider gitlab`
+- generated-app smoke coverage
 - a pinned macOS generated-app native gate that fresh-generates an app and runs `./tools/ci-check.sh`
+
+The Gitflow guard workflow fails PRs that do not follow these routes:
+
+- `feature/*` -> `develop`
+- `release/*` -> `main`
+- `hotfix/*` -> `main`
+
+Back-merges from `release/*` and `hotfix/*` into `develop` remain required after production merges. This is policy plus PR-route validation, not true branch protection, because GitHub branch protection is unavailable on the current private-repo plan.
 
 There is no checked-in pub.dev publish workflow in this repo today. Release automation focus remains on generated downstream repos.
 
@@ -44,15 +63,17 @@ The last command is an inferred best practice from the package metadata in `pubs
 Verified from [`pubspec.yaml`](../pubspec.yaml):
 
 - package name: `agentic_base`
-- version: `0.1.0`
+- version: `0.2.0`
 - homepage/repository/issue tracker are set
+- `.pubignore` excludes repo-only `docs/`, `plans/`, coverage output, and repomix artifacts from the published archive while `README.md` links back to the repository docs
 
 Recommended manual publish sequence:
 
 1. update `version:` in `pubspec.yaml`
-2. run the local validation commands above
-3. run `dart pub publish`
-4. tag the release in git
+2. review `.pubignore` and `README.md` links so the archive only ships package assets
+3. run the local validation commands above
+4. run `dart pub publish`
+5. create an annotated release tag in the form `vX.Y.Z`
 
 This sequence is partly inference. The repo does not currently codify pub.dev publishing in scripts or workflows.
 
@@ -85,7 +106,9 @@ Supported environments in source:
   - `./tools/build.sh <env> [artifact]`
   - `./tools/release-preflight.sh <env> <target>`
   - `./tools/release.sh <env> <target>`
+  - `./tools/inspect-evidence.sh <run-kind> [latest|run-id] [markdown|json]`
 - generated workflows upload `artifacts/evidence/**` so verify and release-preflight runs stay inspectable outside the runner
+- generated evidence bundles now also include `telemetry/*` files for runtime context, events, and metrics
 - final production store publish remains a human approval boundary even when upload plumbing is automated
 
 ### GitLab generated projects
@@ -111,6 +134,35 @@ Generated-project GitLab support does not mean this package repo itself runs on 
 
 GitLab production protection is still configured in GitLab project settings via protected environments. The scaffold keeps production deploy jobs manual, but GitLab UI policy must still be applied by the downstream repo owner.
 
+## Downstream Team Workflow
+
+Generated repos document classic Gitflow as a recommended default team workflow:
+
+- `feature/*` -> `develop`
+- `release/*` -> `main`
+- `hotfix/*` -> `main`
+- back-merge `release/*` and `hotfix/*` into `develop` after production promotion
+
+That guidance lives in generated `README.md`, `docs/07-agentic-development-flow.md`, `AGENTS.md`, and `CLAUDE.md`. It is not persisted in `.info/agentic.yaml`, and this wave does not add generated branch-guard automation for downstream repos.
+
+## Repo GitHub Settings
+
+The repo-level GitHub settings target this merge policy:
+
+- squash merge enabled
+- merge commit disabled
+- rebase merge disabled
+- auto-delete merged branches enabled
+- auto-merge enabled for PRs after checks pass
+
+Server-side branch protection for `main` and `develop` is still blocked by the current GitHub private-repo plan. Once branch protection is available, require:
+
+- CI checks from `CI` and `Gitflow Guard`
+- pull request before merge
+- approval after checks pass
+- no direct pushes to `main`
+- no direct pushes to `develop`
+
 ## Harness Contract V1 Status
 
 The generated deployment and release surfaces now implement the Harness Contract V1 deployment-facing guarantees:
@@ -118,6 +170,7 @@ The generated deployment and release surfaces now implement the Harness Contract
 - named release-preflight and evidence outputs
 - explicit approval states shared across local and CI runs
 - tier-aware gate packs derived from the declared profile/support tier
+- derived inspect/report surfaces that read local bundle files instead of a hosted service
 - declared Flutter toolchain checks before release-preflight and release flows
 
 The human boundary remains unchanged: final production publish is still not automated away.
@@ -132,4 +185,5 @@ The contract details are documented in:
 
 - [`lib/src/cli/commands/deploy_command.dart`](../lib/src/cli/commands/deploy_command.dart)
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
+- [`.github/workflows/gitflow-guard.yml`](../.github/workflows/gitflow-guard.yml)
 - [`pubspec.yaml`](../pubspec.yaml)
