@@ -13,6 +13,7 @@ Current checked-in automation stays GitHub-hosted and lives in:
 
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
 - [`.github/workflows/gitflow-guard.yml`](../.github/workflows/gitflow-guard.yml)
+- [`.github/workflows/publish.yml`](../.github/workflows/publish.yml)
 
 The repo now follows classic Gitflow with `main` as the release branch and `develop` as the integration branch.
 
@@ -32,6 +33,7 @@ The CI workflow does:
 - `dart format --set-exit-if-changed lib bin test`
 - `dart test`
 - generated-app smoke coverage
+- pub.dev package archive dry-run with zero warnings
 - a pinned macOS generated-app native gate that fresh-generates an app and runs `./tools/ci-check.sh`
 
 The Gitflow guard workflow fails PRs that do not follow these routes:
@@ -42,7 +44,15 @@ The Gitflow guard workflow fails PRs that do not follow these routes:
 
 Back-merges from `release/*` and `hotfix/*` into `develop` remain required after production merges. This is policy plus PR-route validation, not true branch protection, because GitHub branch protection is unavailable on the current private-repo plan.
 
-There is no checked-in pub.dev publish workflow in this repo today. Release automation focus remains on generated downstream repos.
+The publish workflow releases this package to pub.dev when a version tag is pushed. It intentionally does not publish on normal branch pushes or pull requests.
+
+Before publishing, the workflow validates:
+
+- the pushed tag matches `vX.Y.Z`
+- the tag version matches `version:` in [`pubspec.yaml`](../pubspec.yaml)
+- the tag commit is already reachable from `origin/main`
+
+The publish job uses Dart's official GitHub OIDC flow through `dart-lang/setup-dart/.github/workflows/publish.yml@v1`. It does not require a long-lived pub.dev token in GitHub secrets.
 
 ## Local Validation Before Any Package Release
 
@@ -56,7 +66,7 @@ dart test
 dart pub publish --dry-run
 ```
 
-The last command is an inferred best practice from the package metadata in `pubspec.yaml`. It is not automated in this repo yet.
+The CI workflow also runs `dart pub publish --dry-run` and fails unless the dry-run reports zero warnings.
 
 ## Package Publication Notes
 
@@ -72,10 +82,28 @@ Recommended manual publish sequence:
 1. update `version:` in `pubspec.yaml`
 2. review `.pubignore` and `README.md` links so the archive only ships package assets
 3. run the local validation commands above
-4. run `dart pub publish`
-5. create an annotated release tag in the form `vX.Y.Z`
+4. merge the release branch into `main`
+5. create and push an annotated release tag in the form `vX.Y.Z` from `main`
 
-This sequence is partly inference. The repo does not currently codify pub.dev publishing in scripts or workflows.
+The tag push starts the pub.dev publish workflow after the one-time setup below is complete.
+
+### One-time pub.dev automated publishing setup
+
+Configure this in pub.dev after the package exists:
+
+- open the `agentic_base` package admin page
+- enable automated publishing
+- provider: GitHub Actions
+- repository: `biendo27/agentic_base`
+- tag pattern: `v{{version}}`
+
+Configure this in GitHub:
+
+- create an environment named `pub.dev`
+- require a reviewer for that environment if you want a final human gate before publishing
+- keep release tags created from `main` after Gitflow promotion
+
+The GitHub workflow passes `environment: pub.dev` to the official Dart reusable publish workflow, so GitHub environment approvals can pause production publishing without storing pub.dev credentials in the repo.
 
 ## Generated-Project Deployment
 
@@ -186,4 +214,5 @@ The contract details are documented in:
 - [`lib/src/cli/commands/deploy_command.dart`](../lib/src/cli/commands/deploy_command.dart)
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
 - [`.github/workflows/gitflow-guard.yml`](../.github/workflows/gitflow-guard.yml)
+- [`.github/workflows/publish.yml`](../.github/workflows/publish.yml)
 - [`pubspec.yaml`](../pubspec.yaml)
