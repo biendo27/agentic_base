@@ -9,7 +9,7 @@ This document defines the V1 SDK manager and version policy.
 Status:
 
 - implemented for `create`, `init`, `add`, `remove`, `gen`, `eval`, `doctor`,
-  and `upgrade`
+  `firebase setup`, and `upgrade`
 - preview-only `--dry-run` paths reuse the declared manager contract without
   probing local toolchains or executing Flutter/Dart commands
 - `.info/agentic.yaml` now persists resolved `manager` / `version` plus manifest-facing `preferred_manager` / `preferred_version`
@@ -85,6 +85,19 @@ Version movement should be explicit:
 2. package docs and manifest schema are updated with the newly tested version window
 3. `agentic_base upgrade` syncs generator-owned surfaces without silently jumping SDKs
 4. moving to a newer SDK requires an explicit repo-level action and fresh evidence
+
+## Dependency Catalog Policy
+
+Generated module installs remain deterministic: normal `create`, `add`, `init`, and `upgrade` flows use the repo-owned dependency catalog, not live pub.dev resolution.
+
+Maintainers refresh constraints explicitly before a release:
+
+1. run `dart run tool/refresh_dependency_catalog.dart` for a report-only inventory
+2. test candidate upgrades in a generated temp app
+3. record `flutter pub outdated` / upgrade results and generated-app verification evidence
+4. update the static catalog only after compatibility is proven
+
+Known-broken packages stay forbidden in tests. `uni_links` is removed from the deep-link lane; `app_links` is the provider.
 
 ## Failure Rules
 

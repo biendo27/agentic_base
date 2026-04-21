@@ -65,7 +65,8 @@ context:
 
 execution:
   setup: ./tools/setup.sh
-  run: ./tools/run-dev.sh
+  firebase_setup: ./tools/setup-firebase.sh
+  run: ./tools/run.sh
   test: ./tools/test.sh
   verify: ./tools/verify.sh
   build: ./tools/build.sh

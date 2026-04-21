@@ -32,7 +32,6 @@ const moduleDependencyConstraints = <String, String>{
   'sign_in_with_apple': '^7.0.1',
   'talker': '^5.1.16',
   'talker_dio_logger': '^5.1.16',
-  'uni_links': '^0.5.1',
   'upgrader': '^13.0.0',
 };
 

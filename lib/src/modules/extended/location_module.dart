@@ -37,11 +37,11 @@ class LocationModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/location/location_service.dart',
+        'lib/services/location/location_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/location/geolocator_location_service.dart',
+        'lib/services/location/geolocator_location_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -51,8 +51,8 @@ class LocationModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/location/location_service.dart')
-      ..deleteFile('lib/core/location/geolocator_location_service.dart')
+      ..deleteFile('lib/services/location/location_service.dart')
+      ..deleteFile('lib/services/location/geolocator_location_service.dart')
       ..markUninstalled(name);
   }
 
@@ -92,7 +92,7 @@ abstract class LocationService {
   String _implContent(String pkg) => '''
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:$pkg/core/location/location_service.dart';
+import 'package:$pkg/services/location/location_service.dart';
 
 /// geolocator + geocoding implementation of [LocationService].
 class GeolocatorLocationService implements LocationService {

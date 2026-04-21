@@ -1,4 +1,7 @@
-.PHONY: gen test build clean setup format lint release ci-check run-dev verify release-preflight
+FLAVOR ?= prod
+TARGET ?= firebase
+
+.PHONY: gen test build clean setup format lint release ci-check run verify release-preflight
 
 gen:
 	./tools/gen.sh
@@ -15,8 +18,8 @@ clean:
 setup:
 	./tools/setup.sh
 
-run-dev:
-	./tools/run-dev.sh
+run:
+	./tools/run.sh $(FLAVOR)
 
 verify:
 	./tools/verify.sh
@@ -31,7 +34,7 @@ release:
 	./tools/release.sh
 
 release-preflight:
-	./tools/release-preflight.sh
+	./tools/release-preflight.sh $(FLAVOR) $(TARGET)
 
 ci-check:
 	./tools/ci-check.sh

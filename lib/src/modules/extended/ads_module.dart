@@ -27,8 +27,7 @@ class AdsModule implements AgenticModule {
 
   @override
   List<String> get platformSteps => [
-    'iOS: add GADApplicationIdentifier to Info.plist.',
-    'Android: add com.google.android.gms.ads.APPLICATION_ID meta-data to AndroidManifest.xml.',
+    'Dev/staging use official AdMob sample application IDs by default.',
     'Replace test ad unit IDs in AdsServiceImpl with production IDs before release.',
   ];
 
@@ -37,13 +36,18 @@ class AdsModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/ads/ads_service.dart',
+        'lib/services/ads/ads_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/ads/admob_ads_service.dart',
+        'lib/services/ads/admob_ads_service.dart',
         _implContent(ctx.projectName),
       )
+      ..mutateTextFile(
+        'android/app/src/main/AndroidManifest.xml',
+        _ensureAndroidAdMobAppId,
+      )
+      ..mutateTextFile('ios/Runner/Info.plist', _ensureIosAdMobAppId)
       ..markInstalled(name);
   }
 
@@ -51,8 +55,8 @@ class AdsModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/ads/ads_service.dart')
-      ..deleteFile('lib/core/ads/admob_ads_service.dart')
+      ..deleteFile('lib/services/ads/ads_service.dart')
+      ..deleteFile('lib/services/ads/admob_ads_service.dart')
       ..markUninstalled(name);
   }
 
@@ -85,7 +89,10 @@ abstract class AdsService {
 
   String _implContent(String pkg) => '''
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:$pkg/core/ads/ads_service.dart';
+import 'package:$pkg/services/ads/ads_service.dart';
+
+const _adsEnabled = bool.fromEnvironment('ADS_ENABLED');
+const _adsConsentGranted = bool.fromEnvironment('ADS_CONSENT_GRANTED');
 
 /// AdMob implementation of [AdsService].
 class AdmobAdsService implements AdsService {
@@ -94,11 +101,13 @@ class AdmobAdsService implements AdsService {
 
   @override
   Future<void> initialize() async {
+    if (!_canRequestAds) return;
     await MobileAds.instance.initialize();
   }
 
   @override
   Future<void> loadInterstitial(String adUnitId) async {
+    if (!_canRequestAds) return;
     await InterstitialAd.load(
       adUnitId: adUnitId,
       request: const AdRequest(),
@@ -111,12 +120,14 @@ class AdmobAdsService implements AdsService {
 
   @override
   Future<void> showInterstitial() async {
+    if (!_canRequestAds) return;
     await _interstitialAd?.show();
     _interstitialAd = null;
   }
 
   @override
   Future<void> loadRewarded(String adUnitId) async {
+    if (!_canRequestAds) return;
     await RewardedAd.load(
       adUnitId: adUnitId,
       request: const AdRequest(),
@@ -131,11 +142,35 @@ class AdmobAdsService implements AdsService {
   Future<void> showRewarded({
     required void Function(String type, int amount) onReward,
   }) async {
+    if (!_canRequestAds) return;
     await _rewardedAd?.show(
       onUserEarnedReward: (_, reward) => onReward(reward.type, reward.amount.toInt()),
     );
     _rewardedAd = null;
   }
+
+  bool get _canRequestAds => _adsEnabled && _adsConsentGranted;
 }
 ''';
+}
+
+String _ensureAndroidAdMobAppId(String current) {
+  const metadata =
+      '        <meta-data\n'
+      '            android:name="com.google.android.gms.ads.APPLICATION_ID"\n'
+      '            android:value="ca-app-pub-3940256099942544~3347511713" />\n';
+  if (current.contains('com.google.android.gms.ads.APPLICATION_ID')) {
+    return current;
+  }
+  return current.replaceFirst('</application>', '$metadata    </application>');
+}
+
+String _ensureIosAdMobAppId(String current) {
+  const plistEntry =
+      '  <key>GADApplicationIdentifier</key>\n'
+      '  <string>ca-app-pub-3940256099942544~1458002511</string>\n';
+  if (current.contains('GADApplicationIdentifier')) {
+    return current;
+  }
+  return current.replaceFirst('</dict>', '$plistEntry</dict>');
 }

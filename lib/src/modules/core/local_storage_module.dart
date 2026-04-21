@@ -33,11 +33,11 @@ class LocalStorageModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/storage/local_storage_service.dart',
+        'lib/services/storage/local_storage_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/storage/shared_preferences_storage_service.dart',
+        'lib/services/storage/shared_preferences_storage_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -47,8 +47,10 @@ class LocalStorageModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/storage/local_storage_service.dart')
-      ..deleteFile('lib/core/storage/shared_preferences_storage_service.dart')
+      ..deleteFile('lib/services/storage/local_storage_service.dart')
+      ..deleteFile(
+        'lib/services/storage/shared_preferences_storage_service.dart',
+      )
       ..markUninstalled(name);
   }
 
@@ -90,7 +92,7 @@ abstract class LocalStorageService {
 
   String _implContent(String pkg) => '''
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:$pkg/core/storage/local_storage_service.dart';
+import 'package:$pkg/services/storage/local_storage_service.dart';
 
 /// [SharedPreferences] implementation of [LocalStorageService].
 class SharedPreferencesStorageService implements LocalStorageService {

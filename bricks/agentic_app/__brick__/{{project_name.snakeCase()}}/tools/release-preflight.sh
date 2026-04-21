@@ -34,10 +34,23 @@ validate_release_inputs() {
       ;;
   esac
 
-  [[ -f "env/${FLAVOR}.env.example" ]] || {
-    error "Missing required file: env/${FLAVOR}.env.example"
+  local env_file="env/${FLAVOR}.env"
+  if [[ "$FLAVOR" == "prod" && ! -f "$env_file" ]]; then
+    error "Production release preflight requires env/prod.env."
     return 1
-  }
+  fi
+
+  if [[ "$FLAVOR" != "prod" && ! -f "$env_file" && ! -f "env/${FLAVOR}.env.example" ]]; then
+    error "Missing required file: env/${FLAVOR}.env or env/${FLAVOR}.env.example"
+    return 1
+  fi
+
+  if [[ "$FLAVOR" == "prod" ]]; then
+    if grep -R -q "ca-app-pub-3940256099942544" android ios 2>/dev/null; then
+      error "Production release preflight rejects sample AdMob application IDs."
+      return 1
+    fi
+  fi
 }
 
 validate_release_prerequisites() {

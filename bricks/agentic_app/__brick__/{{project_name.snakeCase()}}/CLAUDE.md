@@ -17,7 +17,8 @@ Thin Claude adapter for `{{project_name.titleCase()}}`.
 ## Commands
 
 - `./tools/setup.sh`
-- `./tools/run-dev.sh`
+- `./tools/run.sh`
+- `./tools/setup-firebase.sh --project <firebase-project-id>`
 - `./tools/test.sh`
 - `./tools/verify.sh`
 - `./tools/build.sh <dev|staging|prod> [apk|appbundle|ipa|all]`

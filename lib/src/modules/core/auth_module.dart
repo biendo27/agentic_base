@@ -29,27 +29,20 @@ class AuthModule implements AgenticModule {
   List<String> get platformSteps => [
     'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
     'Enable desired sign-in providers in the Firebase console.',
-    'Run `flutterfire configure` to generate lib/firebase_options.dart before using Firebase-backed modules.',
+    'Run `agentic_base firebase setup` to generate per-flavor Firebase options before using Firebase-backed modules.',
   ];
 
   @override
   Future<void> install(ProjectContext ctx) async {
-    ModuleInstaller(ctx)
-      ..addDependencies(dependencies)
-      ..writeFileIfAbsent(
-        'lib/firebase_options.dart',
-        firebaseOptionsStubFileContent(),
-      )
+    final installer = ModuleInstaller(ctx)..addDependencies(dependencies);
+    writeFirebaseRuntimeFiles(installer, ctx);
+    installer
       ..writeFile(
-        'lib/core/firebase/firebase_runtime.dart',
-        firebaseRuntimeFileContent(packageName: ctx.projectName),
-      )
-      ..writeFile(
-        'lib/core/auth/auth_service.dart',
+        'lib/services/auth/auth_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/auth/firebase_auth_service.dart',
+        'lib/services/auth/firebase_auth_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -59,8 +52,8 @@ class AuthModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/auth/auth_service.dart')
-      ..deleteFile('lib/core/auth/firebase_auth_service.dart')
+      ..deleteFile('lib/services/auth/auth_service.dart')
+      ..deleteFile('lib/services/auth/firebase_auth_service.dart')
       ..markUninstalled(name);
   }
 
@@ -103,35 +96,41 @@ abstract class AuthService {
 ''';
 
   String _implContent(String pkg) => '''
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:$pkg/core/auth/auth_service.dart';
-import 'package:$pkg/core/firebase/firebase_runtime.dart';
+import 'package:$pkg/services/auth/auth_service.dart';
+import 'package:$pkg/services/firebase/firebase_runtime.dart';
 
 /// Firebase implementation of [AuthService].
 class FirebaseAuthService implements AuthService {
-  FirebaseAuthService({FirebaseAuth? auth}) : _overrideAuth = auth;
-
-  final FirebaseAuth? _overrideAuth;
-
-  FirebaseAuth get _auth => _overrideAuth ?? FirebaseAuth.instance;
+  @override
+  Future<void> init() async {
+    await ensureFirebaseInitialized();
+  }
 
   @override
-  Future<void> init() => ensureFirebaseInitialized();
+  Stream<String?> get authStateChanges async* {
+    final auth = await _optionalAuth();
+    if (auth == null) {
+      yield null;
+      return;
+    }
+    yield* auth.authStateChanges().map((user) => user?.uid);
+  }
 
   @override
-  Stream<String?> get authStateChanges =>
-      _auth.authStateChanges().map((user) => user?.uid);
-
-  @override
-  String? get currentUserId => _auth.currentUser?.uid;
+  String? get currentUserId {
+    if (Firebase.apps.isEmpty) return null;
+    return FirebaseAuth.instance.currentUser?.uid;
+  }
 
   @override
   Future<String> signInWithEmailAndPassword({
     required String email,
     required String password,
   }) async {
-    await init();
-    final credential = await _auth.signInWithEmailAndPassword(
+    final auth = await _requireAuth();
+    final credential = await auth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
@@ -143,8 +142,8 @@ class FirebaseAuthService implements AuthService {
     required String email,
     required String password,
   }) async {
-    await init();
-    final credential = await _auth.createUserWithEmailAndPassword(
+    final auth = await _requireAuth();
+    final credential = await auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
@@ -153,14 +152,30 @@ class FirebaseAuthService implements AuthService {
 
   @override
   Future<void> signOut() async {
-    await init();
-    await _auth.signOut();
+    final auth = await _optionalAuth();
+    await auth?.signOut();
   }
 
   @override
   Future<void> sendPasswordResetEmail(String email) async {
-    await init();
-    await _auth.sendPasswordResetEmail(email: email);
+    final auth = await _requireAuth();
+    await auth.sendPasswordResetEmail(email: email);
+  }
+
+  Future<FirebaseAuth?> _optionalAuth() async {
+    if (!await ensureFirebaseInitialized()) return null;
+    return FirebaseAuth.instance;
+  }
+
+  Future<FirebaseAuth> _requireAuth() async {
+    final auth = await _optionalAuth();
+    if (auth == null) {
+      throw StateError(
+        'Firebase Auth is not configured for this flavor. '
+        'Run `agentic_base firebase setup` before using auth operations.',
+      );
+    }
+    return auth;
   }
 }
 ''';

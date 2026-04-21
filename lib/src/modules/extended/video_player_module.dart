@@ -41,11 +41,11 @@ class VideoPlayerModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/video_player/video_player_service.dart',
+        'lib/services/video_player/video_player_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/video_player/media_kit_video_service.dart',
+        'lib/services/video_player/media_kit_video_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -55,8 +55,8 @@ class VideoPlayerModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/video_player/video_player_service.dart')
-      ..deleteFile('lib/core/video_player/media_kit_video_service.dart')
+      ..deleteFile('lib/services/video_player/video_player_service.dart')
+      ..deleteFile('lib/services/video_player/media_kit_video_service.dart')
       ..markUninstalled(name);
   }
 
@@ -89,7 +89,7 @@ abstract class VideoPlayerService {
 
   String _implContent(String pkg) => '''
 import 'package:media_kit/media_kit.dart';
-import 'package:$pkg/core/video_player/video_player_service.dart';
+import 'package:$pkg/services/video_player/video_player_service.dart';
 
 /// media_kit implementation of [VideoPlayerService].
 ///

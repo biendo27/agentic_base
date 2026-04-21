@@ -38,6 +38,7 @@ The CLI runner registers:
 - `gen`
 - `eval`
 - `doctor`
+- `firebase`
 - `init`
 - `upgrade`
 - `deploy`
@@ -58,6 +59,9 @@ Generated starter apps now follow one explicit ownership contract:
 - duplicate root shell files such as `lib/app.dart`, `lib/flavors.dart`, and `lib/pages/**` are deleted and asserted absent
 - starter scaffolds now keep cubit, riverpod, and mobx output aligned with the selected state profile
 - starter scaffolds now render `starter_runtime_profile.dart` plus consent and entitlement seams from one profile-owned preset resolver
+- installed module services now land under `lib/services/<capability>/`, while `lib/core` stays focused on app-shell infrastructure
+- GetIt/MobX module registration now comes from injectable-generated `injection.config.dart`; `module_startup.dart` owns only ordered startup hooks, and Riverpod apps use `lib/app/modules/module_providers.dart` for installed modules
+- Firebase-backed modules now emit per-flavor stubs under `lib/services/firebase/` and remain bootable until `agentic_base firebase setup` writes real provider options and native config paths
 - analytics now wires a concrete `AnalyticsService` seam into the generated DI graph and is smoke-tested
 
 The app brick also ships its own generated-project docs under the template `docs/` folder, which means this repo has two doc surfaces:
@@ -90,12 +94,14 @@ What is not present yet in this repo CI:
 - preview-only `--dry-run` now spans the command surface, and previews no longer probe Flutter managers before printing the planned reads, writes, and commands
 - manager-aware command execution now resolves `flutter`/`dart` invocations through `system`, `fvm`, or `puro`, while `doctor` reports manager fallback as a contract mismatch instead of a healthy state
 - generated app smoke coverage now asserts analytics module DI wiring in the emitted `injection.config.dart`
+- generated app smoke coverage now asserts `tools/run.sh`, `lib/services`, Firebase stubs, and absence of legacy `run-dev.sh`, root `firebase_options.dart`, and `module_registrations.dart`
 - generated app smoke coverage now exercises cubit, riverpod, and mobx starter apps
 - generated starter contracts now use file-per-contract shared models for `AppResult`, response envelopes, pagination, and runtime-agnostic localized text, while the theme layer splits family selection from theme composition
 - default profile execution now lives in `profile_preset.dart`, which resolves the default `subscription-commerce-app` module pack, provider map, gate pack, and starter seam toggles from one source of truth
 - generated starter apps now ship a trustworthy-commerce family, Lexend plus Source Sans 3 via `google_fonts`, profile-aware dashboard signals, and explicit `PaymentsService`, `EntitlementService`, and `ConsentService` seams
 - the default payments lane is now store-native via `in_app_purchase`, while ads stay generated-but-safe until consent and config gates allow richer behavior
 - `ProjectMutationJournal` keeps module mutations rollback-safe while `ModuleIntegrationGenerator` rewrites the live bootstrap seam
+- `tool/refresh_dependency_catalog.dart` gives maintainers a report-first dependency refresh workflow; `uni_links` is forbidden because `app_links` owns the deep-link provider lane
 - some command/orchestration files exceed the repo's 200 LOC target:
   - `init_command.dart`
   - `brick_command.dart`

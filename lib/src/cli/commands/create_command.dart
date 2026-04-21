@@ -284,7 +284,7 @@ class CreateCommand extends Command<int> {
         ..info('')
         ..info('Next steps:')
         ..info('  cd $projectName')
-        ..info('  ./tools/run-dev.sh');
+        ..info('  ./tools/run.sh');
       return 0;
     } on Exception catch (e) {
       _logger.err('Failed to create project: $e');

@@ -58,8 +58,10 @@ Golden path means the profile receives the strongest preset resolution, starter-
 
 - `primary_profile` remains authoritative. Tier and gate-pack summaries stay derived.
 - Thin base must stay bootable without product credentials.
+- Firebase-backed golden-path modules must stay bootable before credentials by using no-op-safe runtime stubs and explicit `agentic_base firebase setup`.
 - Golden-path payments default to digital subscription expectations; external checkout remains opt-in only.
 - Ads may exist in the golden path, but they stay inactive until consent and configuration checks say otherwise.
+- Production release-preflight rejects sample AdMob application IDs and requires a real `env/prod.env`.
 - Docs, starter output, and verify behavior should ship from the same policy and be updated together.
 
 ## Rollout Rule

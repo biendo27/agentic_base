@@ -45,7 +45,7 @@ void main() {
         File(
           p.join(
             tempDir.path,
-            'lib/core/analytics/firebase_analytics_service.dart',
+            'lib/services/analytics/firebase_analytics_service.dart',
           ),
         ).readAsStringSync(),
         contains('@LazySingleton(as: AnalyticsService)'),
@@ -82,9 +82,17 @@ void main() {
         );
         expect(
           File(
-            p.join(tempDir.path, 'lib/core/firebase/firebase_runtime.dart'),
+            p.join(tempDir.path, 'lib/services/firebase/firebase_runtime.dart'),
           ).readAsStringSync(),
-          contains('DefaultFirebaseOptions.currentPlatform'),
+          contains('DefaultFirebaseOptionsForFlavor.currentPlatform'),
+        );
+        expect(
+          File(
+            p.join(tempDir.path, 'lib/services/firebase/firebase_options.dart'),
+          ).readAsStringSync(),
+          contains(
+            "import 'package:demo_app/firebase_options.dart' as legacy;",
+          ),
         );
       },
     );
@@ -97,7 +105,7 @@ void main() {
           File(
             p.join(
               tempDir.path,
-              'lib/core/remote_config/firebase_remote_config_service.dart',
+              'lib/services/remote_config/firebase_remote_config_service.dart',
             ),
           ).readAsStringSync();
 
@@ -109,7 +117,71 @@ void main() {
       expect(initBlock, isNot(contains('_config.fetchAndActivate()')));
       expect(
         implementation,
-        contains('return _config.fetchAndActivate();'),
+        contains('return config.fetchAndActivate();'),
+      );
+    });
+
+    test('installs auth with Firebase no-config guards', () async {
+      final exitCode = await runner.run(['add', 'auth']);
+
+      expect(exitCode, equals(0));
+      final implementation =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/services/auth/firebase_auth_service.dart',
+            ),
+          ).readAsStringSync();
+
+      expect(
+        implementation,
+        contains('Stream<String?> get authStateChanges async*'),
+      );
+      expect(implementation, isNot(contains('FirebaseAuthService({')));
+      expect(
+        implementation,
+        contains('if (Firebase.apps.isEmpty) return null;'),
+      );
+      expect(implementation, contains('Future<FirebaseAuth?> _optionalAuth()'));
+      expect(implementation, contains('Future<FirebaseAuth> _requireAuth()'));
+      expect(
+        implementation,
+        contains('Firebase Auth is not configured for this flavor.'),
+      );
+    });
+
+    test('installs crashlytics with safe platform error reporting', () async {
+      final exitCode = await runner.run(['add', 'crashlytics']);
+
+      expect(exitCode, equals(0));
+      final implementation =
+          File(
+            p.join(
+              tempDir.path,
+              'lib/services/crash_reporting/firebase_crash_reporting_service.dart',
+            ),
+          ).readAsStringSync();
+
+      expect(
+        implementation,
+        contains('unawaited(_recordFatalPlatformError(error, stackTrace));'),
+      );
+      expect(
+        implementation,
+        contains('Future<void> _recordFatalPlatformError'),
+      );
+      expect(implementation, contains('catch (reportingError)'));
+      expect(
+        implementation,
+        contains('crash_reporting.platform_error_report_failed'),
+      );
+      expect(
+        implementation,
+        isNot(
+          contains(
+            'unawaited(_crashlytics.recordError(error, stackTrace, fatal: true));',
+          ),
+        ),
       );
     });
 

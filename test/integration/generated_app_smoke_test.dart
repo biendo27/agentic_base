@@ -162,6 +162,7 @@ void _expectStarterRuntimeSurfaces(
         p.join(appDir, 'lib/core/theme/typography.dart'),
       ).readAsStringSync();
   final generatedReadme = File(p.join(appDir, 'README.md')).readAsStringSync();
+  final generatedMakefile = File(p.join(appDir, 'Makefile')).readAsStringSync();
   final agentsAdapter = File(p.join(appDir, 'AGENTS.md')).readAsStringSync();
   final claudeAdapter = File(p.join(appDir, 'CLAUDE.md')).readAsStringSync();
   final contextExtensions =
@@ -207,6 +208,13 @@ void _expectStarterRuntimeSurfaces(
       File(
         p.join(appDir, 'lib/core/contracts/localized_text.dart'),
       ).readAsStringSync();
+  final injectionDart =
+      File(
+        p.join(appDir, 'lib/core/di/injection.dart'),
+      ).readAsStringSync();
+  final injectionConfigFile = File(
+    p.join(appDir, 'lib/core/di/injection.config.dart'),
+  );
 
   expect(errorInterceptor, contains('ErrorHandler.handle(err)'));
   expect(errorInterceptor, contains('handler.next(mappedError);'));
@@ -265,6 +273,15 @@ void _expectStarterRuntimeSurfaces(
   expect(generatedTypography, contains('GoogleFonts.lexendTextTheme'));
   expect(generatedTypography, contains('GoogleFonts.sourceSans3TextTheme'));
   expect(generatedReadme, contains('./tools/test.sh'));
+  expect(generatedReadme, contains('./tools/run.sh'));
+  expect(generatedMakefile, contains('FLAVOR ?= prod'));
+  expect(generatedMakefile, contains('TARGET ?= firebase'));
+  expect(
+    generatedMakefile,
+    contains(r'./tools/release-preflight.sh $(FLAVOR) $(TARGET)'),
+  );
+  expect(File(p.join(appDir, 'tools/run.sh')).existsSync(), isTrue);
+  expect(File(p.join(appDir, 'tools/run-dev.sh')).existsSync(), isFalse);
   expect(
     generatedReadme,
     contains('docs/07-agentic-development-flow.md'),
@@ -292,6 +309,23 @@ void _expectStarterRuntimeSurfaces(
   expect(workflowGuide, contains('Recommended default Gitflow'));
   expect(appListResponseContract, contains('abstract class AppListResponse'));
   expect(localizedTextContract, contains('abstract class LocalizedText'));
+  if (stateManagement == 'riverpod') {
+    expect(injectionConfigFile.existsSync(), isFalse);
+    expect(injectionDart, isNot(contains('GetIt')));
+    expect(injectionDart, isNot(contains('injectable')));
+  } else {
+    final injectionConfig = injectionConfigFile.readAsStringSync();
+    for (final pluginType in [
+      'FirebaseCrashlytics',
+      'FirebaseAuth',
+      'FlutterSecureStorage',
+      'Connectivity',
+      'Talker',
+      'InAppPurchase',
+    ]) {
+      expect(injectionConfig, isNot(contains('gh<$pluginType>()')));
+    }
+  }
   expect(
     File(
       p.join(appDir, 'lib/core/theme/color_schemes.dart'),
@@ -645,12 +679,12 @@ void main() {
           File(
             p.join(
               appDir,
-              'lib/core/analytics/firebase_analytics_service.dart',
+              'lib/services/analytics/firebase_analytics_service.dart',
             ),
           ).readAsStringSync();
       final registrations =
           File(
-            p.join(appDir, 'lib/app/modules/module_registrations.dart'),
+            p.join(appDir, 'lib/app/modules/module_startup.dart'),
           ).readAsStringSync();
       final injectionConfig =
           File(
@@ -658,11 +692,14 @@ void main() {
           ).readAsStringSync();
       final firebaseOptions =
           File(
-            p.join(appDir, 'lib/firebase_options.dart'),
+            p.join(
+              appDir,
+              'lib/services/firebase/options/firebase_options_dev.dart',
+            ),
           ).readAsStringSync();
       final firebaseRuntime =
           File(
-            p.join(appDir, 'lib/core/firebase/firebase_runtime.dart'),
+            p.join(appDir, 'lib/services/firebase/firebase_runtime.dart'),
           ).readAsStringSync();
 
       expect(analyticsImpl, contains('@LazySingleton(as: AnalyticsService)'));
@@ -683,20 +720,26 @@ void main() {
       expect(
         firebaseOptions,
         contains(
-          'Run `flutterfire configure` to generate lib/firebase_options.dart.',
+          'Run `agentic_base firebase setup` to generate Firebase options.',
         ),
       );
       expect(
         firebaseRuntime,
-        contains("import 'package:$appName/firebase_options.dart';"),
+        contains(
+          "import 'package:$appName/services/firebase/firebase_options.dart';",
+        ),
       );
       expect(
         firebaseRuntime,
-        contains('DefaultFirebaseOptions.currentPlatform'),
+        contains('DefaultFirebaseOptionsForFlavor.currentPlatform'),
       );
       expect(
         firebaseRuntime,
-        contains('await Firebase.initializeApp();'),
+        contains('FirebaseRuntimeState'),
+      );
+      expect(
+        File(p.join(appDir, 'lib/firebase_options.dart')).existsSync(),
+        isFalse,
       );
     },
     skip:
@@ -722,20 +765,20 @@ void main() {
       );
       final registrations =
           File(
-            p.join(appDir, 'lib/app/modules/module_registrations.dart'),
+            p.join(appDir, 'lib/app/modules/module_startup.dart'),
           ).readAsStringSync();
       final notificationsImpl =
           File(
             p.join(
               appDir,
-              'lib/core/notifications/awesome_notifications_service.dart',
+              'lib/services/notifications/awesome_notifications_service.dart',
             ),
           ).readAsStringSync();
 
       expect(registrations, contains('NotificationsService'));
       expect(
         registrations,
-        contains('await getIt<NotificationsService>().init();'),
+        contains('start: () => getIt<NotificationsService>().init(),'),
       );
       expect(notificationsImpl, contains('_defaultNotificationChannels'));
       expect(
@@ -768,6 +811,9 @@ void main() {
         repoRoot: repoRoot,
         tempDir: tempDir,
         appName: 'smoke_release_contract_app',
+      );
+      File(p.join(appDir, 'env', 'prod.env')).writeAsStringSync(
+        File(p.join(appDir, 'env', 'prod.env.example')).readAsStringSync(),
       );
       final fakeBinDir = Directory(p.join(tempDir.path, 'fake-bin'))
         ..createSync(recursive: true);

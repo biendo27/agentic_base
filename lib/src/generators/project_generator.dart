@@ -203,7 +203,10 @@ class ProjectGenerator {
         'Configuring flavors',
         toolchain.dartCommand(['run', 'flutter_flavorizr', '-f']),
       );
-      GeneratedProjectContract.validateNativeFlavorOutputs(outputDirectory);
+      GeneratedProjectContract.validateNativeFlavorOutputs(
+        outputDirectory,
+        platforms: platforms,
+      );
     } else {
       _logger.detail(
         'Skipping flutter_flavorizr: no native platforms selected',
@@ -262,6 +265,7 @@ class ProjectGenerator {
       outputDirectory,
       ciProvider: ciProvider,
       stateManagement: stateManagement,
+      platforms: platforms,
     );
 
     // Step 12: Verify — analyze + test
