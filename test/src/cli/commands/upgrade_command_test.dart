@@ -80,7 +80,7 @@ modules: []
       expect(exitCode, equals(0));
 
       final config = AgenticConfig(projectPath: tempDir.path).read();
-      expect(config['tool_version'], equals('0.2.2'));
+      expect(config['tool_version'], equals('0.3.0'));
       expect(config['context'], isA<Map<String, dynamic>>());
       expect(config['execution'], isA<Map<String, dynamic>>());
 
