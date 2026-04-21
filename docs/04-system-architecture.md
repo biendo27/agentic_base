@@ -80,6 +80,10 @@ Files under `lib/src/modules/` define installable capabilities:
 - `ModuleRegistry` is the inventory plus dependency/conflict resolver
 - `ModuleInstaller` performs file and YAML mutations through a repo-owned dependency catalog
 - concrete modules generate service contracts, runtime wiring, bootstrap init hooks, and manual platform instructions
+- new module service contracts and implementations are generated under `lib/services/<capability>/`
+- GetIt and MobX apps rely on injectable for registrations and use `lib/app/modules/module_startup.dart` only for ordered startup hooks
+- Riverpod apps use `lib/app/modules/module_providers.dart` for providers and startup hooks
+- Firebase-backed modules share a no-op-safe runtime under `lib/services/firebase/` until explicit Firebase setup writes per-flavor options
 
 Current registry count: 27 modules.
 
@@ -141,9 +145,9 @@ layout stable under `artifacts/evidence/**`.
 1. user runs `agentic_base add <module>`
 2. command loads `.info/agentic.yaml`
 3. `ModuleRegistry` resolves the module plus transitive prerequisites
-4. concrete module writes files and dependency entries through `ModuleInstaller`, which resolves every package through the repo-owned version catalog
+4. concrete module writes files under `lib/services/<capability>/` plus dependency entries through `ModuleInstaller`, which resolves every package through the repo-owned version catalog
 5. `flutter pub get` runs
-6. `ModuleIntegrationGenerator` refreshes DI/provider registries and auto-discovers startup `init()` hooks
+6. `ModuleIntegrationGenerator` refreshes injectable annotations, Riverpod providers, and explicit allowlisted startup hooks
 7. `build_runner` plus `dart format` refresh the generated project graph
 8. manual platform steps are printed when needed
 

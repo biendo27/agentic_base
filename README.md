@@ -52,6 +52,7 @@ agentic_base inspect --kind verify
 | `gen` | Run build_runner + format pipeline. |
 | `eval [feature]` | Run tests, optionally scoped to one feature. |
 | `deploy <env>` | Trigger downstream CI/CD deployment via the persisted CI provider. |
+| `firebase setup` | Configure Firebase for generated `dev`, `staging`, and `prod` flavors after human credential approval. |
 | `doctor` | Check environment health and SDK contract drift. |
 | `brick <add|remove|list>` | Manage community Mason bricks. |
 | `init` | Add or repair the agent-ready scaffold in an existing Flutter project. |
@@ -73,9 +74,11 @@ Every generated repo ships:
 - one machine-readable source of truth in `.info/agentic.yaml`
 - one finite human-readable context surface in `README.md`, `docs/01-07`, `AGENTS.md`, and `CLAUDE.md`
 - deterministic wrapper scripts in `tools/` for setup, run, test, verify, build, release-preflight, and release
+- one generated flavor runner: `./tools/run.sh [dev|staging|stg|prod]`, where `stg` is only an operator alias
 - named verify and release-preflight evidence bundles under `artifacts/evidence/`
 - local-first runtime observability seams plus `./tools/inspect-evidence.sh` for latest-run inspection
 - a profile-aware starter journey that proves runtime diagnostics, detail navigation, settings preview, config and lifecycle signals, and separated payments, entitlement, consent, and ads seams for the selected profile
+- installed module services live under `lib/services/<capability>/`; GetIt/MobX registration comes from injectable, startup order comes from `lib/app/modules/module_startup.dart`, and Riverpod providers live in `lib/app/modules/module_providers.dart`
 - starter tests for repository seams, the selected state runtime, starter widget behavior, app boot smoke, and native readiness where the host supports it
 - explicit human checkpoints for credentials and final store publish
 
@@ -84,7 +87,7 @@ Every generated repo ships:
 - missing generator-owned docs, adapters, scripts, CI wrappers, and Fastlane files are copied in
 - conflicting thin adapters or opposite-provider CI files cause `init` to fail and roll back copied scaffold changes
 - module-added package constraints come from the repo-owned version catalog
-- Firebase-backed modules keep generated startup code compilable until real provider configuration replaces the stub surfaces
+- Firebase-backed modules keep generated startup code compilable until `agentic_base firebase setup` writes per-flavor provider configuration under `lib/services/firebase/`
 
 ## Harness Contract V1
 
@@ -133,6 +136,7 @@ lib/
 ├── app/          # Bootstrap, flavors, generated i18n
 ├── core/         # DI, network, theme, router, error handling
 ├── features/     # Starter home flow plus spec-driven feature modules
+├── services/     # Installed module services and provider runtimes
 └── shared/       # Shared widgets and utilities
 ```
 

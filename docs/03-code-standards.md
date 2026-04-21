@@ -60,6 +60,10 @@ Each command should:
   - `conflictsWith`
   - `requiresModules`
   - `platformSteps`
+- new installable module services belong under `lib/services/<capability>/`
+- `lib/core` stays for app-shell infrastructure: contracts, DI, error, network, observability, router, theme, constants, and extensions
+- GetIt/MobX service implementations must be injectable-discoverable; generated startup files must not duplicate GetIt registrations
+- Firebase-backed modules must no-op safely until `agentic_base firebase setup` has written per-flavor options and native config files
 
 ## Template And Generated-Code Rules
 
@@ -86,6 +90,7 @@ Each command should:
 - `library` + `part` stays reserved for codegen-required leaf files; prefer normal
   imports/exports for repositories, use cases, pages, services, and modules
 - when changing module integrations, update smoke tests and `GeneratedProjectContract` together
+- generated run command is `./tools/run.sh [dev|staging|stg|prod]`; `stg` is an operator alias and must not be persisted as a canonical flavor
 
 ## Testing Standards
 
