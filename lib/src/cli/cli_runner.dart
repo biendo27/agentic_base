@@ -47,7 +47,7 @@ class AgenticBaseCliRunner extends CommandRunner<int> {
 
   final AgenticLogger _logger;
 
-  static const String version = '0.2.2';
+  static const String version = '0.3.0';
 
   @override
   Future<int> run(Iterable<String> args) async {
