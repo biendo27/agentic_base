@@ -208,10 +208,13 @@ void _expectStarterRuntimeSurfaces(
       File(
         p.join(appDir, 'lib/core/contracts/localized_text.dart'),
       ).readAsStringSync();
-  final injectionConfig =
+  final injectionDart =
       File(
-        p.join(appDir, 'lib/core/di/injection.config.dart'),
+        p.join(appDir, 'lib/core/di/injection.dart'),
       ).readAsStringSync();
+  final injectionConfigFile = File(
+    p.join(appDir, 'lib/core/di/injection.config.dart'),
+  );
 
   expect(errorInterceptor, contains('ErrorHandler.handle(err)'));
   expect(errorInterceptor, contains('handler.next(mappedError);'));
@@ -306,15 +309,22 @@ void _expectStarterRuntimeSurfaces(
   expect(workflowGuide, contains('Recommended default Gitflow'));
   expect(appListResponseContract, contains('abstract class AppListResponse'));
   expect(localizedTextContract, contains('abstract class LocalizedText'));
-  for (final pluginType in [
-    'FirebaseCrashlytics',
-    'FirebaseAuth',
-    'FlutterSecureStorage',
-    'Connectivity',
-    'Talker',
-    'InAppPurchase',
-  ]) {
-    expect(injectionConfig, isNot(contains('gh<$pluginType>()')));
+  if (stateManagement == 'riverpod') {
+    expect(injectionConfigFile.existsSync(), isFalse);
+    expect(injectionDart, isNot(contains('GetIt')));
+    expect(injectionDart, isNot(contains('injectable')));
+  } else {
+    final injectionConfig = injectionConfigFile.readAsStringSync();
+    for (final pluginType in [
+      'FirebaseCrashlytics',
+      'FirebaseAuth',
+      'FlutterSecureStorage',
+      'Connectivity',
+      'Talker',
+      'InAppPurchase',
+    ]) {
+      expect(injectionConfig, isNot(contains('gh<$pluginType>()')));
+    }
   }
   expect(
     File(
