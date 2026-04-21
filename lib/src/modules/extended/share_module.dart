@@ -35,11 +35,11 @@ class ShareModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/share/share_service.dart',
+        'lib/services/share/share_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/share/share_plus_service.dart',
+        'lib/services/share/share_plus_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -49,8 +49,8 @@ class ShareModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/share/share_service.dart')
-      ..deleteFile('lib/core/share/share_plus_service.dart')
+      ..deleteFile('lib/services/share/share_service.dart')
+      ..deleteFile('lib/services/share/share_plus_service.dart')
       ..markUninstalled(name);
   }
 
@@ -73,7 +73,7 @@ abstract class ShareService {
 
   String _implContent(String pkg) => '''
 import 'package:share_plus/share_plus.dart';
-import 'package:$pkg/core/share/share_service.dart';
+import 'package:$pkg/services/share/share_service.dart';
 
 /// share_plus implementation of [ShareService].
 class SharePlusService implements ShareService {

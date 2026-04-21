@@ -37,11 +37,11 @@ class FileManagerModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/file_manager/file_manager_service.dart',
+        'lib/services/file_manager/file_manager_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/file_manager/file_manager_service_impl.dart',
+        'lib/services/file_manager/file_manager_service_impl.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -51,8 +51,8 @@ class FileManagerModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/file_manager/file_manager_service.dart')
-      ..deleteFile('lib/core/file_manager/file_manager_service_impl.dart')
+      ..deleteFile('lib/services/file_manager/file_manager_service.dart')
+      ..deleteFile('lib/services/file_manager/file_manager_service_impl.dart')
       ..markUninstalled(name);
   }
 
@@ -95,7 +95,7 @@ import 'dart:io';
 import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:$pkg/core/file_manager/file_manager_service.dart';
+import 'package:$pkg/services/file_manager/file_manager_service.dart';
 
 /// open_filex + path_provider implementation of [FileManagerService].
 class FileManagerServiceImpl implements FileManagerService {

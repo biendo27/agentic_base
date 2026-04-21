@@ -35,11 +35,11 @@ class FeatureFlagsModule implements AgenticModule {
   Future<void> install(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..writeFile(
-        'lib/core/feature_flags/feature_flags_service.dart',
+        'lib/services/feature_flags/feature_flags_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/feature_flags/feature_flags_service_impl.dart',
+        'lib/services/feature_flags/feature_flags_service_impl.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -48,8 +48,8 @@ class FeatureFlagsModule implements AgenticModule {
   @override
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
-      ..deleteFile('lib/core/feature_flags/feature_flags_service.dart')
-      ..deleteFile('lib/core/feature_flags/feature_flags_service_impl.dart')
+      ..deleteFile('lib/services/feature_flags/feature_flags_service.dart')
+      ..deleteFile('lib/services/feature_flags/feature_flags_service_impl.dart')
       ..markUninstalled(name);
   }
 
@@ -78,7 +78,7 @@ abstract class FeatureFlagsService {
 ''';
 
   String _implContent(String pkg) => '''
-import 'package:$pkg/core/feature_flags/feature_flags_service.dart';
+import 'package:$pkg/services/feature_flags/feature_flags_service.dart';
 
 /// In-memory implementation of [FeatureFlagsService].
 ///

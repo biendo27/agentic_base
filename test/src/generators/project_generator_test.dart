@@ -71,7 +71,7 @@ Future<void> seedRequiredContractFiles(
     '.info/agentic.yaml': '''
 schema_version: 3
 project_kind: agent_ready_flutter_repo
-tool_version: 0.2.2
+tool_version: 0.3.0
 project_name: demo_app
 org: com.example
 ci_provider: github
@@ -94,7 +94,8 @@ ${thinAdapterFiles.map((doc) => '    - $doc').join('\n')}
   ci_provider: github
 execution:
   setup: ./tools/setup.sh
-  run: ./tools/run-dev.sh
+  firebase_setup: ./tools/setup-firebase.sh
+  run: ./tools/run.sh
   test: ./tools/test.sh
   verify: ./tools/verify.sh
   build: ./tools/build.sh
@@ -154,7 +155,7 @@ harness:
     'CLAUDE.md':
         'Thin Claude adapter\nMachine contract: `.info/agentic.yaml`\nHarness Contract: `v1`\nSupport tier:\ndocs/07-agentic-development-flow.md\nRecommended default Gitflow\n',
     'README.md':
-        'An agent-ready Flutter repository\nPrimary profile: `consumer-app`\nSupport tier: `Tier 1`\nEvidence directory: `artifacts/evidence`\n./tools/test.sh\n./tools/run-dev.sh\ndocs/07-agentic-development-flow.md\nRecommended default Gitflow\nfinal production store publish remains a human approval step\n',
+        'An agent-ready Flutter repository\nPrimary profile: `consumer-app`\nSupport tier: `Tier 1`\nEvidence directory: `artifacts/evidence`\n./tools/test.sh\n./tools/run.sh\ndocs/07-agentic-development-flow.md\nRecommended default Gitflow\nfinal production store publish remains a human approval step\n',
     'docs/02-coding-standards.md':
         'raw data shape, defaults, and invariants that define the transport contract stay on the contract class\n'
         'pure convenience, serialization, and formatting helpers may stay in extensions when they depend only on the contract value and keep the Freezed model smaller\n'
@@ -165,6 +166,7 @@ harness:
         '.info/agentic.yaml\n./tools/verify.sh\n./tools/inspect-evidence.sh\nRecommended default Gitflow\nfeature/*\nrelease/*\nhotfix/*\n',
     'dart_test.yaml': 'tags:\n  app-smoke:\n',
     'tools/_common.sh': 'summary.json\n',
+    'tools/setup-firebase.sh': 'agentic_base firebase setup\n',
     'lib/core/contracts/app_response.dart':
         'abstract class AppResponse<T>\nextension AppResponseX<T> on AppResponse<T> {}\n',
     'lib/core/contracts/app_list_response.dart':
@@ -687,6 +689,49 @@ void main() {
         expect(
           () => GeneratedProjectContract.validate(tempDir.path),
           returnsNormally,
+        );
+      },
+    );
+
+    test(
+      'validate skips native flavor markers for unselected platforms',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'generated-project-contract-platforms-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        await seedRequiredContractFiles(tempDir.path);
+        final configFile = File(p.join(tempDir.path, '.info/agentic.yaml'));
+        configFile.writeAsStringSync(
+          configFile
+              .readAsStringSync()
+              .replaceFirst('  - ios\n', '')
+              .replaceFirst('  - web\n', ''),
+        );
+        await Directory(p.join(tempDir.path, 'android/app')).create(
+          recursive: true,
+        );
+        await File(
+          p.join(tempDir.path, 'android/app/flavorizr.gradle.kts'),
+        ).writeAsString('flavors');
+        await File(
+          p.join(tempDir.path, 'android/app/build.gradle.kts'),
+        ).writeAsString('apply { from("flavorizr.gradle.kts") }');
+        await Directory(p.join(tempDir.path, 'ios/Flutter')).create(
+          recursive: true,
+        );
+
+        expect(
+          () => GeneratedProjectContract.validate(tempDir.path),
+          returnsNormally,
+        );
+        expect(
+          () => GeneratedProjectContract.validateNativeFlavorOutputs(
+            tempDir.path,
+            platforms: const ['ios'],
+          ),
+          throwsA(isA<ProjectGenerationException>()),
         );
       },
     );

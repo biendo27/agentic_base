@@ -30,27 +30,20 @@ class RemoteConfigModule implements AgenticModule {
   List<String> get platformSteps => [
     'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
     'Define default parameter values in the Firebase console.',
-    'Run `flutterfire configure` to generate lib/firebase_options.dart before using Firebase-backed modules.',
+    'Run `agentic_base firebase setup` to generate per-flavor Firebase options before using Firebase-backed modules.',
   ];
 
   @override
   Future<void> install(ProjectContext ctx) async {
-    ModuleInstaller(ctx)
-      ..addDependencies(dependencies)
-      ..writeFileIfAbsent(
-        'lib/firebase_options.dart',
-        firebaseOptionsStubFileContent(),
-      )
+    final installer = ModuleInstaller(ctx)..addDependencies(dependencies);
+    writeFirebaseRuntimeFiles(installer, ctx);
+    installer
       ..writeFile(
-        'lib/core/firebase/firebase_runtime.dart',
-        firebaseRuntimeFileContent(packageName: ctx.projectName),
-      )
-      ..writeFile(
-        'lib/core/remote_config/remote_config_service.dart',
+        'lib/services/remote_config/remote_config_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/remote_config/firebase_remote_config_service.dart',
+        'lib/services/remote_config/firebase_remote_config_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -60,8 +53,10 @@ class RemoteConfigModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/remote_config/remote_config_service.dart')
-      ..deleteFile('lib/core/remote_config/firebase_remote_config_service.dart')
+      ..deleteFile('lib/services/remote_config/remote_config_service.dart')
+      ..deleteFile(
+        'lib/services/remote_config/firebase_remote_config_service.dart',
+      )
       ..markUninstalled(name);
   }
 
@@ -94,20 +89,20 @@ abstract class RemoteConfigService {
 
   String _implContent(String pkg) => '''
 import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:$pkg/core/remote_config/remote_config_service.dart';
-import 'package:$pkg/core/firebase/firebase_runtime.dart';
+import 'package:$pkg/services/remote_config/remote_config_service.dart';
+import 'package:$pkg/services/firebase/firebase_runtime.dart';
 
 /// Firebase implementation of [RemoteConfigService].
 class FirebaseRemoteConfigService implements RemoteConfigService {
-  FirebaseRemoteConfigService()
-      : _config = FirebaseRemoteConfig.instance;
+  FirebaseRemoteConfig? _config;
 
-  final FirebaseRemoteConfig _config;
+  FirebaseRemoteConfig get _readyConfig =>
+      _config ??= FirebaseRemoteConfig.instance;
 
   @override
   Future<void> init() async {
-    await ensureFirebaseInitialized();
-    await _config.setConfigSettings(
+    if (!await ensureFirebaseInitialized()) return;
+    await _readyConfig.setConfigSettings(
       RemoteConfigSettings(
         fetchTimeout: const Duration(seconds: 15),
         minimumFetchInterval: const Duration(hours: 1),
@@ -118,19 +113,23 @@ class FirebaseRemoteConfigService implements RemoteConfigService {
   @override
   Future<bool> fetchAndActivate() async {
     await init();
-    return _config.fetchAndActivate();
+    final config = _config;
+    if (config == null) return false;
+    return config.fetchAndActivate();
   }
 
   @override
   String getString(String key, {String defaultValue = ''}) {
-    final value = _config.getString(key);
+    final config = _config;
+    if (config == null) return defaultValue;
+    final value = config.getString(key);
     return value.isEmpty ? defaultValue : value;
   }
 
   @override
   bool getBool(String key, {bool defaultValue = false}) {
     try {
-      return _config.getBool(key);
+      return _config?.getBool(key) ?? defaultValue;
     } on Exception catch (_) {
       return defaultValue;
     }
@@ -139,7 +138,7 @@ class FirebaseRemoteConfigService implements RemoteConfigService {
   @override
   int getInt(String key, {int defaultValue = 0}) {
     try {
-      return _config.getInt(key);
+      return _config?.getInt(key) ?? defaultValue;
     } on Exception catch (_) {
       return defaultValue;
     }
@@ -148,7 +147,7 @@ class FirebaseRemoteConfigService implements RemoteConfigService {
   @override
   double getDouble(String key, {double defaultValue = 0.0}) {
     try {
-      return _config.getDouble(key);
+      return _config?.getDouble(key) ?? defaultValue;
     } on Exception catch (_) {
       return defaultValue;
     }

@@ -36,11 +36,11 @@ class SecureStorageModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/secure_storage/secure_storage_service.dart',
+        'lib/services/secure_storage/secure_storage_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/secure_storage/flutter_secure_storage_service.dart',
+        'lib/services/secure_storage/flutter_secure_storage_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -50,9 +50,9 @@ class SecureStorageModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/secure_storage/secure_storage_service.dart')
+      ..deleteFile('lib/services/secure_storage/secure_storage_service.dart')
       ..deleteFile(
-        'lib/core/secure_storage/flutter_secure_storage_service.dart',
+        'lib/services/secure_storage/flutter_secure_storage_service.dart',
       )
       ..markUninstalled(name);
   }
@@ -85,14 +85,11 @@ abstract class SecureStorageService {
 
   String _implContent(String pkg) => '''
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:$pkg/core/secure_storage/secure_storage_service.dart';
+import 'package:$pkg/services/secure_storage/secure_storage_service.dart';
 
 /// [FlutterSecureStorage] implementation of [SecureStorageService].
 class FlutterSecureStorageService implements SecureStorageService {
-  FlutterSecureStorageService({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
-
-  final FlutterSecureStorage _storage;
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   @override
   Future<String?> read(String key) => _storage.read(key: key);

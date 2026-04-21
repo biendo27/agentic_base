@@ -5,6 +5,7 @@ import 'package:agentic_base/src/cli/commands/deploy_command.dart';
 import 'package:agentic_base/src/cli/commands/doctor_command.dart';
 import 'package:agentic_base/src/cli/commands/eval_command.dart';
 import 'package:agentic_base/src/cli/commands/feature_command.dart';
+import 'package:agentic_base/src/cli/commands/firebase_command.dart';
 import 'package:agentic_base/src/cli/commands/gen_command.dart';
 import 'package:agentic_base/src/cli/commands/init_command.dart';
 import 'package:agentic_base/src/cli/commands/inspect_command.dart';
@@ -36,6 +37,7 @@ class AgenticBaseCliRunner extends CommandRunner<int> {
     addCommand(DoctorCommand(logger: _logger));
     addCommand(EvalCommand(logger: _logger));
     addCommand(FeatureCommand(logger: _logger));
+    addCommand(FirebaseCommand(logger: _logger));
     addCommand(GenCommand(logger: _logger));
     addCommand(InitCommand(logger: _logger));
     addCommand(InspectCommand(logger: _logger));
@@ -45,7 +47,7 @@ class AgenticBaseCliRunner extends CommandRunner<int> {
 
   final AgenticLogger _logger;
 
-  static const String version = '0.2.2';
+  static const String version = '0.3.0';
 
   @override
   Future<int> run(Iterable<String> args) async {

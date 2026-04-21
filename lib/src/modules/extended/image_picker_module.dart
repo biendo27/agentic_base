@@ -37,11 +37,11 @@ class ImagePickerModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/image_picker/image_picker_service.dart',
+        'lib/services/image_picker/image_picker_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/image_picker/image_picker_service_impl.dart',
+        'lib/services/image_picker/image_picker_service_impl.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -51,8 +51,8 @@ class ImagePickerModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/image_picker/image_picker_service.dart')
-      ..deleteFile('lib/core/image_picker/image_picker_service_impl.dart')
+      ..deleteFile('lib/services/image_picker/image_picker_service.dart')
+      ..deleteFile('lib/services/image_picker/image_picker_service_impl.dart')
       ..markUninstalled(name);
   }
 
@@ -80,7 +80,7 @@ abstract class ImagePickerService {
   String _implContent(String pkg) => '''
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:$pkg/core/image_picker/image_picker_service.dart';
+import 'package:$pkg/services/image_picker/image_picker_service.dart';
 
 /// image_picker + image_cropper implementation of [ImagePickerService].
 class ImagePickerServiceImpl implements ImagePickerService {

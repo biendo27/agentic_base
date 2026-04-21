@@ -41,5 +41,16 @@ void main() {
         expect(entry.value.startsWith('^'), isTrue);
       }
     });
+
+    test('rejects known-broken legacy dependency pins', () {
+      expect(moduleDependencyConstraints, isNot(contains('uni_links')));
+      for (final module in ModuleRegistry.all) {
+        expect(
+          module.dependencies,
+          isNot(contains('uni_links')),
+          reason: '${module.name} must not reintroduce uni_links',
+        );
+      }
+    });
   });
 }

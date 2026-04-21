@@ -37,11 +37,11 @@ class BiometricModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/biometric/biometric_service.dart',
+        'lib/services/biometric/biometric_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/biometric/local_auth_biometric_service.dart',
+        'lib/services/biometric/local_auth_biometric_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -51,8 +51,8 @@ class BiometricModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/biometric/biometric_service.dart')
-      ..deleteFile('lib/core/biometric/local_auth_biometric_service.dart')
+      ..deleteFile('lib/services/biometric/biometric_service.dart')
+      ..deleteFile('lib/services/biometric/local_auth_biometric_service.dart')
       ..markUninstalled(name);
   }
 
@@ -82,7 +82,7 @@ abstract class BiometricService {
 
   String _implContent(String pkg) => '''
 import 'package:local_auth/local_auth.dart';
-import 'package:$pkg/core/biometric/biometric_service.dart';
+import 'package:$pkg/services/biometric/biometric_service.dart';
 
 /// local_auth implementation of [BiometricService].
 class LocalAuthBiometricService implements BiometricService {

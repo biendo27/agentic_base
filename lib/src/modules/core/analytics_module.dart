@@ -28,27 +28,20 @@ class AnalyticsModule implements AgenticModule {
   @override
   List<String> get platformSteps => [
     'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
-    'Run `flutterfire configure` to generate lib/firebase_options.dart before using Firebase-backed modules.',
+    'Run `agentic_base firebase setup` to generate per-flavor Firebase options before using Firebase-backed modules.',
   ];
 
   @override
   Future<void> install(ProjectContext ctx) async {
-    ModuleInstaller(ctx)
-      ..addDependencies(dependencies)
-      ..writeFileIfAbsent(
-        'lib/firebase_options.dart',
-        firebaseOptionsStubFileContent(),
-      )
+    final installer = ModuleInstaller(ctx)..addDependencies(dependencies);
+    writeFirebaseRuntimeFiles(installer, ctx);
+    installer
       ..writeFile(
-        'lib/core/firebase/firebase_runtime.dart',
-        firebaseRuntimeFileContent(packageName: ctx.projectName),
-      )
-      ..writeFile(
-        'lib/core/analytics/analytics_service.dart',
+        'lib/services/analytics/analytics_service.dart',
         _analyticsServiceContract(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/analytics/firebase_analytics_service.dart',
+        'lib/services/analytics/firebase_analytics_service.dart',
         _firebaseAnalyticsImpl(ctx.projectName),
       )
       ..mutateTextFile('ios/Podfile', _ensureIos15PodfilePlatform)
@@ -59,8 +52,8 @@ class AnalyticsModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/analytics/analytics_service.dart')
-      ..deleteFile('lib/core/analytics/firebase_analytics_service.dart')
+      ..deleteFile('lib/services/analytics/analytics_service.dart')
+      ..deleteFile('lib/services/analytics/firebase_analytics_service.dart')
       ..markUninstalled(name);
   }
 
@@ -92,18 +85,16 @@ abstract class AnalyticsService {
 
   String _firebaseAnalyticsImpl(String pkg) => '''
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:injectable/injectable.dart';
-import 'package:$pkg/core/analytics/analytics_service.dart';
-import 'package:$pkg/core/firebase/firebase_runtime.dart';
+import 'package:$pkg/services/analytics/analytics_service.dart';
+import 'package:$pkg/services/firebase/firebase_runtime.dart';
 
 /// Firebase implementation of [AnalyticsService].
-@LazySingleton(as: AnalyticsService)
 class FirebaseAnalyticsService implements AnalyticsService {
   FirebaseAnalytics get _analytics => FirebaseAnalytics.instance;
 
   @override
   Future<void> logEvent(String name, {Map<String, String>? parameters}) async {
-    await _ensureReady();
+    if (!await _ensureReady()) return;
     await _analytics.logEvent(name: name, parameters: parameters);
   }
 
@@ -112,13 +103,13 @@ class FirebaseAnalyticsService implements AnalyticsService {
     required String name,
     required String value,
   }) async {
-    await _ensureReady();
+    if (!await _ensureReady()) return;
     await _analytics.setUserProperty(name: name, value: value);
   }
 
   @override
   Future<void> setUserId(String? id) async {
-    await _ensureReady();
+    if (!await _ensureReady()) return;
     await _analytics.setUserId(id: id);
   }
 
@@ -127,14 +118,14 @@ class FirebaseAnalyticsService implements AnalyticsService {
     required String screenName,
     String? screenClass,
   }) async {
-    await _ensureReady();
+    if (!await _ensureReady()) return;
     await _analytics.logScreenView(
       screenName: screenName,
       screenClass: screenClass,
     );
   }
 
-  Future<void> _ensureReady() => ensureFirebaseInitialized();
+  Future<bool> _ensureReady() => ensureFirebaseInitialized();
 }
 ''';
 }

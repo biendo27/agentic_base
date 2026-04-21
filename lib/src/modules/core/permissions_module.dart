@@ -36,11 +36,11 @@ class PermissionsModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/permissions/permissions_service.dart',
+        'lib/services/permissions/permissions_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/permissions/permission_handler_service.dart',
+        'lib/services/permissions/permission_handler_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -50,8 +50,8 @@ class PermissionsModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/permissions/permissions_service.dart')
-      ..deleteFile('lib/core/permissions/permission_handler_service.dart')
+      ..deleteFile('lib/services/permissions/permissions_service.dart')
+      ..deleteFile('lib/services/permissions/permission_handler_service.dart')
       ..markUninstalled(name);
   }
 
@@ -96,7 +96,7 @@ abstract class PermissionsService {
 
   String _implContent(String pkg) => '''
 import 'package:permission_handler/permission_handler.dart';
-import 'package:$pkg/core/permissions/permissions_service.dart';
+import 'package:$pkg/services/permissions/permissions_service.dart';
 
 /// [Permission] implementation of [PermissionsService].
 class PermissionHandlerService implements PermissionsService {

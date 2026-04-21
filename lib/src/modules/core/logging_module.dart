@@ -35,11 +35,11 @@ class LoggingModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/logging/logging_service.dart',
+        'lib/services/logging/logging_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/logging/talker_logging_service.dart',
+        'lib/services/logging/talker_logging_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -49,8 +49,8 @@ class LoggingModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/logging/logging_service.dart')
-      ..deleteFile('lib/core/logging/talker_logging_service.dart')
+      ..deleteFile('lib/services/logging/logging_service.dart')
+      ..deleteFile('lib/services/logging/talker_logging_service.dart')
       ..markUninstalled(name);
   }
 
@@ -80,14 +80,12 @@ abstract class LoggingService {
 
   String _implContent(String pkg) => '''
 import 'package:talker/talker.dart';
-import 'package:$pkg/core/logging/logging_service.dart';
+import 'package:$pkg/services/logging/logging_service.dart';
 import 'package:$pkg/core/observability/observability_service.dart';
 
 /// [Talker] implementation of [LoggingService].
 class TalkerLoggingService implements LoggingService {
-  TalkerLoggingService({Talker? talker}) : _talker = talker ?? Talker();
-
-  final Talker _talker;
+  final Talker _talker = Talker();
 
   /// Expose the underlying [Talker] instance (e.g. for TalkerDioLogger).
   Talker get talker => _talker;

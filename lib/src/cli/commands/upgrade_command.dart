@@ -185,6 +185,13 @@ class UpgradeCommand extends Command<int> {
                 );
           };
       await sync(projectPath: projectPath, metadata: syncedMetadata);
+      final legacyRunScript = File(p.join(projectPath, 'tools/run-dev.sh'));
+      if (legacyRunScript.existsSync()) {
+        legacyRunScript.deleteSync();
+        _logger.warn(
+          'Removed generator-owned tools/run-dev.sh. Use ./tools/run.sh instead.',
+        );
+      }
       syncProgress.complete('Generator-owned repo assets synced');
     } on Exception catch (error) {
       syncProgress.fail('Generator-owned repo asset sync failed');

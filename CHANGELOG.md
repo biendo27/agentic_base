@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-21
+
+### Added
+
+- explicit `agentic_base firebase setup` flow with generated `tools/setup-firebase.sh` and flavor-aware Firebase option placeholders
+- generator-owned module startup policy surfaces for `lib/app/modules/module_startup.dart` and `lib/app/modules/module_providers.dart`
+
+### Changed
+
+- generated apps now use one flavor runner: `./tools/run.sh [dev|staging|stg|prod]`
+- installed module implementations now live under `lib/services/<capability>/`
+- default runtime seams now stay bootable until Firebase credentials and native config are explicitly installed
+
+### Fixed
+
+- Android-only generated projects no longer fail native flavor-output validation by requiring iOS artifacts
+- Firebase setup rollback now restores generated Dart outputs plus Android and iOS native mutations
+- Crashlytics bootstrap error forwarding now avoids uncaught future propagation from the global platform error hook
+
+### Testing
+
+- `dart analyze --fatal-infos` passed
+- focused rollback, Crashlytics, generator, and generated-app smoke coverage passed
+- generated Android-only create plus generated verify passed
+
 ## [0.2.2] - 2026-04-20
 
 ### Fixed

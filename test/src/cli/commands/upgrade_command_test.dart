@@ -48,6 +48,9 @@ modules: []
       File(
         p.join(tempDir.path, 'README.md'),
       ).writeAsStringSync('legacy readme');
+      final legacyRunScript = File(p.join(tempDir.path, 'tools/run-dev.sh'));
+      legacyRunScript.parent.createSync(recursive: true);
+      legacyRunScript.writeAsStringSync('#!/bin/sh\n');
       final bootstrapFile = File(
         p.join(tempDir.path, 'lib/app/bootstrap.dart'),
       );
@@ -77,7 +80,7 @@ modules: []
       expect(exitCode, equals(0));
 
       final config = AgenticConfig(projectPath: tempDir.path).read();
-      expect(config['tool_version'], equals('0.2.2'));
+      expect(config['tool_version'], equals('0.3.0'));
       expect(config['context'], isA<Map<String, dynamic>>());
       expect(config['execution'], isA<Map<String, dynamic>>());
 
@@ -92,6 +95,14 @@ modules: []
       expect(
         File(p.join(tempDir.path, 'tools/verify.sh')).existsSync(),
         isTrue,
+      );
+      expect(
+        File(p.join(tempDir.path, 'tools/run.sh')).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(p.join(tempDir.path, 'tools/run-dev.sh')).existsSync(),
+        isFalse,
       );
       if (!Platform.isWindows) {
         expect(

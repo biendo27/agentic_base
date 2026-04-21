@@ -38,11 +38,11 @@ class MapsModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/maps/maps_service.dart',
+        'lib/services/maps/maps_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/maps/google_maps_service.dart',
+        'lib/services/maps/google_maps_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -52,8 +52,8 @@ class MapsModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/maps/maps_service.dart')
-      ..deleteFile('lib/core/maps/google_maps_service.dart')
+      ..deleteFile('lib/services/maps/maps_service.dart')
+      ..deleteFile('lib/services/maps/google_maps_service.dart')
       ..markUninstalled(name);
   }
 
@@ -62,7 +62,7 @@ class MapsModule implements AgenticModule {
   // ---------------------------------------------------------------------------
 
   String _contractContent(String pkg) => '''
-import 'package:$pkg/core/location/location_service.dart';
+import 'package:$pkg/services/location/location_service.dart';
 
 /// Map marker model.
 class MapMarker {
@@ -103,8 +103,8 @@ abstract class MapsService {
 
   String _implContent(String pkg) => '''
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:$pkg/core/location/location_service.dart';
-import 'package:$pkg/core/maps/maps_service.dart';
+import 'package:$pkg/services/location/location_service.dart';
+import 'package:$pkg/services/maps/maps_service.dart';
 
 /// google_maps_flutter implementation of [MapsService].
 ///

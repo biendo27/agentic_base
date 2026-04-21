@@ -37,11 +37,11 @@ class CameraModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/camera/camera_service.dart',
+        'lib/services/camera/camera_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/camera/camerawesome_service.dart',
+        'lib/services/camera/camerawesome_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -51,8 +51,8 @@ class CameraModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/camera/camera_service.dart')
-      ..deleteFile('lib/core/camera/camerawesome_service.dart')
+      ..deleteFile('lib/services/camera/camera_service.dart')
+      ..deleteFile('lib/services/camera/camerawesome_service.dart')
       ..markUninstalled(name);
   }
 
@@ -94,7 +94,7 @@ abstract class CameraService {
 
   String _implContent(String pkg) => '''
 import 'package:camerawesome/camerawesome_plugin.dart';
-import 'package:$pkg/core/camera/camera_service.dart';
+import 'package:$pkg/services/camera/camera_service.dart';
 
 /// CameraAwesome stub implementation of [CameraService].
 ///

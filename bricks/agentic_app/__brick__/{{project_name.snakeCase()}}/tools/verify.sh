@@ -136,6 +136,7 @@ if [[ "$FAST_VERIFY_MODE" == "1" ]]; then
   skip_gate "native-readiness" "release_readiness" "Native readiness skipped by AGENTIC_VERIFY_FAST."
 elif [[ "${AGENTIC_SKIP_NATIVE_READINESS:-0}" == "1" ]]; then
   skip_gate "native-readiness" "release_readiness" "Native readiness skipped by AGENTIC_SKIP_NATIVE_READINESS."
+{{#has_ios}}
 elif [[ "$(uname -s)" == "Darwin" && -d ios ]]; then
   if ! run_gate "native-readiness" "release_readiness" "Checking iOS simulator readiness..." verify_native_readiness; then
     RUN_EXIT_CODE=1
@@ -143,6 +144,11 @@ elif [[ "$(uname -s)" == "Darwin" && -d ios ]]; then
   fi
 else
   skip_gate "native-readiness" "release_readiness" "iOS simulator readiness only runs on Darwin hosts with ios/."
+{{/has_ios}}
+{{^has_ios}}
+else
+  skip_gate "native-readiness" "release_readiness" "iOS simulator readiness skipped because ios platform is not selected."
+{{/has_ios}}
 fi
 
 if [[ "$(overall_run_state)" == "pass" ]]; then

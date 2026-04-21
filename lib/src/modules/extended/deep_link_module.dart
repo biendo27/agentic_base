@@ -2,7 +2,7 @@ import 'package:agentic_base/src/modules/base_module.dart';
 import 'package:agentic_base/src/modules/module_installer.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
 
-/// Installs app_links + uni_links with a DeepLinkService contract.
+/// Installs app_links with a DeepLinkService contract.
 class DeepLinkModule implements AgenticModule {
   const DeepLinkModule();
 
@@ -11,10 +11,10 @@ class DeepLinkModule implements AgenticModule {
 
   @override
   String get description =>
-      'app_links + uni_links — deep link and universal link handling.';
+      'app_links — deep link and universal link handling.';
 
   @override
-  List<String> get dependencies => ['app_links', 'uni_links'];
+  List<String> get dependencies => ['app_links'];
 
   @override
   List<String> get devDependencies => [];
@@ -37,11 +37,11 @@ class DeepLinkModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/deep_link/deep_link_service.dart',
+        'lib/services/deep_link/deep_link_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/deep_link/app_links_service.dart',
+        'lib/services/deep_link/app_links_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -51,8 +51,8 @@ class DeepLinkModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/deep_link/deep_link_service.dart')
-      ..deleteFile('lib/core/deep_link/app_links_service.dart')
+      ..deleteFile('lib/services/deep_link/deep_link_service.dart')
+      ..deleteFile('lib/services/deep_link/app_links_service.dart')
       ..markUninstalled(name);
   }
 
@@ -75,7 +75,7 @@ abstract class DeepLinkService {
 
   String _implContent(String pkg) => '''
 import 'package:app_links/app_links.dart';
-import 'package:$pkg/core/deep_link/deep_link_service.dart';
+import 'package:$pkg/services/deep_link/deep_link_service.dart';
 
 /// app_links implementation of [DeepLinkService].
 class AppLinksService implements DeepLinkService {

@@ -29,27 +29,20 @@ class CrashlyticsModule implements AgenticModule {
   List<String> get platformSteps => [
     'Add GoogleService-Info.plist (iOS) and google-services.json (Android).',
     'Enable Crashlytics in the Firebase console.',
-    'Run `flutterfire configure` to generate lib/firebase_options.dart before using Firebase-backed modules.',
+    'Run `agentic_base firebase setup` to generate per-flavor Firebase options before using Firebase-backed modules.',
   ];
 
   @override
   Future<void> install(ProjectContext ctx) async {
-    ModuleInstaller(ctx)
-      ..addDependencies(dependencies)
-      ..writeFileIfAbsent(
-        'lib/firebase_options.dart',
-        firebaseOptionsStubFileContent(),
-      )
+    final installer = ModuleInstaller(ctx)..addDependencies(dependencies);
+    writeFirebaseRuntimeFiles(installer, ctx);
+    installer
       ..writeFile(
-        'lib/core/firebase/firebase_runtime.dart',
-        firebaseRuntimeFileContent(packageName: ctx.projectName),
-      )
-      ..writeFile(
-        'lib/core/crash_reporting/crash_reporting_service.dart',
+        'lib/services/crash_reporting/crash_reporting_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/crash_reporting/firebase_crash_reporting_service.dart',
+        'lib/services/crash_reporting/firebase_crash_reporting_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -59,9 +52,9 @@ class CrashlyticsModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/crash_reporting/crash_reporting_service.dart')
+      ..deleteFile('lib/services/crash_reporting/crash_reporting_service.dart')
       ..deleteFile(
-        'lib/core/crash_reporting/firebase_crash_reporting_service.dart',
+        'lib/services/crash_reporting/firebase_crash_reporting_service.dart',
       )
       ..markUninstalled(name);
   }
@@ -93,27 +86,22 @@ abstract class CrashReportingService {
 ''';
 
   String _implContent(String pkg) => '''
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
-import 'package:$pkg/core/crash_reporting/crash_reporting_service.dart';
-import 'package:$pkg/core/firebase/firebase_runtime.dart';
+import 'package:$pkg/services/crash_reporting/crash_reporting_service.dart';
+import 'package:$pkg/services/firebase/firebase_runtime.dart';
 import 'package:$pkg/core/observability/observability_service.dart';
 
 /// Firebase implementation of [CrashReportingService].
 class FirebaseCrashReportingService implements CrashReportingService {
-  FirebaseCrashReportingService({FirebaseCrashlytics? crashlytics})
-      : _overrideCrashlytics = crashlytics;
-
-  final FirebaseCrashlytics? _overrideCrashlytics;
-
-  FirebaseCrashlytics get _crashlytics =>
-      _overrideCrashlytics ?? FirebaseCrashlytics.instance;
+  FirebaseCrashlytics get _crashlytics => FirebaseCrashlytics.instance;
 
   @override
   Future<void> init() async {
-    await ensureFirebaseInitialized();
+    if (!await ensureFirebaseInitialized()) return;
     await _crashlytics.setCrashlyticsCollectionEnabled(true);
     ObservabilityService.instance.log('crash_reporting.initialized');
     PlatformDispatcher.instance.onError = (error, stackTrace) {
@@ -122,9 +110,27 @@ class FirebaseCrashReportingService implements CrashReportingService {
         level: 'error',
         fields: {'error_type': error.runtimeType.toString()},
       );
-      _crashlytics.recordError(error, stackTrace, fatal: true);
+      unawaited(_recordFatalPlatformError(error, stackTrace));
       return true;
     };
+  }
+
+  Future<void> _recordFatalPlatformError(
+    Object error,
+    StackTrace stackTrace,
+  ) async {
+    try {
+      await _crashlytics.recordError(error, stackTrace, fatal: true);
+    } catch (reportingError) {
+      ObservabilityService.instance.log(
+        'crash_reporting.platform_error_report_failed',
+        level: 'error',
+        fields: {
+          'error_type': error.runtimeType.toString(),
+          'reporting_error_type': reportingError.runtimeType.toString(),
+        },
+      );
+    }
   }
 
   @override
@@ -133,7 +139,7 @@ class FirebaseCrashReportingService implements CrashReportingService {
     StackTrace? stackTrace, {
     String? reason,
     bool fatal = false,
-  }) {
+  }) async {
     ObservabilityService.instance.log(
       'crash_reporting.record_error',
       level: fatal ? 'critical' : 'error',
@@ -143,21 +149,26 @@ class FirebaseCrashReportingService implements CrashReportingService {
         'fatal': fatal,
       },
     );
-    return _crashlytics.recordError(
-        error,
-        stackTrace,
-        reason: reason,
-        fatal: fatal,
-      );
+    if (!await ensureFirebaseInitialized()) return;
+    await _crashlytics.recordError(
+      error,
+      stackTrace,
+      reason: reason,
+      fatal: fatal,
+    );
   }
 
   @override
-  Future<void> setCustomKey(String key, Object value) =>
-      _crashlytics.setCustomKey(key, value);
+  Future<void> setCustomKey(String key, Object value) async {
+    if (!await ensureFirebaseInitialized()) return;
+    await _crashlytics.setCustomKey(key, value);
+  }
 
   @override
-  Future<void> setUserId(String identifier) =>
-      _crashlytics.setUserIdentifier(identifier);
+  Future<void> setUserId(String identifier) async {
+    if (!await ensureFirebaseInitialized()) return;
+    await _crashlytics.setUserIdentifier(identifier);
+  }
 }
 ''';
 }

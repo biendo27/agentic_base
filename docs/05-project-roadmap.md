@@ -12,6 +12,8 @@ Validation is green on `dart analyze --fatal-infos`, the doc and generator-focus
 
 The observability contract and agent legibility milestone is now complete: repo-scoped runtime telemetry, structured evidence exports, and a single derived local inspect surface are landed and regression-covered.
 
+The generator contract hardening wave is complete: `run.sh` is canonical, module services live under `lib/services`, Firebase setup is explicit and rollback-safe, DI startup is split, default runtime modules stay bootable without credentials, and Android-only create/verify now skips iOS readiness. Android native launch evidence is recorded in [`plans/reports/native-260421-1104-android-launch-log.txt`](../plans/reports/native-260421-1104-android-launch-log.txt).
+
 The next active milestone is command/orchestration modularization so large command files can be split without changing behavior.
 
 ## Completed Phases
@@ -28,19 +30,18 @@ The next active milestone is command/orchestration modularization so large comma
 | 8. Harness Contract V1 | Completed | Typed harness manifest, support tiers, evidence outputs, approval states, and SDK policy enforcement shipped. |
 | 9. Contract-Freeze Slice 1 | Completed | Default app service matrix added; `observability` renamed to `evidence_quality`; validator and manifest parser now enforce canonical quality dimensions. |
 | 10. Profile Execution Golden Path | Completed | Profile presets, profile-aware verify gates, trustworthy-commerce starter UI, migration docs, and generated-app regression coverage shipped. |
+| 11. Generator Contract Hardening | Completed | Run/flavor contract, dependency catalog, Firebase setup, DI startup split, and default runtime safety shipped. |
 
-## Active Milestone
+## Next Milestone
 
-### Milestone: Observability Contract And Agent Legibility
+### Milestone: Command/Orchestration Modularization
 
 Status:
 
-- Completed
-- Preserve Harness Contract V1 and keep `evidence_quality` as the evidence dimension only
-- Add one additive `harness.observability` support envelope to the manifest
-- Ship generated app runtime telemetry plus structured `telemetry/*` bundle files
-- Ship one derived inspect surface through `agentic_base inspect` and `./tools/inspect-evidence.sh`
-- Keep operator reporting local-first, Markdown/JSON only, and free of hosted-console claims
+- Next
+- Split large command files without changing behavior
+- Keep command orchestration thin enough to maintain without behavior drift
+- Preserve the current run, Firebase, and DI contracts while modularizing
 
 Defined outputs:
 
@@ -48,9 +49,7 @@ Defined outputs:
 - prevent drift between generated surfaces, validators, and docs
 - keep evidence and approval outputs stable across local and CI execution
 - preserve honest Flutter SDK contract handling during future upgrades
-- keep observability local-first, redactable, and inspectable from one derived run ledger
-- ship publication/release automation only when it matches the real package workflow
-- preserve approval transitions inside verify evidence and keep `latest/` as a deterministic local pointer, not a second copied truth
+- keep generated apps credential-safe before Firebase/AdMob setup
 
 Key docs:
 
@@ -68,7 +67,7 @@ Key docs:
 
 | Wave | Goal | Entry Gate | Exit Gate |
 | --- | --- | --- | --- |
-| 1 | Reduce command/orchestration file size | observability rollout stable | large command files split without behavior regressions |
+| 1 | Reduce command/orchestration file size | hardening wave stable | large command files split without behavior regressions |
 | 2 | Improve package release hygiene | stabilized docs/tests | publish flow is scripted or explicitly documented end to end |
 | 3 | Grow non-default profile coverage | rollout stable | more Tier 1 and Tier 2 profile packs are mechanically proven, not just documented |
 
