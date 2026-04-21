@@ -1,7 +1,7 @@
 {{#uses_get_it}}
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
-import 'package:{{project_name.snakeCase()}}/app/modules/module_registrations.dart';
+import 'package:{{project_name.snakeCase()}}/app/modules/module_startup.dart';
 import 'package:{{project_name.snakeCase()}}/core/di/injection.config.dart';
 
 final GetIt getIt = GetIt.instance;
@@ -9,7 +9,6 @@ final GetIt getIt = GetIt.instance;
 @InjectableInit()
 Future<void> configureDependencies({bool initializeModules = true}) async {
   await Future.sync(getIt.init);
-  await registerModuleServices(getIt);
   if (initializeModules) {
     await initializeModuleServices(getIt);
   }

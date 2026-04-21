@@ -28,31 +28,31 @@ Future<void> bootstrap(
   Widget Function() builder, {
   bool initializeModules = true,
 }) async {
-  WidgetsFlutterBinding.ensureInitialized();
-  ObservabilityService.instance.bootstrap(
-    flavor: FlavorConfig.instance.flavor.name,
-    appName: FlavorConfig.instance.appName,
-  );
-  unawaited(AppLocaleContract.useDeviceLocale());
+  await runZonedGuarded<Future<void>>(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      ObservabilityService.instance.bootstrap(
+        flavor: FlavorConfig.instance.flavor.name,
+        appName: FlavorConfig.instance.appName,
+      );
+      unawaited(AppLocaleContract.useDeviceLocale());
 {{#is_cubit}}
-  Bloc.observer = AppBlocObserver();
+      Bloc.observer = AppBlocObserver();
 {{/is_cubit}}
 {{^is_riverpod}}
-  await configureDependencies(initializeModules: initializeModules);
+      await configureDependencies(initializeModules: initializeModules);
 {{/is_riverpod}}
 {{#is_riverpod}}
-  final container = ProviderContainer();
-  if (initializeModules) {
-    await initializeModuleProviders(container);
-  }
+      final container = ProviderContainer();
+      if (initializeModules) {
+        await initializeModuleProviders(container);
+      }
 {{/is_riverpod}}
-  final existingFlutterErrorHandler = FlutterError.onError;
-  FlutterError.onError = (details) {
-    FlutterError.presentError(details);
-    existingFlutterErrorHandler?.call(details);
-  };
-  runZonedGuarded(
-    () {
+      final existingFlutterErrorHandler = FlutterError.onError;
+      FlutterError.onError = (details) {
+        FlutterError.presentError(details);
+        existingFlutterErrorHandler?.call(details);
+      };
 {{#is_riverpod}}
       runApp(
         UncontrolledProviderScope(

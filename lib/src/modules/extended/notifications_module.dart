@@ -36,11 +36,11 @@ class NotificationsModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/notifications/notifications_service.dart',
+        'lib/services/notifications/notifications_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/notifications/awesome_notifications_service.dart',
+        'lib/services/notifications/awesome_notifications_service.dart',
         _implContent(ctx.projectName),
       )
       ..mutateTextFile('ios/Podfile', _patchIosPodfile)
@@ -51,8 +51,10 @@ class NotificationsModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/notifications/notifications_service.dart')
-      ..deleteFile('lib/core/notifications/awesome_notifications_service.dart')
+      ..deleteFile('lib/services/notifications/notifications_service.dart')
+      ..deleteFile(
+        'lib/services/notifications/awesome_notifications_service.dart',
+      )
       ..markUninstalled(name);
   }
 
@@ -116,7 +118,7 @@ abstract class NotificationsService {
   String _implContent(String pkg) => '''
 import 'package:awesome_notifications/awesome_notifications.dart'
     as awesome;
-import 'package:$pkg/core/notifications/notifications_service.dart';
+import 'package:$pkg/services/notifications/notifications_service.dart';
 
 const _defaultNotificationChannels = <AppNotificationChannel>[
   AppNotificationChannel(

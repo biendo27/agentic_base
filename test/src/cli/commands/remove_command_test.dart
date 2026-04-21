@@ -58,7 +58,7 @@ void main() {
         File(
           p.join(
             tempDir.path,
-            'lib/core/analytics/firebase_analytics_service.dart',
+            'lib/services/analytics/firebase_analytics_service.dart',
           ),
         ).existsSync(),
         isFalse,

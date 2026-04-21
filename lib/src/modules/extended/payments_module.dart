@@ -37,11 +37,11 @@ class PaymentsModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/payments/payments_service.dart',
+        'lib/services/payments/payments_service.dart',
         _contractContent(),
       )
       ..writeFile(
-        'lib/core/payments/in_app_purchase_payments_service.dart',
+        'lib/services/payments/in_app_purchase_payments_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -51,8 +51,10 @@ class PaymentsModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/payments/payments_service.dart')
-      ..deleteFile('lib/core/payments/in_app_purchase_payments_service.dart')
+      ..deleteFile('lib/services/payments/payments_service.dart')
+      ..deleteFile(
+        'lib/services/payments/in_app_purchase_payments_service.dart',
+      )
       ..markUninstalled(name);
   }
 
@@ -99,15 +101,11 @@ abstract class PaymentsService {
 import 'dart:async';
 
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:$packageName/core/payments/payments_service.dart';
+import 'package:$packageName/services/payments/payments_service.dart';
 
 /// Store-native implementation of [PaymentsService] using in_app_purchase.
 class InAppPurchasePaymentsService implements PaymentsService {
-  InAppPurchasePaymentsService({
-    InAppPurchase? inAppPurchase,
-  }) : _inAppPurchase = inAppPurchase ?? InAppPurchase.instance;
-
-  final InAppPurchase _inAppPurchase;
+  final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   final Set<String> _ownedProductIds = <String>{};
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
 

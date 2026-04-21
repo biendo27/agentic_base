@@ -38,11 +38,11 @@ class SocialLoginModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/social_login/social_login_service.dart',
+        'lib/services/social_login/social_login_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/social_login/social_login_service_impl.dart',
+        'lib/services/social_login/social_login_service_impl.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -52,8 +52,8 @@ class SocialLoginModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/social_login/social_login_service.dart')
-      ..deleteFile('lib/core/social_login/social_login_service_impl.dart')
+      ..deleteFile('lib/services/social_login/social_login_service.dart')
+      ..deleteFile('lib/services/social_login/social_login_service_impl.dart')
       ..markUninstalled(name);
   }
 
@@ -94,7 +94,7 @@ abstract class SocialLoginService {
   String _implContent(String pkg) => '''
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:$pkg/core/social_login/social_login_service.dart';
+import 'package:$pkg/services/social_login/social_login_service.dart';
 
 /// Implementation of [SocialLoginService] using Google and Apple SDKs.
 class SocialLoginServiceImpl implements SocialLoginService {

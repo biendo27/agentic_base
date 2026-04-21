@@ -36,11 +36,11 @@ class InAppReviewModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/in_app_review/in_app_review_service.dart',
+        'lib/services/in_app_review/in_app_review_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/in_app_review/native_in_app_review_service.dart',
+        'lib/services/in_app_review/native_in_app_review_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -50,8 +50,10 @@ class InAppReviewModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/in_app_review/in_app_review_service.dart')
-      ..deleteFile('lib/core/in_app_review/native_in_app_review_service.dart')
+      ..deleteFile('lib/services/in_app_review/in_app_review_service.dart')
+      ..deleteFile(
+        'lib/services/in_app_review/native_in_app_review_service.dart',
+      )
       ..markUninstalled(name);
   }
 
@@ -75,7 +77,7 @@ abstract class InAppReviewService {
 
   String _implContent(String pkg) => '''
 import 'package:in_app_review/in_app_review.dart';
-import 'package:$pkg/core/in_app_review/in_app_review_service.dart';
+import 'package:$pkg/services/in_app_review/in_app_review_service.dart';
 
 /// Native implementation of [InAppReviewService] using in_app_review package.
 class NativeInAppReviewService implements InAppReviewService {

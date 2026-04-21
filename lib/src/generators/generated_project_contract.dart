@@ -54,6 +54,8 @@ final class GeneratedProjectContract {
     'lib/app/bootstrap.dart',
     'lib/app/flavors.dart',
     'lib/app/locale/app_locale_contract.dart',
+    'lib/app/modules/module_providers.dart',
+    'lib/app/modules/module_startup.dart',
     'lib/app/i18n/translations.g.dart',
     'lib/core/commerce/entitlement_service.dart',
     'lib/core/contracts/app_list_response.dart',
@@ -92,7 +94,8 @@ final class GeneratedProjectContract {
     'tools/lint.sh',
     'tools/release-preflight.sh',
     'tools/release.sh',
-    'tools/run-dev.sh',
+    'tools/run.sh',
+    'tools/setup-firebase.sh',
     'tools/setup.sh',
     'tools/test.sh',
     'tools/verify.sh',
@@ -119,6 +122,7 @@ final class GeneratedProjectContract {
   static const forbiddenFiles = <String>[
     'lib/app.dart',
     'lib/flavors.dart',
+    'lib/app/modules/module_registrations.dart',
     '.idea/modules.xml',
     '.idea/runConfigurations/main_dart.xml',
     '.idea/workspace.xml',
@@ -215,6 +219,7 @@ final class GeneratedProjectContract {
     String projectDir, {
     CiProvider? ciProvider,
     String? stateManagement,
+    List<String>? platforms,
   }) {
     for (final relativePath in requiredPaths) {
       final type = FileSystemEntity.typeSync(
@@ -259,7 +264,7 @@ final class GeneratedProjectContract {
     _validateGeneratedContractModelSurface(projectDir);
     _validateGeneratedVerifySurface(projectDir);
     _validateThemeSurface(projectDir);
-    validateNativeFlavorOutputs(projectDir);
+    validateNativeFlavorOutputs(projectDir, platforms: platforms);
     if (stateManagement != null) {
       validateStateOutput(projectDir, stateManagement: stateManagement);
     }
@@ -340,6 +345,8 @@ final class GeneratedProjectContract {
         _requireContent(pubspec, 'get_it');
         _requireContent(pubspec, 'injectable');
         _requireContent(bootstrap, 'Bloc.observer');
+        _requirePath(projectDir, 'lib/app/modules/module_startup.dart');
+        _forbidPath(projectDir, 'lib/app/modules/module_registrations.dart');
         _requirePath(
           projectDir,
           'lib/features/home/presentation/cubit/home_cubit.dart',
@@ -361,6 +368,7 @@ final class GeneratedProjectContract {
         _forbidContent(pubspec, 'get_it');
         _forbidContent(pubspec, 'injectable');
         _requireContent(bootstrap, 'UncontrolledProviderScope');
+        _requirePath(projectDir, 'lib/app/modules/module_providers.dart');
         _forbidContent(bootstrap, 'Bloc.observer');
         _forbidContent(injection, 'GetIt');
         _requirePath(
@@ -387,6 +395,8 @@ final class GeneratedProjectContract {
         _requireContent(pubspec, 'get_it');
         _requireContent(pubspec, 'injectable');
         _forbidContent(bootstrap, 'Bloc.observer');
+        _requirePath(projectDir, 'lib/app/modules/module_startup.dart');
+        _forbidPath(projectDir, 'lib/app/modules/module_registrations.dart');
         _requirePath(
           projectDir,
           'lib/features/home/presentation/store/home_store.dart',
@@ -480,24 +490,53 @@ final class GeneratedProjectContract {
     }
   }
 
-  static void validateNativeFlavorOutputs(String projectDir) {
-    if (Directory(
-      _resolveProjectPath(projectDir, 'android/app'),
-    ).existsSync()) {
+  static void validateNativeFlavorOutputs(
+    String projectDir, {
+    List<String>? platforms,
+  }) {
+    final configuredPlatforms =
+        platforms?.map((platform) => platform.trim()).toSet() ??
+        _resolveConfiguredPlatforms(projectDir);
+
+    if (_shouldValidateNativeFlavorPlatform(
+      projectDir: projectDir,
+      platform: 'android',
+      markerPath: 'android/app',
+      configuredPlatforms: configuredPlatforms,
+    )) {
       _validateAndroidFlavorOutputs(projectDir);
     }
 
-    if (Directory(
-      _resolveProjectPath(projectDir, 'ios/Flutter'),
-    ).existsSync()) {
+    if (_shouldValidateNativeFlavorPlatform(
+      projectDir: projectDir,
+      platform: 'ios',
+      markerPath: 'ios/Flutter',
+      configuredPlatforms: configuredPlatforms,
+    )) {
       _validateIosFlavorOutputs(projectDir);
     }
 
-    if (Directory(
-      _resolveProjectPath(projectDir, 'macos/Flutter'),
-    ).existsSync()) {
+    if (_shouldValidateNativeFlavorPlatform(
+      projectDir: projectDir,
+      platform: 'macos',
+      markerPath: 'macos/Flutter',
+      configuredPlatforms: configuredPlatforms,
+    )) {
       _validateMacosFlavorOutputs(projectDir);
     }
+  }
+
+  static bool _shouldValidateNativeFlavorPlatform({
+    required String projectDir,
+    required String platform,
+    required String markerPath,
+    required Set<String>? configuredPlatforms,
+  }) {
+    if (!Directory(_resolveProjectPath(projectDir, markerPath)).existsSync()) {
+      return false;
+    }
+    return configuredPlatforms == null ||
+        configuredPlatforms.contains(platform);
   }
 
   static void _validateAndroidFlavorOutputs(String projectDir) {
@@ -970,7 +1009,7 @@ final class GeneratedProjectContract {
     _requireContent(readme, 'Support tier: `');
     _requireContent(readme, 'Evidence directory: `artifacts/evidence`');
     _requireContent(readme, './tools/test.sh');
-    _requireContent(readme, './tools/run-dev.sh');
+    _requireContent(readme, './tools/run.sh');
     _requireContent(readme, 'docs/07-agentic-development-flow.md');
     _requireContent(readme, 'Recommended default Gitflow');
     _requireContent(
@@ -1220,6 +1259,20 @@ final class GeneratedProjectContract {
         'Generated YAML contract has invalid ci_provider: $error',
       );
     }
+  }
+
+  static Set<String>? _resolveConfiguredPlatforms(String projectDir) {
+    final config = _readRequiredYamlMap(projectDir, '.info/agentic.yaml');
+    final storedPlatforms = config['platforms'];
+    if (storedPlatforms is! YamlList) return null;
+
+    final platforms =
+        storedPlatforms
+            .whereType<Object>()
+            .map((platform) => platform.toString().trim())
+            .where((platform) => platform.isNotEmpty)
+            .toSet();
+    return platforms.isEmpty ? null : platforms;
   }
 
   static void _requirePath(String projectDir, String relativePath) {

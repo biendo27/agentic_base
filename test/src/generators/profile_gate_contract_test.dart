@@ -98,5 +98,56 @@ void main() {
       expect(verifyScript, contains('profile-advisory'));
       expect(verifyScript, isNot(contains('starter-commerce')));
     });
+
+    test('android-only surfaces skip iOS native readiness', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'profile-gate-contract-android-only-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      final preset = resolveProfilePreset(
+        appProfile: HarnessAppProfile.subscriptionCommerceApp,
+      );
+      final outputDirectory = p.join(tempDir.path, 'demo_app');
+
+      await const AgenticAppSurfaceSynchronizer().overlay(
+        outputDirectory: outputDirectory,
+        metadata: AgenticConfig.buildInitialMetadata(
+          projectName: 'demo_app',
+          org: 'com.example',
+          stateManagement: 'cubit',
+          platforms: const ['android'],
+          flavors: const ['dev', 'staging', 'prod'],
+          toolVersion: 'test',
+          modules: preset.effectiveModules,
+          harness: HarnessMetadata.defaultFor(
+            appProfile: HarnessAppProfile.subscriptionCommerceApp,
+            capabilities: preset.effectiveModules,
+            providers: preset.providers,
+            sdk: const FlutterSdkContract(
+              manager: FlutterSdkManager.system,
+              channel: 'stable',
+              version: '3.41.6',
+              policy: FlutterVersionPolicy.newestTested,
+            ),
+          ),
+        ),
+      );
+
+      final verifyScript =
+          File(
+            p.join(outputDirectory, 'tools', 'verify.sh'),
+          ).readAsStringSync();
+      expect(
+        verifyScript,
+        contains(
+          'iOS simulator readiness skipped because ios platform is not selected.',
+        ),
+      );
+      expect(
+        verifyScript,
+        isNot(contains('Checking iOS simulator readiness...')),
+      );
+    });
   });
 }

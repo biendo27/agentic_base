@@ -35,11 +35,11 @@ class ConnectivityModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/connectivity/connectivity_service.dart',
+        'lib/services/connectivity/connectivity_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/connectivity/connectivity_plus_service.dart',
+        'lib/services/connectivity/connectivity_plus_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -49,8 +49,8 @@ class ConnectivityModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/connectivity/connectivity_service.dart')
-      ..deleteFile('lib/core/connectivity/connectivity_plus_service.dart')
+      ..deleteFile('lib/services/connectivity/connectivity_service.dart')
+      ..deleteFile('lib/services/connectivity/connectivity_plus_service.dart')
       ..markUninstalled(name);
   }
 
@@ -71,14 +71,11 @@ abstract class ConnectivityService {
 
   String _implContent(String pkg) => '''
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:$pkg/core/connectivity/connectivity_service.dart';
+import 'package:$pkg/services/connectivity/connectivity_service.dart';
 
 /// [Connectivity] implementation of [ConnectivityService].
 class ConnectivityPlusService implements ConnectivityService {
-  ConnectivityPlusService({Connectivity? connectivity})
-      : _connectivity = connectivity ?? Connectivity();
-
-  final Connectivity _connectivity;
+  final Connectivity _connectivity = Connectivity();
 
   @override
   Stream<bool> get onConnectivityChanged =>

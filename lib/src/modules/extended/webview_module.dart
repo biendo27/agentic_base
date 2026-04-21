@@ -37,11 +37,11 @@ class WebViewModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/webview/webview_service.dart',
+        'lib/services/webview/webview_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/webview/inappwebview_service.dart',
+        'lib/services/webview/inappwebview_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -51,8 +51,8 @@ class WebViewModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/webview/webview_service.dart')
-      ..deleteFile('lib/core/webview/inappwebview_service.dart')
+      ..deleteFile('lib/services/webview/webview_service.dart')
+      ..deleteFile('lib/services/webview/inappwebview_service.dart')
       ..markUninstalled(name);
   }
 
@@ -92,7 +92,7 @@ abstract class WebViewService {
 
   String _implContent(String pkg) => '''
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:$pkg/core/webview/webview_service.dart';
+import 'package:$pkg/services/webview/webview_service.dart';
 
 /// flutter_inappwebview implementation of [WebViewService].
 ///

@@ -59,7 +59,8 @@ presentation -> domain <- data
 ## Deterministic Entrypoints
 
 - setup: `./tools/setup.sh`
-- default run: `./tools/run-dev.sh`
+- default run: `./tools/run.sh [dev|staging|stg|prod]`
+- Firebase setup: `./tools/setup-firebase.sh --project <firebase-project-id>`
 - verify: `./tools/verify.sh`
 - build: `./tools/build.sh <flavor> [artifact]`
 - release preflight: `./tools/release-preflight.sh <flavor> <target>`
@@ -101,3 +102,10 @@ Meaningful verify and release-preflight runs emit named gate outputs under `{{{e
   - helpers that require explicit caller input are allowed on the class
   - locale-, DI-, or runtime-aware convenience belongs in extensions or services outside raw contracts
 - `part` files stay scoped to those modeled leaf contracts instead of widening codegen across the app shell
+
+## Module Services
+
+- installed module services live under `lib/services/<capability>/`
+- Firebase setup and runtime files live under `lib/services/firebase/`
+- `lib/core` remains reserved for app-shell infrastructure such as DI, router, theme, network, error handling, observability, and shared contracts
+- GetIt apps use `injectable` as the registration source of truth; `lib/app/modules/module_startup.dart` only owns ordered startup hooks

@@ -10,4 +10,4 @@ run_flutter pub get
 
 "$PROJECT_ROOT/tools/gen.sh"
 
-info "Setup complete. Run './tools/run-dev.sh' to start."
+info "Setup complete. Run './tools/run.sh' to start."

@@ -37,11 +37,11 @@ class AppUpdateModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/app_update/app_update_service.dart',
+        'lib/services/app_update/app_update_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/app_update/upgrader_app_update_service.dart',
+        'lib/services/app_update/upgrader_app_update_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -51,8 +51,8 @@ class AppUpdateModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/app_update/app_update_service.dart')
-      ..deleteFile('lib/core/app_update/upgrader_app_update_service.dart')
+      ..deleteFile('lib/services/app_update/app_update_service.dart')
+      ..deleteFile('lib/services/app_update/upgrader_app_update_service.dart')
       ..markUninstalled(name);
   }
 
@@ -76,7 +76,7 @@ abstract class AppUpdateService {
 
   String _implContent(String pkg) => '''
 import 'package:upgrader/upgrader.dart';
-import 'package:$pkg/core/app_update/app_update_service.dart';
+import 'package:$pkg/services/app_update/app_update_service.dart';
 
 /// upgrader implementation of [AppUpdateService].
 ///

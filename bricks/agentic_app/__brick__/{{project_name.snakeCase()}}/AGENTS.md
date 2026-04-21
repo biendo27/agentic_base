@@ -25,7 +25,8 @@ Thin adapter for coding agents working in `{{project_name.titleCase()}}`.
 
 ```bash
 ./tools/setup.sh
-./tools/run-dev.sh
+./tools/run.sh
+./tools/setup-firebase.sh --project <firebase-project-id>
 ./tools/test.sh
 ./tools/verify.sh
 ./tools/build.sh <dev|staging|prod> [apk|appbundle|ipa|all]

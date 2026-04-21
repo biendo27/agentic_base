@@ -36,11 +36,11 @@ class QrScannerModule implements AgenticModule {
     ModuleInstaller(ctx)
       ..addDependencies(dependencies)
       ..writeFile(
-        'lib/core/qr_scanner/qr_scanner_service.dart',
+        'lib/services/qr_scanner/qr_scanner_service.dart',
         _contractContent(ctx.projectName),
       )
       ..writeFile(
-        'lib/core/qr_scanner/mobile_scanner_service.dart',
+        'lib/services/qr_scanner/mobile_scanner_service.dart',
         _implContent(ctx.projectName),
       )
       ..markInstalled(name);
@@ -50,8 +50,8 @@ class QrScannerModule implements AgenticModule {
   Future<void> uninstall(ProjectContext ctx) async {
     ModuleInstaller(ctx)
       ..removeDependencies(dependencies)
-      ..deleteFile('lib/core/qr_scanner/qr_scanner_service.dart')
-      ..deleteFile('lib/core/qr_scanner/mobile_scanner_service.dart')
+      ..deleteFile('lib/services/qr_scanner/qr_scanner_service.dart')
+      ..deleteFile('lib/services/qr_scanner/mobile_scanner_service.dart')
       ..markUninstalled(name);
   }
 
@@ -97,7 +97,7 @@ abstract class QrScannerService {
   String _implContent(String pkg) => '''
 import 'dart:async';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:$pkg/core/qr_scanner/qr_scanner_service.dart';
+import 'package:$pkg/services/qr_scanner/qr_scanner_service.dart';
 
 /// mobile_scanner implementation of [QrScannerService].
 ///
