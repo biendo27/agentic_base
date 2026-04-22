@@ -9,7 +9,7 @@
   artifacts:
     when: always
     paths:
-      - {{evidence_dir}}
+      - {{{evidence_dir}}}
 
 deploy_dev:
   extends: .deploy_template

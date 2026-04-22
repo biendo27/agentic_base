@@ -144,8 +144,11 @@ void main() {
       );
 
       expect(rootDartTestConfig, contains('slow-canary'));
+      expect(rootDartTestConfig, contains('generated-app'));
+      expect(rootDartTestConfig, contains('native-smoke'));
       expect(generatedDartTestConfig, contains('app-smoke'));
       expect(testingGuide, contains('app-shell-smoke'));
+      expect(testingGuide, contains('./tools/lint.sh --strict'));
       expect(testingGuide, contains('./tools/inspect-evidence.sh'));
       expect(verifyScript, contains('--exclude-tags app-smoke'));
       expect(verifyScript, contains('runtime-telemetry'));

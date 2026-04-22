@@ -166,11 +166,89 @@ String _ensureAndroidAdMobAppId(String current) {
 }
 
 String _ensureIosAdMobAppId(String current) {
-  const plistEntry =
-      '  <key>GADApplicationIdentifier</key>\n'
-      '  <string>ca-app-pub-3940256099942544~1458002511</string>\n';
-  if (current.contains('GADApplicationIdentifier')) {
+  const defaultAppId = 'ca-app-pub-3940256099942544~1458002511';
+  final rootCloseIndex = _findRootDictCloseIndex(current);
+  if (rootCloseIndex == null) {
     return current;
   }
-  return current.replaceFirst('</dict>', '$plistEntry</dict>');
+
+  final preservedAppId = _findTopLevelIosAdMobAppId(current);
+  final cleaned = current.replaceAll(
+    RegExp(
+      r'\s*<key>\s*GADApplicationIdentifier\s*</key>\s*'
+      r'<string>[^<]*</string>\s*',
+    ),
+    '\n',
+  );
+  final cleanedRootCloseIndex = _findRootDictCloseIndex(cleaned);
+  if (cleanedRootCloseIndex == null) {
+    return current;
+  }
+
+  final plistEntry =
+      '  <key>GADApplicationIdentifier</key>\n'
+      '  <string>${preservedAppId ?? defaultAppId}</string>\n';
+  return cleaned.replaceRange(
+    cleanedRootCloseIndex,
+    cleanedRootCloseIndex,
+    plistEntry,
+  );
 }
+
+String? _findTopLevelIosAdMobAppId(String current) {
+  final pattern = RegExp(
+    r'<key>\s*GADApplicationIdentifier\s*</key>\s*'
+    '<string>([^<]*)</string>',
+  );
+  for (final match in pattern.allMatches(current)) {
+    if (_plistDictDepthAt(current, match.start) == 1) {
+      return match.group(1);
+    }
+  }
+  return null;
+}
+
+int? _findRootDictCloseIndex(String current) {
+  var depth = 0;
+  var sawRoot = false;
+  for (final match in _dictTagPattern.allMatches(current)) {
+    final tag = match.group(0)!;
+    if (tag.endsWith('/>')) {
+      continue;
+    }
+    final isClosing = tag.startsWith('</');
+    if (!isClosing) {
+      depth++;
+      sawRoot = true;
+      continue;
+    }
+    if (!sawRoot) {
+      return null;
+    }
+    depth--;
+    if (depth == 0) {
+      return match.start;
+    }
+    if (depth < 0) {
+      return null;
+    }
+  }
+  return null;
+}
+
+int _plistDictDepthAt(String current, int offset) {
+  var depth = 0;
+  for (final match in _dictTagPattern.allMatches(current)) {
+    if (match.start >= offset) {
+      break;
+    }
+    final tag = match.group(0)!;
+    if (tag.endsWith('/>')) {
+      continue;
+    }
+    depth += tag.startsWith('</') ? -1 : 1;
+  }
+  return depth;
+}
+
+final _dictTagPattern = RegExp(r'</?dict\b[^>]*>');

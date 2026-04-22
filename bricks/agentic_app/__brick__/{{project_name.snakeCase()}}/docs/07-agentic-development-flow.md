@@ -56,6 +56,15 @@ Use the wrapper surfaces in this order:
 
 The wrapper scripts stay manager-aware. They resolve the declared Flutter runtime from `.info/agentic.yaml` instead of assuming one local toolchain layout.
 `inspect-evidence.sh` stays local-first and reads the existing bundle files instead of requiring a hosted console.
+Use `./tools/lint.sh --strict` for fatal-info analysis. Default verify keeps normal analyzer strictness so Flutter/lint-version info churn does not block every local loop.
+
+## CI/CD Boundary
+
+Generated GitHub PR CI verifies the app and builds credentialless `dev` and `staging` artifacts only. Production builds require `env/prod.env` and run through release or production deploy workflows with protected environments and real credentials.
+
+GitLab deploy jobs are manual and should be attached to protected environments in project settings. Native validation requires a macOS runner with Xcode; Linux runners do not satisfy the iOS/native gate.
+
+The iOS simulator native-readiness gate does not prove physical-device signing. A physical iPhone run still requires an Apple signing team, provisioning profile, and device UDID managed outside this scaffold.
 
 ## Human Approval Boundary
 

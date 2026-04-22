@@ -1,3 +1,4 @@
+import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:agentic_base/src/config/profile_preset.dart';
 import 'package:agentic_base/src/modules/module_registry.dart';
@@ -47,6 +48,15 @@ class CreatePrompts {
       choices: stateManagementOptions,
       defaultValue: 'cubit',
     );
+  }
+
+  CiProvider promptCiProvider(CiProvider defaultValue) {
+    final selected = _logger.chooseOne(
+      'CI provider',
+      choices: supportedCiProviders,
+      defaultValue: defaultValue.name,
+    );
+    return parseCiProvider(selected);
   }
 
   /// Prompt user to customize modules during project creation.

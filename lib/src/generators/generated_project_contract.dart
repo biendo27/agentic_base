@@ -26,6 +26,7 @@ final class GeneratedProjectContract {
     'ios',
     'macos',
   };
+  static final _plistDictTagPattern = RegExp(r'</?dict\b[^>]*>');
 
   static const requiredPaths = <String>[
     '.info/agentic.yaml',
@@ -265,6 +266,7 @@ final class GeneratedProjectContract {
     _validateGeneratedVerifySurface(projectDir);
     _validateThemeSurface(projectDir);
     validateNativeFlavorOutputs(projectDir, platforms: platforms);
+    _validateInstalledModuleNativeSurfaces(projectDir);
     if (stateManagement != null) {
       validateStateOutput(projectDir, stateManagement: stateManagement);
     }
@@ -471,6 +473,7 @@ final class GeneratedProjectContract {
     for (final relativePath in requiredCiPaths) {
       _requirePath(projectDir, relativePath);
     }
+    _validateNoUnresolvedMasonTokens(projectDir, requiredCiPaths);
 
     for (final relativePath in forbiddenCiPaths) {
       final type = FileSystemEntity.typeSync(
@@ -647,6 +650,13 @@ final class GeneratedProjectContract {
         ciContents.contains(r'./tools/build.sh \${{ matrix.flavor }}')) {
       throw const ProjectGenerationException(
         'GitHub build matrix must preserve the matrix.flavor expression.',
+      );
+    }
+    if (!ciContents.contains('flavor: [dev, staging]') ||
+        ciContents.contains('flavor: [dev, staging, prod]') ||
+        ciContents.contains('./tools/build.sh prod')) {
+      throw const ProjectGenerationException(
+        'GitHub PR CI must build credentialless dev/staging artifacts only.',
       );
     }
 
@@ -1030,6 +1040,7 @@ final class GeneratedProjectContract {
 
     _requireContent(testingGuide, './tools/test.sh');
     _requireContent(testingGuide, './tools/verify.sh');
+    _requireContent(testingGuide, './tools/lint.sh --strict');
     _requireContent(testingGuide, './tools/inspect-evidence.sh');
     _requireContent(testingGuide, 'make test');
     _requireContent(testingGuide, 'app-shell-smoke');
@@ -1090,6 +1101,7 @@ final class GeneratedProjectContract {
     final config = _readRequiredYamlMap(projectDir, '.info/agentic.yaml');
     final dartTestConfig = _readRequiredFile(projectDir, 'dart_test.yaml');
     final verifyScript = _readRequiredFile(projectDir, 'tools/verify.sh');
+    final lintScript = _readRequiredFile(projectDir, 'tools/lint.sh');
     final appSmokeTest = _readRequiredFile(
       projectDir,
       'test/app_smoke_test.dart',
@@ -1100,6 +1112,8 @@ final class GeneratedProjectContract {
     _requireContent(verifyScript, 'runtime-telemetry');
     _requireContent(verifyScript, 'AGENTIC_RUNTIME_TELEMETRY_CONTEXT_FILE');
     _requireContent(verifyScript, 'test/app_smoke_test.dart');
+    _requireContent(lintScript, '--strict');
+    _requireContent(lintScript, '--fatal-infos');
     _requireContent(appSmokeTest, 'app-smoke');
 
     final harness = _requireYamlMap(config, 'harness');
@@ -1181,6 +1195,82 @@ final class GeneratedProjectContract {
     _requireContent(contextExtensions, 'adaptivePagePadding');
     _requireContent(themingGuide, 'BuildContextX');
     _forbidPath(projectDir, 'lib/core/responsive/app_screen_util_init.dart');
+  }
+
+  static void _validateInstalledModuleNativeSurfaces(String projectDir) {
+    final config = _readRequiredYamlMap(projectDir, '.info/agentic.yaml');
+    final modules = config['modules'];
+    if (modules is! YamlList || !modules.contains('ads')) {
+      return;
+    }
+
+    final plistFile = File(
+      _resolveProjectPath(projectDir, 'ios/Runner/Info.plist'),
+    );
+    if (!plistFile.existsSync()) {
+      return;
+    }
+
+    final plist = plistFile.readAsStringSync();
+    final matches =
+        RegExp(
+          r'<key>\s*GADApplicationIdentifier\s*</key>\s*'
+          '<string>[^<]+</string>',
+        ).allMatches(plist).toList();
+    if (matches.length != 1) {
+      throw const ProjectGenerationException(
+        'Ads module must write exactly one iOS GADApplicationIdentifier.',
+      );
+    }
+    if (_plistDictDepthAt(plist, matches.single.start) != 1) {
+      throw const ProjectGenerationException(
+        'Ads module must write GADApplicationIdentifier in the root Info.plist dictionary.',
+      );
+    }
+  }
+
+  static void _validateNoUnresolvedMasonTokens(
+    String projectDir,
+    Iterable<String> relativePaths,
+  ) {
+    final defaultDelimiterPattern = RegExp(
+      r'\{\{+[^}\n]*[A-Za-z_][^}\n]*\}\}+',
+    );
+    final customDelimiterPattern = RegExp(
+      r'<%[#\^\/!&{]?\s*[A-Za-z_][^%\n]*%>',
+    );
+    for (final relativePath in relativePaths) {
+      final contents = _readRequiredFile(projectDir, relativePath);
+      for (final match in defaultDelimiterPattern.allMatches(contents)) {
+        if (match.start > 0 && contents[match.start - 1] == r'$') {
+          continue;
+        }
+        throw ProjectGenerationException(
+          'Generated CI file contains an unresolved Mason token in $relativePath: ${match.group(0)}',
+        );
+      }
+      final customMatch = customDelimiterPattern.firstMatch(contents);
+      if (customMatch != null) {
+        throw ProjectGenerationException(
+          'Generated CI file contains an unresolved Mason token in $relativePath: ${customMatch.group(0)}',
+        );
+      }
+    }
+  }
+
+  static int _plistDictDepthAt(String current, int offset) {
+    var depth = 0;
+    for (final match in _plistDictTagPattern.allMatches(current)) {
+      if (match.start >= offset) {
+        break;
+      }
+      final tag = match.group(0)!;
+      if (tag.endsWith('/>')) {
+        continue;
+      }
+      depth += tag.startsWith('</') ? -1 : 1;
+    }
+    return depth;
   }
 
   static void _validateReleaseSurfaces(
