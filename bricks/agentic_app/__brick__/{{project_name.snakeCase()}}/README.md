@@ -98,12 +98,15 @@ This scaffold persists `ci_provider: {{ci_provider}}` in `.info/agentic.yaml` an
 - `github`: `.github/workflows/*.yml` calls the shared `tools/*.sh` contract
 - `gitlab`: root `.gitlab-ci.yml` plus `.gitlab/ci/*.yml` call the same shared `tools/*.sh` contract
 
+GitHub PR CI verifies the app and builds credentialless `dev` and `staging` artifacts. Production builds require `env/prod.env` and stay in protected release or production deploy lanes with real credentials.
+
 GitLab native validation is macOS-only by contract:
 
 - register a project runner with `tags: [macos]`
 - use a shell executor on a macOS machine
 - install Xcode on that runner
 - do not treat Linux runners as a replacement for iOS/native validation
+- do not treat simulator validation as proof that a physical iPhone is provisioned; device signing remains human-owned
 
 CI preserves the same local evidence vocabulary and stores `{{{evidence_dir}}}` as an artifact.
 

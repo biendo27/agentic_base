@@ -11,6 +11,8 @@ The primary verification surface is `./tools/verify.sh`. It runs the same local 
 5. run the dedicated starter app-shell smoke test once
 6. run native readiness checks where the host can support them
 
+`AGENTIC_VERIFY_FAST=1 ./tools/verify.sh` is only for local smoke loops and CI lanes that run another complete gate immediately after generation. It skips static analysis, unit/widget tests, and native readiness, so do not use it as a release gate.
+
 Use `./tools/release-preflight.sh` before any upload-oriented release command.
 Inspect evidence under `{{{evidence_dir}}}` for `summary.json`, gate check files, and logs.
 Use `./tools/inspect-evidence.sh verify` for the latest derived run report.
@@ -22,6 +24,7 @@ Use the generated wrappers first:
 - `./tools/test.sh` runs the manager-aware test command declared by `.info/agentic.yaml`
 - `./tools/test.sh <path-or-args>` passes extra test arguments through to the resolved Flutter runtime
 - `make test` is the shortest full-suite entrypoint
+- `./tools/lint.sh --strict` runs `dart analyze --fatal-infos` when you need info-level lint enforcement
 - `./tools/verify.sh` is the pre-review gate, not just another test command
 - `./tools/inspect-evidence.sh <run-kind> [latest|run-id] [markdown|json]` renders the local evidence bundle through the shared inspect surface when `agentic_base` is available
 - `test/app_smoke_test.dart` stays on the dedicated `app-shell-smoke` gate so verify avoids duplicate Flutter startup cost inside the broader suite
@@ -151,6 +154,7 @@ testWidgets('renders the starter CTA and reacts to taps', (tester) async {
 ./tools/test.sh
 ./tools/test.sh test/features/home/
 ./tools/test.sh --coverage
+./tools/lint.sh --strict
 ./tools/verify.sh
 ./tools/inspect-evidence.sh verify
 make test

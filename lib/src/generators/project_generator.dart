@@ -11,6 +11,7 @@ import 'package:agentic_base/src/config/profile_preset.dart';
 import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:agentic_base/src/generators/agentic_app_surface_synchronizer.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
+import 'package:agentic_base/src/generators/generated_verification_mode.dart';
 import 'package:agentic_base/src/modules/module_integration_generator.dart';
 import 'package:agentic_base/src/modules/module_registry.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
@@ -40,6 +41,7 @@ class ProjectGenerator {
     String? flutterSdkVersion,
     List<String> secondaryTraits = const [],
     List<String>? modules,
+    GeneratedVerificationMode verificationMode = GeneratedVerificationMode.full,
   }) async {
     final metadata = _buildMetadata(
       projectName: projectName,
@@ -90,6 +92,9 @@ class ProjectGenerator {
       ..info(
         '  - would persist CI provider `${ciProvider.name}` and flavors '
         '`${flavors.join(', ')}`',
+      )
+      ..info(
+        '  - would use generated verification mode `${verificationMode.name}`',
       );
 
     if (GeneratedProjectContract.requiresNativeFlavorization(platforms)) {
@@ -108,7 +113,7 @@ class ProjectGenerator {
         ..info('  - would run `$pubGetCommand` after module sync');
     }
 
-    for (final command in [
+    final postGenerationCommands = [
       dartCommandForManager(preferredManager, [
         'run',
         'build_runner',
@@ -118,9 +123,25 @@ class ProjectGenerator {
       dartCommandForManager(preferredManager, ['fix', '--apply']),
       dartCommandForManager(preferredManager, ['run', 'slang']),
       dartCommandForManager(preferredManager, ['format', 'lib', 'test']),
-      const ToolCommandSpec(executable: 'bash', arguments: ['tools/verify.sh']),
-    ]) {
-      _logger.info('  - would run `$command');
+    ];
+
+    for (final command in postGenerationCommands) {
+      _logger.info('  - would run `$command`');
+    }
+
+    switch (verificationMode) {
+      case GeneratedVerificationMode.full:
+        _logger.info('  - would run `bash tools/verify.sh`');
+      case GeneratedVerificationMode.fast:
+        _logger.info(
+          '  - would run `AGENTIC_VERIFY_FAST=1 '
+          'AGENTIC_SKIP_NATIVE_READINESS=1 bash tools/verify.sh`',
+        );
+      case GeneratedVerificationMode.none:
+        _logger.info(
+          '  - would skip generated verify; next required command is '
+          '`./tools/verify.sh`',
+        );
     }
 
     _logger.success('Dry run complete. No changes were made.');
@@ -140,7 +161,7 @@ class ProjectGenerator {
     String? flutterSdkVersion,
     List<String> secondaryTraits = const [],
     List<String>? modules,
-    bool runVerify = true,
+    GeneratedVerificationMode verificationMode = GeneratedVerificationMode.full,
   }) async {
     final toolchain = resolveFlutterToolchain(
       projectPath: Directory.current.path,
@@ -269,13 +290,7 @@ class ProjectGenerator {
     );
 
     // Step 12: Verify — analyze + test
-    if (runVerify) {
-      await _verify(outputDirectory);
-    } else {
-      _logger.detail(
-        'Skipping generated verify step because the caller manages smoke coverage.',
-      );
-    }
+    await _verify(outputDirectory, verificationMode);
   }
 
   /// Install selected modules into the generated project.
@@ -355,15 +370,45 @@ class ProjectGenerator {
   }
 
   /// Run analyze + test to verify the generated project is clean.
-  Future<void> _verify(String projectDir) async {
-    await _runInProject(
-      projectDir,
-      'Verifying generated app with harness contract',
-      const ToolCommandSpec(
-        executable: 'bash',
-        arguments: ['tools/verify.sh'],
-      ),
-    );
+  Future<void> _verify(
+    String projectDir,
+    GeneratedVerificationMode mode,
+  ) async {
+    switch (mode) {
+      case GeneratedVerificationMode.full:
+        _logger.info('Generated verification mode: full');
+        await _runInProject(
+          projectDir,
+          'Verifying generated app with harness contract',
+          const ToolCommandSpec(
+            executable: 'bash',
+            arguments: ['tools/verify.sh'],
+          ),
+        );
+      case GeneratedVerificationMode.fast:
+        _logger.warn(
+          'Generated verification mode: fast. Static, unit/widget, and '
+          'native-readiness gates are skipped by environment flags.',
+        );
+        await _runInProject(
+          projectDir,
+          'Fast-verifying generated app with harness contract',
+          const ToolCommandSpec(
+            executable: 'bash',
+            arguments: ['tools/verify.sh'],
+          ),
+          environment: const {
+            'AGENTIC_VERIFY_FAST': '1',
+            'AGENTIC_SKIP_NATIVE_READINESS': '1',
+          },
+        );
+      case GeneratedVerificationMode.none:
+        _logger.warn(
+          'Generated verification mode: none. The generated project is '
+          'unverified; run `./tools/verify.sh` or `./tools/ci-check.sh` '
+          'before trusting it.',
+        );
+    }
   }
 
   /// Run a command with inherited stdio (for tools that need a terminal).
@@ -391,13 +436,18 @@ class ProjectGenerator {
   Future<void> _runInProject(
     String projectDir,
     String label,
-    ToolCommandSpec command,
-  ) async {
+    ToolCommandSpec command, {
+    Map<String, String>? environment,
+  }) async {
     final progress = _logger.progress(label);
     final result = await Process.run(
       command.executable,
       command.arguments,
       workingDirectory: projectDir,
+      environment:
+          environment == null
+              ? null
+              : {...Platform.environment, ...environment},
     );
     if (result.exitCode != 0) {
       progress.fail('$label failed');

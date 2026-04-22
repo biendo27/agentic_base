@@ -56,7 +56,7 @@ Files under `lib/src/generators/` own scaffold workflows:
 - `FeatureHostSynchronizer` wires full feature specs into host routes and spec-contract tests
 - `TestGenerator` turns a feature spec into test stubs
 
-`ProjectGenerator` is the central create-flow orchestrator. `AgenticAppSurfaceSynchronizer` is the shared surface materializer for `create`, `init`, and `upgrade`. Together they call native tooling, overlay templates, sync generator-owned surfaces, install modules, apply ownership cleanup, materialize typed translations, then verify the generated project contract through the generated harness scripts.
+`ProjectGenerator` is the central create-flow orchestrator. `AgenticAppSurfaceSynchronizer` is the shared surface materializer for `create`, `init`, and `upgrade`. Together they call native tooling, overlay templates, sync generator-owned surfaces, install modules, apply ownership cleanup, materialize typed translations, then verify the generated project contract through the generated harness scripts. Fresh creates default to full verification, while CI can opt into `--verify-mode none` only when it immediately runs another generated gate.
 
 ### 3. Project State Layer
 
@@ -137,7 +137,7 @@ layout stable under `artifacts/evidence/**`.
 8. `build_runner` runs for DI/router/model codegen through the resolved toolchain
 9. duplicate root shell files and forbidden IDE artifacts are removed
 10. `dart run slang` materializes typed localization output from `build.yaml`
-11. generated `./tools/verify.sh` runs named gates and writes evidence bundles
+11. generated `./tools/verify.sh` runs named gates and writes evidence bundles unless the caller explicitly selected a lower verification mode
 12. generated repos ship deterministic `tools/` entrypoints and thin adapters that point back to canonical docs
 
 ### Add Module Flow
@@ -177,7 +177,7 @@ Repo CI currently lives in one GitHub Actions workflow:
 
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
 
-That workflow verifies the package, keeps one full cubit/GitHub generated-repo lane plus riverpod and mobx starter-runtime lanes, and enforces a separate pinned macOS generated-app native gate. GitLab provider semantics are still covered, but now mostly through lower-level contract tests instead of a duplicate full generated-app lane. Generated-project CI is scaffolded into downstream repos, where provider-specific workflows now also preserve harness evidence artifacts.
+That workflow keeps package checks fast with `test/src`, then gates generated-app smoke, the slow verify canary, and the pinned macOS native smoke only when changed paths or promotion events require them. `ci-required` is the always-running aggregate status. GitLab provider semantics are still covered mostly through lower-level contract tests instead of a duplicate full generated-app lane. Generated-project CI is scaffolded into downstream repos, where provider-specific workflows preserve harness evidence artifacts and PR CI builds only `dev` and `staging` artifacts.
 
 ## Architectural Pressure Points
 

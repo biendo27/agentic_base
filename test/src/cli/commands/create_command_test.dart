@@ -4,6 +4,7 @@ import 'package:agentic_base/src/cli/commands/create_command.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/config/harness_profile.dart';
+import 'package:agentic_base/src/generators/generated_verification_mode.dart';
 import 'package:agentic_base/src/generators/project_generator.dart';
 import 'package:agentic_base/src/modules/module_registry.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
@@ -30,6 +31,7 @@ class RecordingProjectGenerator extends ProjectGenerator {
   String? flutterSdkVersion;
   List<String>? secondaryTraits;
   List<String>? modules;
+  GeneratedVerificationMode? verificationMode;
 
   @override
   Future<void> previewGenerate({
@@ -45,12 +47,14 @@ class RecordingProjectGenerator extends ProjectGenerator {
     String? flutterSdkVersion,
     List<String> secondaryTraits = const [],
     List<String>? modules,
+    GeneratedVerificationMode verificationMode = GeneratedVerificationMode.full,
   }) async {
     previewInvoked = true;
     this.projectName = projectName;
     this.outputDirectory = outputDirectory;
     this.modules = modules == null ? null : List.of(modules);
     this.appProfile = appProfile;
+    this.verificationMode = verificationMode;
   }
 
   @override
@@ -67,7 +71,7 @@ class RecordingProjectGenerator extends ProjectGenerator {
     String? flutterSdkVersion,
     List<String> secondaryTraits = const [],
     List<String>? modules,
-    bool runVerify = true,
+    GeneratedVerificationMode verificationMode = GeneratedVerificationMode.full,
   }) async {
     generateInvoked = true;
     this.projectName = projectName;
@@ -82,6 +86,7 @@ class RecordingProjectGenerator extends ProjectGenerator {
     this.flutterSdkVersion = flutterSdkVersion;
     this.secondaryTraits = List.of(secondaryTraits);
     this.modules = modules == null ? null : List.of(modules);
+    this.verificationMode = verificationMode;
   }
 }
 
@@ -116,6 +121,7 @@ void main() {
       expect(command.argParser.options.keys, contains('flavors'));
       expect(command.argParser.options.keys, isNot(contains('primary-color')));
       expect(command.argParser.options.keys, contains('ci-provider'));
+      expect(command.argParser.options.keys, contains('verify-mode'));
       expect(command.argParser.options.keys, contains('app-profile'));
       expect(command.argParser.options.keys, contains('traits'));
       expect(command.argParser.options.keys, contains('flutter-sdk-manager'));
@@ -159,6 +165,11 @@ void main() {
         args['app-profile'],
         equals(HarnessAppProfile.subscriptionCommerceApp.wireName),
       );
+    });
+
+    test('verify-mode defaults to full', () {
+      final args = command.argParser.parse([]);
+      expect(args['verify-mode'], equals('full'));
     });
 
     test('state option accepts cubit, riverpod, mobx', () {
@@ -245,6 +256,65 @@ void main() {
 
         expect(exitCode, equals(0));
         expect(recordingGenerator.ciProvider, equals(CiProvider.gitlab));
+      },
+    );
+
+    test(
+      'prompts for ci-provider during interactive create when omitted',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'create-command-provider-prompt-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+        when(
+          () => mockLogger.chooseOne(
+            'CI provider',
+            choices: supportedCiProviders,
+            defaultValue: defaultCiProvider.name,
+          ),
+        ).thenReturn('gitlab');
+
+        final exitCode = await runner.run([
+          'create',
+          'demo_app',
+          '--output-dir',
+          tempDir.path,
+          '--org',
+          'com.example',
+          '--platforms',
+          'android',
+          '--modules',
+          'analytics',
+        ]);
+
+        expect(exitCode, equals(0));
+        expect(recordingGenerator.ciProvider, equals(CiProvider.gitlab));
+      },
+    );
+
+    test(
+      'passes verify-mode through to the project generator',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'create-command-verify-mode-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        final exitCode = await runner.run([
+          'create',
+          'demo_app',
+          '--no-interactive',
+          '--output-dir',
+          tempDir.path,
+          '--verify-mode',
+          'fast',
+        ]);
+
+        expect(exitCode, equals(0));
+        expect(
+          recordingGenerator.verificationMode,
+          equals(GeneratedVerificationMode.fast),
+        );
       },
     );
 

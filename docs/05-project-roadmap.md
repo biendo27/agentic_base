@@ -12,7 +12,7 @@ Validation is green on `dart analyze --fatal-infos`, the doc and generator-focus
 
 The observability contract and agent legibility milestone is now complete: repo-scoped runtime telemetry, structured evidence exports, and a single derived local inspect surface are landed and regression-covered.
 
-The generator contract hardening wave is complete: `run.sh` is canonical, module services live under `lib/services`, Firebase setup is explicit and rollback-safe, DI startup is split, default runtime modules stay bootable without credentials, and Android-only create/verify now skips iOS readiness. Android native launch evidence is recorded in [`plans/reports/native-260421-1104-android-launch-log.txt`](../plans/reports/native-260421-1104-android-launch-log.txt).
+The CI speed and generated-app hardening wave is complete: root package CI now has fast required tests plus conditional generated/native gates, generated CI/CD templates render provider variables safely, PR CI avoids credentialless prod builds, generated create supports explicit verification modes, iOS AdMob metadata is root-dict-safe, and generated strict lint is opt-in.
 
 The next active milestone is command/orchestration modularization so large command files can be split without changing behavior.
 
@@ -31,6 +31,7 @@ The next active milestone is command/orchestration modularization so large comma
 | 9. Contract-Freeze Slice 1 | Completed | Default app service matrix added; `observability` renamed to `evidence_quality`; validator and manifest parser now enforce canonical quality dimensions. |
 | 10. Profile Execution Golden Path | Completed | Profile presets, profile-aware verify gates, trustworthy-commerce starter UI, migration docs, and generated-app regression coverage shipped. |
 | 11. Generator Contract Hardening | Completed | Run/flavor contract, dependency catalog, Firebase setup, DI startup split, and default runtime safety shipped. |
+| 12. CI Speed And Generated App Hardening | Completed | Fast root CI taxonomy, explicit generated verify modes, render-safe CI templates, AdMob plist repair, and strict lint mode shipped. |
 
 ## Next Milestone
 
@@ -74,9 +75,9 @@ Key docs:
 ## Release Gates
 
 - `agentic_base` passes analyze, format check, and test locally and in CI
-- generated app smoke tests pass in CI for the retained heavy starter lanes (GitHub cubit plus riverpod and mobx runtime variants)
+- generated app smoke tests pass in CI when generator/template/module/harness paths require them
 - GitLab scaffold semantics remain covered by contract validators and repo-level tests instead of a duplicate full generated-app lane
-- the pinned macOS generated-app native gate passes in CI
+- the pinned macOS generated-app native gate passes when native/template/module paths require it
 - `init` parity, deterministic module versioning, and startup-seam regressions stay covered by package tests
 - command docs, generated docs, adapters, and roadmap agree
 - generated verify/release-preflight evidence remains downloadable in downstream CI

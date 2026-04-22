@@ -48,7 +48,7 @@ The CLI runner registers:
 
 The package creates or modifies Flutter projects in two main ways:
 
-- `create` makes a fresh Flutter project, overlays the `agentic_app` brick, writes `.info/agentic.yaml`, resolves profile-owned default modules and providers when the user does not explicitly override them, materializes typed translations, and verifies the generated app with profile-aware gate policy.
+- `create` makes a fresh Flutter project, overlays the `agentic_app` brick, writes `.info/agentic.yaml`, resolves profile-owned default modules and providers when the user does not explicitly override them, materializes typed translations, and verifies the generated app with an explicit `full`, `fast`, or `none` verification mode.
 - `init` adds agentic scaffolding to an existing Flutter project without overwriting existing files and can repair stale or fabricated metadata with provenance.
 
 Generated starter apps now follow one explicit ownership contract:
@@ -63,6 +63,7 @@ Generated starter apps now follow one explicit ownership contract:
 - GetIt/MobX module registration now comes from injectable-generated `injection.config.dart`; `module_startup.dart` owns only ordered startup hooks, and Riverpod apps use `lib/app/modules/module_providers.dart` for installed modules
 - Firebase-backed modules now emit per-flavor stubs under `lib/services/firebase/` and remain bootable until `agentic_base firebase setup` writes real provider options and native config paths
 - analytics now wires a concrete `AnalyticsService` seam into the generated DI graph and is smoke-tested
+- ads now repairs iOS `GADApplicationIdentifier` at the root `Info.plist` dictionary so generated iOS metadata is valid before simulator readiness or real runtime launch
 
 The app brick also ships its own generated-project docs under the template `docs/` folder, which means this repo has two doc surfaces:
 
@@ -82,6 +83,7 @@ Current tests are mostly fast unit tests:
 - module registry dependency logic
 - project contract validation and generated-app smoke tests
 - analytics module DI wiring in generated starter apps
+- root generated-app/native test lanes are tagged separately from fast package tests
 
 What is not present yet in this repo CI:
 
@@ -94,6 +96,7 @@ What is not present yet in this repo CI:
 - preview-only `--dry-run` now spans the command surface, and previews no longer probe Flutter managers before printing the planned reads, writes, and commands
 - manager-aware command execution now resolves `flutter`/`dart` invocations through `system`, `fvm`, or `puro`, while `doctor` reports manager fallback as a contract mismatch instead of a healthy state
 - generated app smoke coverage now asserts analytics module DI wiring in the emitted `injection.config.dart`
+- repo CI now has a fast required `test/src` lane, conditional generated/native lanes, and one always-running aggregate `ci-required` status
 - generated app smoke coverage now asserts `tools/run.sh`, `lib/services`, Firebase stubs, and absence of legacy `run-dev.sh`, root `firebase_options.dart`, and `module_registrations.dart`
 - generated app smoke coverage now exercises cubit, riverpod, and mobx starter apps
 - generated starter contracts now use file-per-contract shared models for `AppResult`, response envelopes, pagination, and runtime-agnostic localized text, while the theme layer splits family selection from theme composition
