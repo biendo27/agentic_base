@@ -149,6 +149,7 @@ lib/
 | `--state` | State management. | `cubit` |
 | `--flavors` | Build flavors. | `dev,staging,prod` |
 | `--ci-provider` | Generated project CI provider (`github` or `gitlab`). | `github` |
+| `--verify-mode` | Generated project verification depth (`full`, `fast`, or `none`). `full` runs `tools/verify.sh`; `none` is for CI paths that immediately run another gate. | `full` |
 | `--app-profile` | Declared Harness Contract V1 primary profile. | `subscription-commerce-app` |
 | `--traits` | Optional profile traits (comma-separated). | none |
 | `--flutter-sdk-manager` | Declared Flutter SDK manager (`system`, `fvm`, `puro`). | `system` |

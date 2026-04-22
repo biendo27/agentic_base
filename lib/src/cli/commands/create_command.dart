@@ -4,6 +4,7 @@ import 'package:agentic_base/src/cli/dry_run.dart';
 import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/config/harness_profile.dart';
+import 'package:agentic_base/src/generators/generated_verification_mode.dart';
 import 'package:agentic_base/src/generators/project_generator.dart';
 import 'package:agentic_base/src/modules/module_registry.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
@@ -54,6 +55,14 @@ class CreateCommand extends Command<int> {
         help: 'CI provider: github or gitlab',
         allowed: supportedCiProviders,
         defaultsTo: defaultCiProvider.name,
+      )
+      ..addOption(
+        'verify-mode',
+        help:
+            'Generated project verification depth: full, fast, or none. '
+            'Default keeps the full generated verify contract.',
+        allowed: generatedVerificationModes,
+        defaultsTo: GeneratedVerificationMode.full.name,
       )
       ..addOption(
         'app-profile',
@@ -150,8 +159,14 @@ class CreateCommand extends Command<int> {
       args['flavors'] as String?,
     );
     final requestedTraits = _normalizeCsvOption(args['traits'] as String?);
-    final ciProvider = parseCiProvider(
-      args['ci-provider'] as String? ?? defaultCiProvider.name,
+    final ciProvider =
+        args.wasParsed('ci-provider') || noInteractive
+            ? parseCiProvider(
+              args['ci-provider'] as String? ?? defaultCiProvider.name,
+            )
+            : prompts.promptCiProvider(defaultCiProvider);
+    final verificationMode = GeneratedVerificationModeX.fromWireName(
+      args['verify-mode'] as String?,
     );
     final appProfile = HarnessAppProfileX.fromWireName(
       args['app-profile'] as String?,
@@ -259,6 +274,7 @@ class CreateCommand extends Command<int> {
           flutterSdkVersion: flutterVersion,
           secondaryTraits: requestedTraits ?? const <String>[],
           modules: modules,
+          verificationMode: verificationMode,
         );
         return 0;
       }
@@ -277,6 +293,7 @@ class CreateCommand extends Command<int> {
         flutterSdkVersion: flutterVersion,
         secondaryTraits: requestedTraits ?? const <String>[],
         modules: modules,
+        verificationMode: verificationMode,
       );
 
       _logger

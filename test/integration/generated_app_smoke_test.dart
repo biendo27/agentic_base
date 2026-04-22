@@ -5,6 +5,7 @@ import 'package:agentic_base/src/config/ci_provider.dart';
 import 'package:agentic_base/src/config/flutter_sdk_contract.dart';
 import 'package:agentic_base/src/config/harness_profile.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
+import 'package:agentic_base/src/generators/generated_verification_mode.dart';
 import 'package:agentic_base/src/generators/project_generator.dart';
 import 'package:agentic_base/src/tui/agentic_logger.dart';
 import 'package:path/path.dart' as p;
@@ -42,7 +43,7 @@ Future<String> _generateStarterApp({
       appProfile: appProfile,
       flutterSdkManager: FlutterSdkManager.system,
       modules: modules,
-      runVerify: false,
+      verificationMode: GeneratedVerificationMode.none,
     );
   } finally {
     Directory.current = previousCurrent;
@@ -548,108 +549,201 @@ void main() {
   // The default subscription-commerce lane now installs and verifies a larger
   // golden-path surface than the other starter smoke cases.
   const slowVerifyCanaryTimeout = Timeout(Duration(minutes: 15));
-  test(
-    'slow verify canary stays blocking for harness, verify, evidence, and profile-surface changes',
-    () async {
-      final tempDir = await Directory.systemTemp.createTemp(
-        'agentic-base-smoke-github-',
-      );
-      addTearDown(() => tempDir.delete(recursive: true));
-
-      const appName = 'smoke_github_app';
-      final appDir = await _generateStarterApp(
-        repoRoot: repoRoot,
-        tempDir: tempDir,
-        appName: appName,
-        appProfile: HarnessAppProfile.subscriptionCommerceApp,
-      );
-      await _runGeneratedVerify(appDir);
-      expect(Directory(appDir).existsSync(), isTrue);
-      expect(
-        () => GeneratedProjectContract.validate(
-          appDir,
-          ciProvider: CiProvider.github,
-          stateManagement: 'cubit',
-        ),
-        returnsNormally,
-      );
-      final verifySummary =
-          File(
-            p.join(
-              _latestEvidenceRunDirectory(appDir, 'verify').path,
-              'summary.json',
-            ),
-          ).readAsStringSync();
-      final verifyTelemetryContext =
-          File(
-            p.join(
-              _latestEvidenceRunDirectory(appDir, 'verify').path,
-              'telemetry',
-              'runtime-context.json',
-            ),
-          ).readAsStringSync();
-      final verifyTelemetryMetrics =
-          File(
-            p.join(
-              _latestEvidenceRunDirectory(appDir, 'verify').path,
-              'telemetry',
-              'metrics.json',
-            ),
-          ).readAsStringSync();
-      final verifyTelemetryEvents =
-          File(
-            p.join(
-              _latestEvidenceRunDirectory(appDir, 'verify').path,
-              'telemetry',
-              'events.ndjson',
-            ),
-          ).readAsStringSync();
-      expect(verifySummary, contains('"run_kind": "verify"'));
-      expect(verifySummary, contains('"derived_gate_expectation_id"'));
-      expect(verifySummary, contains('"unit-widget"'));
-      expect(verifySummary, contains('"app-shell-smoke"'));
-      expect(verifySummary, contains('"runtime-telemetry"'));
-      expect(verifySummary, contains('"starter-commerce"'));
-      expect(verifyTelemetryContext, contains('"mode": "local-first"'));
-      expect(verifyTelemetryEvents, contains('"kind":"approval_transition"'));
-      expect(verifyTelemetryMetrics, contains('"counters"'));
-      _expectStarterRuntimeSurfaces(appDir, stateManagement: 'cubit');
-    },
-    tags: const ['slow-canary'],
-    skip:
-        flutterAvailable
-            ? false
-            : 'Flutter SDK is required for smoke generation.',
-    timeout: slowVerifyCanaryTimeout,
-  );
-
-  for (final stateManagement in ['riverpod', 'mobx']) {
+  group('generated app smoke', () {
     test(
-      'create command generates a $stateManagement starter app with no foreign runtime leftovers',
+      'slow verify canary stays blocking for harness, verify, evidence, and profile-surface changes',
       () async {
         final tempDir = await Directory.systemTemp.createTemp(
-          'agentic-base-smoke-state-$stateManagement-',
+          'agentic-base-smoke-github-',
         );
         addTearDown(() => tempDir.delete(recursive: true));
 
+        const appName = 'smoke_github_app';
         final appDir = await _generateStarterApp(
           repoRoot: repoRoot,
           tempDir: tempDir,
-          appName: 'smoke_${stateManagement}_app',
-          stateManagement: stateManagement,
+          appName: appName,
+          appProfile: HarnessAppProfile.subscriptionCommerceApp,
         );
-
+        await _runGeneratedVerify(appDir);
+        expect(Directory(appDir).existsSync(), isTrue);
         expect(
           () => GeneratedProjectContract.validate(
             appDir,
             ciProvider: CiProvider.github,
-            stateManagement: stateManagement,
+            stateManagement: 'cubit',
           ),
           returnsNormally,
         );
-        _expectStarterRuntimeSurfaces(
-          appDir,
-          stateManagement: stateManagement,
+        final verifySummary =
+            File(
+              p.join(
+                _latestEvidenceRunDirectory(appDir, 'verify').path,
+                'summary.json',
+              ),
+            ).readAsStringSync();
+        final verifyTelemetryContext =
+            File(
+              p.join(
+                _latestEvidenceRunDirectory(appDir, 'verify').path,
+                'telemetry',
+                'runtime-context.json',
+              ),
+            ).readAsStringSync();
+        final verifyTelemetryMetrics =
+            File(
+              p.join(
+                _latestEvidenceRunDirectory(appDir, 'verify').path,
+                'telemetry',
+                'metrics.json',
+              ),
+            ).readAsStringSync();
+        final verifyTelemetryEvents =
+            File(
+              p.join(
+                _latestEvidenceRunDirectory(appDir, 'verify').path,
+                'telemetry',
+                'events.ndjson',
+              ),
+            ).readAsStringSync();
+        expect(verifySummary, contains('"run_kind": "verify"'));
+        expect(verifySummary, contains('"derived_gate_expectation_id"'));
+        expect(verifySummary, contains('"unit-widget"'));
+        expect(verifySummary, contains('"app-shell-smoke"'));
+        expect(verifySummary, contains('"runtime-telemetry"'));
+        expect(verifySummary, contains('"starter-commerce"'));
+        expect(verifyTelemetryContext, contains('"mode": "local-first"'));
+        expect(verifyTelemetryEvents, contains('"kind":"approval_transition"'));
+        expect(verifyTelemetryMetrics, contains('"counters"'));
+        _expectStarterRuntimeSurfaces(appDir, stateManagement: 'cubit');
+      },
+      tags: const ['slow-canary'],
+      skip:
+          flutterAvailable
+              ? false
+              : 'Flutter SDK is required for smoke generation.',
+      timeout: slowVerifyCanaryTimeout,
+    );
+
+    for (final stateManagement in ['riverpod', 'mobx']) {
+      test(
+        'create command generates a $stateManagement starter app with no foreign runtime leftovers',
+        () async {
+          final tempDir = await Directory.systemTemp.createTemp(
+            'agentic-base-smoke-state-$stateManagement-',
+          );
+          addTearDown(() => tempDir.delete(recursive: true));
+
+          final appDir = await _generateStarterApp(
+            repoRoot: repoRoot,
+            tempDir: tempDir,
+            appName: 'smoke_${stateManagement}_app',
+            stateManagement: stateManagement,
+          );
+
+          expect(
+            () => GeneratedProjectContract.validate(
+              appDir,
+              ciProvider: CiProvider.github,
+              stateManagement: stateManagement,
+            ),
+            returnsNormally,
+          );
+          _expectStarterRuntimeSurfaces(
+            appDir,
+            stateManagement: stateManagement,
+          );
+        },
+        skip:
+            flutterAvailable
+                ? false
+                : 'Flutter SDK is required for smoke generation.',
+        timeout: smokeTimeout,
+      );
+    }
+
+    test(
+      'create command wires analytics module into the generated DI graph',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'agentic-base-smoke-analytics-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        const appName = 'smoke_analytics_app';
+        final appDir = await _generateStarterApp(
+          repoRoot: repoRoot,
+          tempDir: tempDir,
+          appName: appName,
+          modules: const ['analytics'],
+        );
+        final analyticsImpl =
+            File(
+              p.join(
+                appDir,
+                'lib/services/analytics/firebase_analytics_service.dart',
+              ),
+            ).readAsStringSync();
+        final registrations =
+            File(
+              p.join(appDir, 'lib/app/modules/module_startup.dart'),
+            ).readAsStringSync();
+        final injectionConfig =
+            File(
+              p.join(appDir, 'lib/core/di/injection.config.dart'),
+            ).readAsStringSync();
+        final firebaseOptions =
+            File(
+              p.join(
+                appDir,
+                'lib/services/firebase/options/firebase_options_dev.dart',
+              ),
+            ).readAsStringSync();
+        final firebaseRuntime =
+            File(
+              p.join(appDir, 'lib/services/firebase/firebase_runtime.dart'),
+            ).readAsStringSync();
+
+        expect(analyticsImpl, contains('@LazySingleton(as: AnalyticsService)'));
+        expect(analyticsImpl, contains('FirebaseAnalytics.instance'));
+        expect(
+          analyticsImpl,
+          isNot(
+            contains(
+              'FirebaseAnalyticsService({FirebaseAnalytics? analytics})',
+            ),
+          ),
+        );
+        expect(
+          registrations,
+          isNot(contains('await getIt<AnalyticsService>().init();')),
+        );
+        _expectIosPodfileContains(appDir, ["platform :ios, '15.0'"]);
+        expect(injectionConfig, contains('FirebaseAnalyticsService'));
+        expect(injectionConfig, contains('AnalyticsService'));
+        expect(
+          firebaseOptions,
+          contains(
+            'Run `agentic_base firebase setup` to generate Firebase options.',
+          ),
+        );
+        expect(
+          firebaseRuntime,
+          contains(
+            "import 'package:$appName/services/firebase/firebase_options.dart';",
+          ),
+        );
+        expect(
+          firebaseRuntime,
+          contains('DefaultFirebaseOptionsForFlavor.currentPlatform'),
+        );
+        expect(
+          firebaseRuntime,
+          contains('FirebaseRuntimeState'),
+        );
+        expect(
+          File(p.join(appDir, 'lib/firebase_options.dart')).existsSync(),
+          isFalse,
         );
       },
       skip:
@@ -658,209 +752,120 @@ void main() {
               : 'Flutter SDK is required for smoke generation.',
       timeout: smokeTimeout,
     );
-  }
 
-  test(
-    'create command wires analytics module into the generated DI graph',
-    () async {
-      final tempDir = await Directory.systemTemp.createTemp(
-        'agentic-base-smoke-analytics-',
-      );
-      addTearDown(() => tempDir.delete(recursive: true));
+    test(
+      'create command wires notifications into the generated startup seam',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'agentic-base-smoke-notifications-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
 
-      const appName = 'smoke_analytics_app';
-      final appDir = await _generateStarterApp(
-        repoRoot: repoRoot,
-        tempDir: tempDir,
-        appName: appName,
-        modules: const ['analytics'],
-      );
-      final analyticsImpl =
-          File(
-            p.join(
-              appDir,
-              'lib/services/analytics/firebase_analytics_service.dart',
-            ),
-          ).readAsStringSync();
-      final registrations =
-          File(
-            p.join(appDir, 'lib/app/modules/module_startup.dart'),
-          ).readAsStringSync();
-      final injectionConfig =
-          File(
-            p.join(appDir, 'lib/core/di/injection.config.dart'),
-          ).readAsStringSync();
-      final firebaseOptions =
-          File(
-            p.join(
-              appDir,
-              'lib/services/firebase/options/firebase_options_dev.dart',
-            ),
-          ).readAsStringSync();
-      final firebaseRuntime =
-          File(
-            p.join(appDir, 'lib/services/firebase/firebase_runtime.dart'),
-          ).readAsStringSync();
+        final appDir = await _generateStarterApp(
+          repoRoot: repoRoot,
+          tempDir: tempDir,
+          appName: 'smoke_notifications_app',
+          modules: const ['notifications'],
+        );
+        final registrations =
+            File(
+              p.join(appDir, 'lib/app/modules/module_startup.dart'),
+            ).readAsStringSync();
+        final notificationsImpl =
+            File(
+              p.join(
+                appDir,
+                'lib/services/notifications/awesome_notifications_service.dart',
+              ),
+            ).readAsStringSync();
 
-      expect(analyticsImpl, contains('@LazySingleton(as: AnalyticsService)'));
-      expect(analyticsImpl, contains('FirebaseAnalytics.instance'));
-      expect(
-        analyticsImpl,
-        isNot(
-          contains('FirebaseAnalyticsService({FirebaseAnalytics? analytics})'),
-        ),
-      );
-      expect(
-        registrations,
-        isNot(contains('await getIt<AnalyticsService>().init();')),
-      );
-      _expectIosPodfileContains(appDir, ["platform :ios, '15.0'"]);
-      expect(injectionConfig, contains('FirebaseAnalyticsService'));
-      expect(injectionConfig, contains('AnalyticsService'));
-      expect(
-        firebaseOptions,
-        contains(
-          'Run `agentic_base firebase setup` to generate Firebase options.',
-        ),
-      );
-      expect(
-        firebaseRuntime,
-        contains(
-          "import 'package:$appName/services/firebase/firebase_options.dart';",
-        ),
-      );
-      expect(
-        firebaseRuntime,
-        contains('DefaultFirebaseOptionsForFlavor.currentPlatform'),
-      );
-      expect(
-        firebaseRuntime,
-        contains('FirebaseRuntimeState'),
-      );
-      expect(
-        File(p.join(appDir, 'lib/firebase_options.dart')).existsSync(),
-        isFalse,
-      );
-    },
-    skip:
-        flutterAvailable
-            ? false
-            : 'Flutter SDK is required for smoke generation.',
-    timeout: smokeTimeout,
-  );
+        expect(registrations, contains('NotificationsService'));
+        expect(
+          registrations,
+          contains('start: () => getIt<NotificationsService>().init(),'),
+        );
+        expect(notificationsImpl, contains('_defaultNotificationChannels'));
+        expect(
+          notificationsImpl,
+          contains("channelKey: 'general'"),
+        );
+        _expectIosPodfileContains(appDir, [
+          "platform :ios, '15.0'",
+          'use_modular_headers!',
+          'update_awesome_pod_build_settings(installer)',
+          "update_awesome_main_target_settings('Runner'",
+        ]);
+      },
+      skip:
+          flutterAvailable
+              ? false
+              : 'Flutter SDK is required for smoke generation.',
+      timeout: smokeTimeout,
+    );
 
-  test(
-    'create command wires notifications into the generated startup seam',
-    () async {
-      final tempDir = await Directory.systemTemp.createTemp(
-        'agentic-base-smoke-notifications-',
-      );
-      addTearDown(() => tempDir.delete(recursive: true));
+    test(
+      'release-preflight emits approval evidence for production uploads',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'agentic-base-smoke-release-preflight-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
 
-      final appDir = await _generateStarterApp(
-        repoRoot: repoRoot,
-        tempDir: tempDir,
-        appName: 'smoke_notifications_app',
-        modules: const ['notifications'],
-      );
-      final registrations =
-          File(
-            p.join(appDir, 'lib/app/modules/module_startup.dart'),
-          ).readAsStringSync();
-      final notificationsImpl =
-          File(
-            p.join(
-              appDir,
-              'lib/services/notifications/awesome_notifications_service.dart',
-            ),
-          ).readAsStringSync();
+        final appDir = await _generateStarterApp(
+          repoRoot: repoRoot,
+          tempDir: tempDir,
+          appName: 'smoke_release_contract_app',
+        );
+        File(p.join(appDir, 'env', 'prod.env')).writeAsStringSync(
+          File(p.join(appDir, 'env', 'prod.env.example')).readAsStringSync(),
+        );
+        final fakeBinDir = Directory(p.join(tempDir.path, 'fake-bin'))
+          ..createSync(recursive: true);
+        final bundleScript = File(p.join(fakeBinDir.path, 'bundle'))
+          ..writeAsStringSync('#!/bin/sh\nexit 0\n');
+        await Process.run('chmod', ['755', bundleScript.path]);
 
-      expect(registrations, contains('NotificationsService'));
-      expect(
-        registrations,
-        contains('start: () => getIt<NotificationsService>().init(),'),
-      );
-      expect(notificationsImpl, contains('_defaultNotificationChannels'));
-      expect(
-        notificationsImpl,
-        contains("channelKey: 'general'"),
-      );
-      _expectIosPodfileContains(appDir, [
-        "platform :ios, '15.0'",
-        'use_modular_headers!',
-        'update_awesome_pod_build_settings(installer)',
-        "update_awesome_main_target_settings('Runner'",
-      ]);
-    },
-    skip:
-        flutterAvailable
-            ? false
-            : 'Flutter SDK is required for smoke generation.',
-    timeout: smokeTimeout,
-  );
+        final preflightResult = await Process.run(
+          'bash',
+          ['./tools/release-preflight.sh', 'prod', 'play-production'],
+          workingDirectory: appDir,
+          environment: {
+            'PATH':
+                '${fakeBinDir.path}${Platform.isWindows ? ';' : ':'}${Platform.environment['PATH'] ?? ''}',
+            'PLAY_STORE_JSON_KEY': 'fake-key',
+          },
+        );
 
-  test(
-    'release-preflight emits approval evidence for production uploads',
-    () async {
-      final tempDir = await Directory.systemTemp.createTemp(
-        'agentic-base-smoke-release-preflight-',
-      );
-      addTearDown(() => tempDir.delete(recursive: true));
+        expect(
+          preflightResult.exitCode,
+          equals(0),
+          reason: '${preflightResult.stdout}\n${preflightResult.stderr}',
+        );
 
-      final appDir = await _generateStarterApp(
-        repoRoot: repoRoot,
-        tempDir: tempDir,
-        appName: 'smoke_release_contract_app',
-      );
-      File(p.join(appDir, 'env', 'prod.env')).writeAsStringSync(
-        File(p.join(appDir, 'env', 'prod.env.example')).readAsStringSync(),
-      );
-      final fakeBinDir = Directory(p.join(tempDir.path, 'fake-bin'))
-        ..createSync(recursive: true);
-      final bundleScript = File(p.join(fakeBinDir.path, 'bundle'))
-        ..writeAsStringSync('#!/bin/sh\nexit 0\n');
-      await Process.run('chmod', ['755', bundleScript.path]);
-
-      final preflightResult = await Process.run(
-        'bash',
-        ['./tools/release-preflight.sh', 'prod', 'play-production'],
-        workingDirectory: appDir,
-        environment: {
-          'PATH':
-              '${fakeBinDir.path}${Platform.isWindows ? ';' : ':'}${Platform.environment['PATH'] ?? ''}',
-          'PLAY_STORE_JSON_KEY': 'fake-key',
-        },
-      );
-
-      expect(
-        preflightResult.exitCode,
-        equals(0),
-        reason: '${preflightResult.stdout}\n${preflightResult.stderr}',
-      );
-
-      final summary =
-          File(
-            p.join(
-              _latestEvidenceRunDirectory(appDir, 'release-preflight').path,
-              'summary.json',
-            ),
-          ).readAsStringSync();
-      final telemetryEvents =
-          File(
-            p.join(
-              _latestEvidenceRunDirectory(appDir, 'release-preflight').path,
-              'telemetry',
-              'events.ndjson',
-            ),
-          ).readAsStringSync();
-      expect(summary, contains('"run_kind": "release-preflight"'));
-      expect(summary, contains('"approval_state": "UploadReady"'));
-      expect(telemetryEvents, contains('"kind":"approval_transition"'));
-    },
-    skip:
-        flutterAvailable
-            ? false
-            : 'Flutter SDK is required for smoke generation.',
-    timeout: smokeTimeout,
-  );
+        final summary =
+            File(
+              p.join(
+                _latestEvidenceRunDirectory(appDir, 'release-preflight').path,
+                'summary.json',
+              ),
+            ).readAsStringSync();
+        final telemetryEvents =
+            File(
+              p.join(
+                _latestEvidenceRunDirectory(appDir, 'release-preflight').path,
+                'telemetry',
+                'events.ndjson',
+              ),
+            ).readAsStringSync();
+        expect(summary, contains('"run_kind": "release-preflight"'));
+        expect(summary, contains('"approval_state": "UploadReady"'));
+        expect(telemetryEvents, contains('"kind":"approval_transition"'));
+      },
+      skip:
+          flutterAvailable
+              ? false
+              : 'Flutter SDK is required for smoke generation.',
+      timeout: smokeTimeout,
+    );
+  }, tags: const ['generated-app']);
 }

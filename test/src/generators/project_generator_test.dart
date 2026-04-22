@@ -161,7 +161,8 @@ harness:
         'pure convenience, serialization, and formatting helpers may stay in extensions when they depend only on the contract value and keep the Freezed model smaller\n'
         'locale-, DI-, or app-runtime-aware convenience belongs in extensions or services outside raw contracts\n',
     'docs/06-testing-guide.md':
-        './tools/test.sh\n./tools/verify.sh\n./tools/inspect-evidence.sh\nmake test\napp-shell-smoke\n',
+        './tools/test.sh\n./tools/verify.sh\n./tools/lint.sh --strict\n./tools/inspect-evidence.sh\nmake test\napp-shell-smoke\n',
+    'tools/lint.sh': '--strict\n--fatal-infos\n',
     'docs/07-agentic-development-flow.md':
         '.info/agentic.yaml\n./tools/verify.sh\n./tools/inspect-evidence.sh\nRecommended default Gitflow\nfeature/*\nrelease/*\nhotfix/*\n',
     'dart_test.yaml': 'tags:\n  app-smoke:\n',
@@ -197,7 +198,7 @@ harness:
     'lib/core/extensions/context_extensions.dart': 'adaptivePagePadding\n',
     'docs/05-theming-guide.md': 'BuildContextX\ntrustworthy-commerce\n',
     '.github/workflows/ci.yml':
-        r'./tools/verify.sh ${{ github.workflow }}-${{ github.ref }} ./tools/build.sh ${{ matrix.flavor }} actions/upload-artifact@v4 flutter-version:',
+        r'./tools/verify.sh ${{ github.workflow }}-${{ github.ref }} ./tools/build.sh ${{ matrix.flavor }} actions/upload-artifact@v4 flutter-version: flavor: [dev, staging]',
     '.github/workflows/cd-dev.yml': './tools/release.sh dev firebase\n',
     '.github/workflows/cd-staging.yml':
         './tools/release.sh staging play-internal\n./tools/release.sh staging testflight\n',
@@ -430,6 +431,100 @@ void main() {
         );
       },
     );
+
+    test('validate rejects generated CI with unresolved Mason tokens', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-unresolved-ci-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+      await File(
+        p.join(tempDir.path, '.github/workflows/ci.yml'),
+      ).writeAsString(
+        r'./tools/verify.sh ${{ github.workflow }}-${{ github.ref }} '
+        r'./tools/build.sh ${{ matrix.flavor }} actions/upload-artifact@v4 '
+        'flutter-version: channel: {{flutter_sdk_channel}} flavor: [dev, staging]',
+      );
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test('validate rejects generated PR CI prod build matrix', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-prod-pr-ci-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+      await File(
+        p.join(tempDir.path, '.github/workflows/ci.yml'),
+      ).writeAsString(
+        r'./tools/verify.sh ${{ github.workflow }}-${{ github.ref }} '
+        r'./tools/build.sh ${{ matrix.flavor }} actions/upload-artifact@v4 '
+        'flutter-version: flavor: [dev, staging, prod]',
+      );
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+    });
+
+    test('validate rejects nested iOS AdMob app id for ads module', () async {
+      final tempDir = await Directory.systemTemp.createTemp(
+        'generated-project-contract-ads-plist-',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      await seedRequiredContractFiles(tempDir.path);
+      final configFile = File(p.join(tempDir.path, '.info/agentic.yaml'));
+      configFile.writeAsStringSync(
+        configFile.readAsStringSync().replaceFirst(
+          'modules: []',
+          'modules:\n  - ads',
+        ),
+      );
+      final plistFile = File(p.join(tempDir.path, 'ios/Runner/Info.plist'))
+        ..createSync(recursive: true);
+      void writePlist(String contents) => plistFile.writeAsStringSync(contents);
+
+      writePlist('''
+<plist version="1.0">
+<dict>
+  <key>UIApplicationSceneManifest</key>
+  <dict>
+    <key>GADApplicationIdentifier</key>
+    <string>nested</string>
+  </dict>
+</dict>
+</plist>
+''');
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        throwsA(isA<ProjectGenerationException>()),
+      );
+
+      writePlist('''
+<plist version="1.0">
+<dict>
+  <key>UIApplicationSceneManifest</key>
+  <dict/>
+  <key>GADApplicationIdentifier</key>
+  <string>top-level</string>
+</dict>
+</plist>
+''');
+
+      expect(
+        () => GeneratedProjectContract.validate(tempDir.path),
+        returnsNormally,
+      );
+    });
 
     test(
       'validate rejects verify surfaces that double-run app smoke without tag separation',

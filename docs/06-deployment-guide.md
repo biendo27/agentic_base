@@ -31,10 +31,14 @@ The CI workflow does:
 - `dart pub get`
 - `dart analyze --fatal-infos`
 - `dart format --set-exit-if-changed lib bin test`
-- `dart test`
-- generated-app smoke coverage
+- `dart test test/src --exclude-tags generated-app --reporter github`
+- generated-app smoke coverage only when generator, template, module, harness, or integration-test paths changed
+- the slow generated-app canary only for harness/profile/evidence/native-surface changes, manual runs, schedules, and protected branch promotions
 - pub.dev package archive dry-run with zero warnings
-- a pinned macOS generated-app native gate that fresh-generates an app and runs `./tools/ci-check.sh`
+- a conditional pinned macOS generated-app native gate that fresh-generates an app with `--verify-mode none` and then runs `./tools/ci-check.sh`
+- an always-running `ci-required` aggregate status that fails if any required or executed conditional job fails or is cancelled
+
+The workflow intentionally avoids workflow-level `paths` and `paths-ignore` filters. Required GitHub checks can remain pending when whole workflows are skipped, so path decisions happen inside the workflow through the `changes` job.
 
 The Gitflow guard workflow fails PRs that do not follow these routes:
 
@@ -62,7 +66,8 @@ Run from the repo root:
 dart pub get
 dart format --set-exit-if-changed lib bin test
 dart analyze --fatal-infos
-dart test
+dart test test/src --exclude-tags generated-app
+dart test test/integration/generated_app_smoke_test.dart --exclude-tags slow-canary
 dart pub publish --dry-run
 ```
 
@@ -73,7 +78,7 @@ The CI workflow also runs `dart pub publish --dry-run` and fails unless the dry-
 Verified from [`pubspec.yaml`](../pubspec.yaml):
 
 - package name: `agentic_base`
-- version: `0.3.0`
+- version: `0.3.1`
 - homepage/repository/issue tracker are set
 - `.pubignore` excludes repo-only `/docs/`, `/plans/`, coverage output, and repomix artifacts from the published archive while keeping generated-app brick docs and hidden generated-project files available for runtime scaffolding
 
@@ -131,12 +136,14 @@ Supported environments in source:
   - `prod` → `cd-prod.yml`
 - generated workflows call shared local scripts such as:
   - `./tools/verify.sh`
+  - `./tools/lint.sh --strict`
   - `./tools/build.sh <env> [artifact]`
   - `./tools/release-preflight.sh <env> <target>`
   - `./tools/release.sh <env> <target>`
   - `./tools/inspect-evidence.sh <run-kind> [latest|run-id] [markdown|json]`
 - generated workflows upload `artifacts/evidence/**` so verify and release-preflight runs stay inspectable outside the runner
 - generated evidence bundles now also include `telemetry/*` files for runtime context, events, and metrics
+- generated PR CI builds only credentialless `dev` and `staging` artifacts; `prod` builds require `env/prod.env` and protected release or production deploy workflows
 - final production store publish remains a human approval boundary even when upload plumbing is automated
 
 ### GitLab generated projects
@@ -146,6 +153,7 @@ Supported environments in source:
   - the verification job is tagged `macos`
   - the project must provide a macOS runner with shell executor and Xcode
   - Linux runners may handle Dart-only work, but they do not satisfy native validation
+- iOS simulator readiness does not replace physical-device signing; provisioning profiles and device UDIDs remain human-owned setup
 - deploy jobs route through the same shared project scripts and stay manual
 - generated verification and deploy pipelines preserve `artifacts/evidence/**` as job artifacts
 - logical environment mapping fans out to the real generated jobs:

@@ -8,4 +8,4 @@ native_validate:
   artifacts:
     when: always
     paths:
-      - {{evidence_dir}}
+      - {{{evidence_dir}}}

@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-04-22
+
+### Added
+
+- explicit generated-app verification modes for full, fast, and intentionally skipped create-time validation
+- strict generated-project CI contract checks for unresolved Mason tokens, credentialless PR build scope, and root-level iOS AdMob metadata
+
+### Changed
+
+- root CI now keeps protected check contexts while splitting fast package tests from conditional generated-app, slow-canary, and native validation lanes
+- generated GitHub PR CI builds only credentialless `dev` and `staging` artifacts, leaving `prod` to protected release and deploy workflows
+- generated `tools/lint.sh` now supports an opt-in `--strict` mode backed by `dart analyze --fatal-infos`
+
+### Fixed
+
+- generated GitHub and GitLab workflow templates no longer leave unresolved provider or evidence-path tokens after Mason rendering
+- iOS AdMob plist mutation now preserves exactly one root-level `GADApplicationIdentifier` and repairs nested sample entries
+- interactive create prompts for CI provider, while non-interactive create keeps the documented GitHub default
+
+### Testing
+
+- `dart analyze --fatal-infos` passed
+- focused create, generator contract, AdMob module, and documentation tests passed
+- generated-app fast smoke, slow canary, and fresh native gate passed locally and in GitHub CI
+
 ## [0.3.0] - 2026-04-21
 
 ### Added
