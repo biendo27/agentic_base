@@ -110,7 +110,7 @@ jobs:
       - run: dart analyze --fatal-infos
       - run: dart format --set-exit-if-changed lib bin test
 
-  unit-tests:
+  test:
     runs-on: ubuntu-latest
     needs: analyze
     steps:
@@ -121,11 +121,11 @@ jobs:
       - run: dart pub get
       - run: dart test test/src --exclude-tags generated-app --reporter github
 
-  generated-app-smoke-fast:
+  generated-app-smoke:
     runs-on: ubuntu-latest
     needs:
       - changes
-      - unit-tests
+      - test
     if: ${{ needs.changes.outputs.generated_app == 'true' }}
     steps:
       - uses: actions/checkout@v5
@@ -140,7 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - changes
-      - unit-tests
+      - test
     if: ${{ needs.changes.outputs.slow_canary == 'true' }}
     steps:
       - uses: actions/checkout@v5
@@ -153,7 +153,7 @@ jobs:
 
   pub-publish-dry-run:
     runs-on: ubuntu-latest
-    needs: unit-tests
+    needs: test
     steps:
       - uses: actions/checkout@v5
       - uses: dart-lang/setup-dart@v1.7.2
@@ -167,11 +167,11 @@ jobs:
           dart pub publish --dry-run 2>&1 | tee "$RUNNER_TEMP/pub-publish-dry-run.log"
           grep -q "Package has 0 warnings" "$RUNNER_TEMP/pub-publish-dry-run.log"
 
-  native-smoke:
+  generated-app-native-gate:
     runs-on: macos-15
     needs:
       - changes
-      - unit-tests
+      - test
     if: ${{ needs.changes.outputs.native_smoke == 'true' }}
     steps:
       - uses: actions/checkout@v5
@@ -199,11 +199,11 @@ jobs:
     needs:
       - changes
       - analyze
-      - unit-tests
-      - generated-app-smoke-fast
+      - test
+      - generated-app-smoke
       - slow-canary
       - pub-publish-dry-run
-      - native-smoke
+      - generated-app-native-gate
     if: always()
     steps:
       - name: Check aggregate CI result
@@ -211,22 +211,22 @@ jobs:
         env:
           CHANGES_RESULT: ${{ needs.changes.result }}
           ANALYZE_RESULT: ${{ needs.analyze.result }}
-          UNIT_TESTS_RESULT: ${{ needs['unit-tests'].result }}
-          GENERATED_APP_SMOKE_FAST_RESULT: ${{ needs['generated-app-smoke-fast'].result }}
+          TEST_RESULT: ${{ needs.test.result }}
+          GENERATED_APP_SMOKE_RESULT: ${{ needs['generated-app-smoke'].result }}
           SLOW_CANARY_RESULT: ${{ needs['slow-canary'].result }}
           PUB_PUBLISH_DRY_RUN_RESULT: ${{ needs['pub-publish-dry-run'].result }}
-          NATIVE_SMOKE_RESULT: ${{ needs['native-smoke'].result }}
+          GENERATED_APP_NATIVE_GATE_RESULT: ${{ needs['generated-app-native-gate'].result }}
         run: |
           set -euo pipefail
           failed=0
           for job in \
             CHANGES_RESULT \
             ANALYZE_RESULT \
-            UNIT_TESTS_RESULT \
-            GENERATED_APP_SMOKE_FAST_RESULT \
+            TEST_RESULT \
+            GENERATED_APP_SMOKE_RESULT \
             SLOW_CANARY_RESULT \
             PUB_PUBLISH_DRY_RUN_RESULT \
-            NATIVE_SMOKE_RESULT; do
+            GENERATED_APP_NATIVE_GATE_RESULT; do
             result="${!job}"
             echo "$job=$result"
             case "$result" in
