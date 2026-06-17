@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-06-17
+
+### Fixed
+
+- generated native CI contract now matches `flutter_flavorizr` `AppIcon-<flavor>.appiconset` output for iOS and macOS
+- generated notification apps keep Awesome Notifications iOS Podfile build settings after dependency refresh
+- generated app analysis skips native Swift Package checkouts so third-party package sources do not fail starter verification
+- fresh generated starter apps disable Swift Package Manager while the default native plugin set still includes CocoaPods-only packages
+
+### Testing
+
+- `dart analyze --fatal-infos` passed
+- non-generated package suite and generated-app smoke suite passed
+- fresh macOS native gate create plus generated `./tools/ci-check.sh` passed
+
 ## [0.3.1] - 2026-04-22
 
 ### Added

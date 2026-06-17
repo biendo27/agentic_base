@@ -154,6 +154,8 @@ void _expectStarterRuntimeSurfaces(
       ).readAsStringSync();
   final generatedPubspec =
       File(p.join(appDir, 'pubspec.yaml')).readAsStringSync();
+  final generatedAnalysisOptions =
+      File(p.join(appDir, 'analysis_options.yaml')).readAsStringSync();
   final generatedTheme =
       File(
         p.join(appDir, 'lib/core/theme/app_theme.dart'),
@@ -267,7 +269,9 @@ void _expectStarterRuntimeSurfaces(
     homeRepository,
     contains('return failure(ErrorHandler.handle(error));'),
   );
+  expect(generatedAnalysisOptions, contains('- "**/SourcePackages/**"'));
   expect(generatedPubspec, isNot(contains('flutter_screenutil:')));
+  expect(generatedPubspec, contains('enable-swift-package-manager: false'));
   expect(generatedPubspec, contains('google_fonts:'));
   expect(generatedTheme, contains('ThemeData.from('));
   expect(generatedTheme, isNot(contains('ColorScheme.fromSeed(')));

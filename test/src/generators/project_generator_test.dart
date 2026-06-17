@@ -770,7 +770,7 @@ void main() {
           await Directory(
             p.join(
               tempDir.path,
-              'ios/Runner/Assets.xcassets/${flavor}AppIcon.appiconset',
+              'ios/Runner/Assets.xcassets/AppIcon-$flavor.appiconset',
             ),
           ).create(recursive: true);
           await Directory(
@@ -783,6 +783,75 @@ void main() {
 
         expect(
           () => GeneratedProjectContract.validate(tempDir.path),
+          returnsNormally,
+        );
+      },
+    );
+
+    test(
+      'validate enforces macOS flavor schemes when macos output exists',
+      () async {
+        final tempDir = await Directory.systemTemp.createTemp(
+          'generated-project-contract-macos-',
+        );
+        addTearDown(() => tempDir.delete(recursive: true));
+
+        await seedRequiredContractFiles(tempDir.path);
+        await Directory(p.join(tempDir.path, 'macos/Flutter')).create(
+          recursive: true,
+        );
+        await Directory(
+          p.join(
+            tempDir.path,
+            'macos/Runner.xcodeproj/xcshareddata/xcschemes',
+          ),
+        ).create(recursive: true);
+        await Directory(p.join(tempDir.path, 'macos/Runner/Configs')).create(
+          recursive: true,
+        );
+
+        for (final flavor in GeneratedProjectContract.generatedFlavors) {
+          for (final mode in ['Debug', 'Profile', 'Release']) {
+            await File(
+              p.join(tempDir.path, 'macos/Flutter/$flavor$mode.xcconfig'),
+            ).writeAsString('ok');
+            await File(
+              p.join(
+                tempDir.path,
+                'macos/Runner/Configs/$flavor$mode.xcconfig',
+              ),
+            ).writeAsString('ok');
+          }
+          await File(
+            p.join(
+              tempDir.path,
+              'macos/Runner.xcodeproj/xcshareddata/xcschemes/$flavor.xcscheme',
+            ),
+          ).writeAsString('ok');
+        }
+
+        expect(
+          () => GeneratedProjectContract.validateNativeFlavorOutputs(
+            tempDir.path,
+            platforms: const ['macos'],
+          ),
+          throwsA(isA<ProjectGenerationException>()),
+        );
+
+        for (final flavor in GeneratedProjectContract.generatedFlavors) {
+          await Directory(
+            p.join(
+              tempDir.path,
+              'macos/Runner/Assets.xcassets/AppIcon-$flavor.appiconset',
+            ),
+          ).create(recursive: true);
+        }
+
+        expect(
+          () => GeneratedProjectContract.validateNativeFlavorOutputs(
+            tempDir.path,
+            platforms: const ['macos'],
+          ),
           returnsNormally,
         );
       },

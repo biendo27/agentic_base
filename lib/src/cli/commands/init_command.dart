@@ -313,6 +313,7 @@ build:
 const _safeAnalysisOptionsContent = '''
 analyzer:
   exclude:
+    - "**/SourcePackages/**"
     - "**/*.g.dart"
     - "**/*.freezed.dart"
 
