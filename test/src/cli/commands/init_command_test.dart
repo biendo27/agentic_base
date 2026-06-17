@@ -105,6 +105,7 @@ void main() {
         final makefile =
             File(p.join(tempDir.path, 'Makefile')).readAsStringSync();
         expect(analysisOptions, isNot(contains('very_good_analysis')));
+        expect(analysisOptions, contains('- "**/SourcePackages/**"'));
         expect(analysisOptions, contains('public_member_api_docs: false'));
         expect(makefile, contains('./tools/lint.sh'));
         expect(makefile, contains('./tools/format.sh'));

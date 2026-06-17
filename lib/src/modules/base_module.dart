@@ -39,3 +39,8 @@ abstract class AgenticModule {
   /// Undo the install: remove files and clean pubspec.
   Future<void> uninstall(ProjectContext ctx);
 }
+
+/// Optional hook for modules that must repair native files after pub refresh.
+abstract interface class PostDependencyRefreshModule {
+  Future<void> afterDependencyRefresh(ProjectContext ctx);
+}

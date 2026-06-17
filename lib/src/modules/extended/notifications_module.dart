@@ -3,7 +3,8 @@ import 'package:agentic_base/src/modules/module_installer.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
 
 /// Installs awesome_notifications with a NotificationsService contract.
-class NotificationsModule implements AgenticModule {
+class NotificationsModule
+    implements AgenticModule, PostDependencyRefreshModule {
   const NotificationsModule();
 
   @override
@@ -45,6 +46,11 @@ class NotificationsModule implements AgenticModule {
       )
       ..mutateTextFile('ios/Podfile', _patchIosPodfile)
       ..markInstalled(name);
+  }
+
+  @override
+  Future<void> afterDependencyRefresh(ProjectContext ctx) async {
+    ModuleInstaller(ctx).mutateTextFile('ios/Podfile', _patchIosPodfile);
   }
 
   @override

@@ -1,5 +1,13 @@
 # Project Changelog
 
+## 2026-06-17
+
+- Fixed generated-app native CI validation for Flutter 3.44.
+- Aligned iOS/macOS flavor asset contract checks with `flutter_flavorizr` `AppIcon-<flavor>.appiconset` output.
+- Re-applied notifications iOS Podfile patches after dependency refresh so generated notification apps keep Awesome Notifications build settings.
+- Excluded native Swift Package checkouts from generated app analysis to avoid third-party package diagnostics.
+- Disabled Swift Package Manager in freshly generated starter apps while the selected native plugin set still includes CocoaPods-only packages.
+
 ## 2026-04-21
 
 - Completed generator contract hardening.
