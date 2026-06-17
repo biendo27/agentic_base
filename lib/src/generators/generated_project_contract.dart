@@ -585,7 +585,7 @@ final class GeneratedProjectContract {
     for (final flavor in generatedFlavors) {
       _requirePath(
         projectDir,
-        'ios/Runner/Assets.xcassets/${flavor}AppIcon.appiconset',
+        'ios/Runner/Assets.xcassets/AppIcon-$flavor.appiconset',
       );
       _requirePath(
         projectDir,
@@ -605,7 +605,7 @@ final class GeneratedProjectContract {
     for (final flavor in generatedFlavors) {
       _requirePath(
         projectDir,
-        'macos/Runner/Assets.xcassets/${flavor}AppIcon.appiconset',
+        'macos/Runner/Assets.xcassets/AppIcon-$flavor.appiconset',
       );
     }
   }

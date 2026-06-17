@@ -217,7 +217,7 @@ flavors:
       final iosGeneratedAsset = File(
         p.join(
           tempDir.path,
-          'ios/Runner/Assets.xcassets/devAppIcon.appiconset/Contents.json',
+          'ios/Runner/Assets.xcassets/AppIcon-dev.appiconset/Contents.json',
         ),
       );
       final runner = _runner(

@@ -12,6 +12,7 @@ import 'package:agentic_base/src/config/project_metadata.dart';
 import 'package:agentic_base/src/generators/agentic_app_surface_synchronizer.dart';
 import 'package:agentic_base/src/generators/generated_project_contract.dart';
 import 'package:agentic_base/src/generators/generated_verification_mode.dart';
+import 'package:agentic_base/src/modules/base_module.dart';
 import 'package:agentic_base/src/modules/module_integration_generator.dart';
 import 'package:agentic_base/src/modules/module_registry.dart';
 import 'package:agentic_base/src/modules/project_context.dart';
@@ -303,6 +304,7 @@ class ProjectGenerator {
   ) async {
     final progress = _logger.progress('Installing ${modules.length} module(s)');
     final installed = <String>[];
+    final installedModules = <AgenticModule>[];
     final requestedModules = <String>[];
     for (final name in modules) {
       final missing = ModuleRegistry.missingPrerequisites(
@@ -334,6 +336,7 @@ class ProjectGenerator {
       await module.install(ctx);
       if (!installed.contains(name)) {
         installed.add(name);
+        installedModules.add(module);
       }
     }
     const ModuleIntegrationGenerator().sync(
@@ -350,6 +353,17 @@ class ProjectGenerator {
       'Refreshing dependencies after module install',
       toolchain.flutterCommand(['pub', 'get']),
     );
+    for (final module
+        in installedModules.whereType<PostDependencyRefreshModule>()) {
+      await module.afterDependencyRefresh(
+        ProjectContext(
+          projectPath: projectDir,
+          projectName: projectName,
+          stateManagement: stateManagement,
+          installedModules: List.unmodifiable(installed),
+        ),
+      );
+    }
     final config = AgenticConfig(projectPath: projectDir);
     final metadata = config.readMetadata(
       fallbackProjectName: projectName,
